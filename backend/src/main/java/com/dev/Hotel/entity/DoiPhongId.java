@@ -10,10 +10,8 @@ import lombok.AllArgsConstructor;
 import java.io.Serializable;
 import java.util.Objects;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode
 @Embeddable
 public class DoiPhongId implements Serializable {
 
@@ -23,13 +21,32 @@ public class DoiPhongId implements Serializable {
     @Column(name = "SOPHONGMOI")
     private String soPhongMoi;
 
+    // Manual getters and setters
+    public Integer getIdCtPt() {
+        return idCtPt;
+    }
+
+    public void setIdCtPt(Integer idCtPt) {
+        this.idCtPt = idCtPt;
+    }
+
+    public String getSoPhongMoi() {
+        return soPhongMoi;
+    }
+
+    public void setSoPhongMoi(String soPhongMoi) {
+        this.soPhongMoi = soPhongMoi;
+    }
+
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         DoiPhongId that = (DoiPhongId) o;
         return Objects.equals(idCtPt, that.idCtPt) &&
-               Objects.equals(soPhongMoi, that.soPhongMoi);
+                Objects.equals(soPhongMoi, that.soPhongMoi);
     }
 
     @Override

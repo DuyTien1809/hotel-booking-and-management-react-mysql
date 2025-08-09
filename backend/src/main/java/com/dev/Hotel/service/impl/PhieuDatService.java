@@ -2,6 +2,7 @@ package com.dev.Hotel.service.impl;
 
 import com.dev.Hotel.dto.Response;
 import com.dev.Hotel.dto.CreateBookingAtReceptionRequest;
+import com.dev.Hotel.dto.CreateBookingRequest;
 import com.dev.Hotel.dto.UpdateBookingRequest;
 import com.dev.Hotel.entity.PhieuDat;
 import com.dev.Hotel.entity.KhachHang;
@@ -25,19 +26,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class PhieuDatService implements IPhieuDatService {
 
     @Autowired
     private PhieuDatRepository phieuDatRepository;
-    
+
     @Autowired
     private KhachHangRepository khachHangRepository;
-    
+
     @Autowired
     private NhanVienRepository nhanVienRepository;
 
@@ -76,7 +79,7 @@ public class PhieuDatService implements IPhieuDatService {
         Response response = new Response();
         try {
             PhieuDat phieuDat = phieuDatRepository.findByIdWithDetails(idPd)
-                .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
+                    .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
 
             response.setStatusCode(200);
             response.setMessage("Thành công");
@@ -100,12 +103,12 @@ public class PhieuDatService implements IPhieuDatService {
             if (!isValidBookingPeriod(phieuDat.getNgayBdThue(), phieuDat.getNgayDi())) {
                 throw new OurException("Ngày đặt không hợp lệ");
             }
-            
+
             PhieuDat savedPhieuDat = phieuDatRepository.save(phieuDat);
             response.setStatusCode(200);
             response.setMessage("Tạo phiếu đặt thành công");
             response.setPhieuDat(EntityDTOMapper.mapPhieuDatToDTO(savedPhieuDat));
-            
+
         } catch (OurException e) {
             response.setStatusCode(400);
             response.setMessage(e.getMessage());
@@ -121,8 +124,8 @@ public class PhieuDatService implements IPhieuDatService {
         Response response = new Response();
         try {
             PhieuDat existingPhieuDat = phieuDatRepository.findByIdWithDetails(idPd)
-                .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
-            
+                    .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
+
             // Update fields
             existingPhieuDat.setNgayDat(phieuDat.getNgayDat());
             existingPhieuDat.setNgayBdThue(phieuDat.getNgayBdThue());
@@ -131,12 +134,12 @@ public class PhieuDatService implements IPhieuDatService {
             existingPhieuDat.setSoTienCoc(phieuDat.getSoTienCoc());
             existingPhieuDat.setKhachHang(phieuDat.getKhachHang());
             existingPhieuDat.setNhanVien(phieuDat.getNhanVien());
-            
+
             PhieuDat updatedPhieuDat = phieuDatRepository.save(existingPhieuDat);
             response.setStatusCode(200);
             response.setMessage("Cập nhật phiếu đặt thành công");
             response.setPhieuDat(EntityDTOMapper.mapPhieuDatToDTO(updatedPhieuDat));
-            
+
         } catch (OurException e) {
             response.setStatusCode(404);
             response.setMessage(e.getMessage());
@@ -152,12 +155,12 @@ public class PhieuDatService implements IPhieuDatService {
         Response response = new Response();
         try {
             phieuDatRepository.findById(idPd)
-                .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
-            
+                    .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
+
             phieuDatRepository.deleteById(idPd);
             response.setStatusCode(200);
             response.setMessage("Xóa phiếu đặt thành công");
-            
+
         } catch (OurException e) {
             response.setStatusCode(404);
             response.setMessage(e.getMessage());
@@ -188,13 +191,13 @@ public class PhieuDatService implements IPhieuDatService {
         Response response = new Response();
         try {
             NhanVien nhanVien = nhanVienRepository.findById(idNv)
-                .orElseThrow(() -> new OurException("Nhân viên không tồn tại"));
-            
+                    .orElseThrow(() -> new OurException("Nhân viên không tồn tại"));
+
             List<PhieuDat> phieuDatList = phieuDatRepository.findByNhanVien(nhanVien);
             response.setStatusCode(200);
             response.setMessage("Thành công");
             response.setPhieuDatList(EntityDTOMapper.mapPhieuDatListToDTO(phieuDatList));
-            
+
         } catch (OurException e) {
             response.setStatusCode(404);
             response.setMessage(e.getMessage());
@@ -240,15 +243,15 @@ public class PhieuDatService implements IPhieuDatService {
         Response response = new Response();
         try {
             PhieuDat phieuDat = phieuDatRepository.findById(idPd)
-                .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
-            
+                    .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
+
             phieuDat.setTrangThai("Đã xác nhận");
             PhieuDat updatedPhieuDat = phieuDatRepository.save(phieuDat);
-            
+
             response.setStatusCode(200);
             response.setMessage("Xác nhận đặt phòng thành công");
             response.setPhieuDat(EntityDTOMapper.mapPhieuDatToDTO(updatedPhieuDat));
-            
+
         } catch (OurException e) {
             response.setStatusCode(404);
             response.setMessage(e.getMessage());
@@ -264,15 +267,15 @@ public class PhieuDatService implements IPhieuDatService {
         Response response = new Response();
         try {
             PhieuDat phieuDat = phieuDatRepository.findById(idPd)
-                .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
-            
+                    .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
+
             phieuDat.setTrangThai("Đã hủy");
             PhieuDat updatedPhieuDat = phieuDatRepository.save(phieuDat);
-            
+
             response.setStatusCode(200);
             response.setMessage("Hủy đặt phòng thành công. Lý do: " + reason);
             response.setPhieuDat(EntityDTOMapper.mapPhieuDatToDTO(updatedPhieuDat));
-            
+
         } catch (OurException e) {
             response.setStatusCode(404);
             response.setMessage(e.getMessage());
@@ -288,7 +291,7 @@ public class PhieuDatService implements IPhieuDatService {
         Response response = new Response();
         try {
             PhieuDat phieuDat = phieuDatRepository.findById(idPd)
-                .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
+                    .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
 
             phieuDat.setTrangThai(trangThai);
             PhieuDat updatedPhieuDat = phieuDatRepository.save(phieuDat);
@@ -312,7 +315,7 @@ public class PhieuDatService implements IPhieuDatService {
         Response response = new Response();
         try {
             PhieuDat phieuDat = phieuDatRepository.findByIdWithDetails(idPd)
-                .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
+                    .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
 
             // Update basic booking info
             if (request.getCheckIn() != null) {
@@ -330,7 +333,8 @@ public class PhieuDatService implements IPhieuDatService {
 
             // Update customer info
             if (phieuDat.getKhachHang() != null &&
-                (request.getCustomerName() != null || request.getCustomerPhone() != null || request.getCustomerEmail() != null)) {
+                    (request.getCustomerName() != null || request.getCustomerPhone() != null
+                            || request.getCustomerEmail() != null)) {
 
                 KhachHang khachHang = phieuDat.getKhachHang();
 
@@ -387,11 +391,12 @@ public class PhieuDatService implements IPhieuDatService {
 
                     // Nếu kiểu phòng hoặc loại phòng thay đổi, cần tạo record mới
                     if ((newIdKp != null && !newIdKp.equals(currentIdKp)) ||
-                        (newIdLp != null && !newIdLp.equals(currentIdLp))) {
+                            (newIdLp != null && !newIdLp.equals(currentIdLp))) {
 
                         // Tìm hạng phòng tương ứng với kiểu phòng và loại phòng mới
                         if (newIdKp != null && newIdLp != null) {
-                            List<HangPhong> hangPhongList = hangPhongRepository.findByKieuPhongAndLoaiPhong(newIdKp, newIdLp);
+                            List<HangPhong> hangPhongList = hangPhongRepository.findByKieuPhongAndLoaiPhong(newIdKp,
+                                    newIdLp);
                             if (!hangPhongList.isEmpty()) {
                                 HangPhong newHangPhong = hangPhongList.get(0);
 
@@ -511,9 +516,12 @@ public class PhieuDatService implements IPhieuDatService {
             List<PhieuDat> phieuDatList = phieuDatRepository.findByTrangThaiWithDetails("Đã xác nhận");
             // Sắp xếp theo ngày bắt đầu thuê
             phieuDatList.sort((a, b) -> {
-                if (a.getNgayBdThue() == null && b.getNgayBdThue() == null) return 0;
-                if (a.getNgayBdThue() == null) return 1;
-                if (b.getNgayBdThue() == null) return -1;
+                if (a.getNgayBdThue() == null && b.getNgayBdThue() == null)
+                    return 0;
+                if (a.getNgayBdThue() == null)
+                    return 1;
+                if (b.getNgayBdThue() == null)
+                    return -1;
                 return a.getNgayBdThue().compareTo(b.getNgayBdThue());
             });
 
@@ -561,7 +569,8 @@ public class PhieuDatService implements IPhieuDatService {
             }
 
             // Get room category and validate deposit
-            List<HangPhong> hangPhongList = hangPhongRepository.findByKieuPhongAndLoaiPhong(request.getIdKp(), request.getIdLp());
+            List<HangPhong> hangPhongList = hangPhongRepository.findByKieuPhongAndLoaiPhong(request.getIdKp(),
+                    request.getIdLp());
             if (hangPhongList.isEmpty()) {
                 throw new OurException("Không tìm thấy hạng phòng với kiểu phòng và loại phòng này");
             }
@@ -570,9 +579,8 @@ public class PhieuDatService implements IPhieuDatService {
 
             // Get current room price
             Optional<GiaHangPhong> giaHangPhong = giaHangPhongRepository.findLatestPriceByHangPhong(
-                hangPhong.getIdHangPhong(),
-                LocalDate.now()
-            );
+                    hangPhong.getIdHangPhong(),
+                    LocalDate.now());
 
             BigDecimal roomPrice;
             if (giaHangPhong.isPresent()) {
@@ -602,7 +610,7 @@ public class PhieuDatService implements IPhieuDatService {
             } else {
                 // Find existing customer
                 khachHang = khachHangRepository.findById(request.getCccd())
-                    .orElseThrow(() -> new OurException("Khách hàng không tồn tại"));
+                        .orElseThrow(() -> new OurException("Khách hàng không tồn tại"));
             }
 
             // Create PhieuDat
@@ -617,9 +625,10 @@ public class PhieuDatService implements IPhieuDatService {
             // Set employee
             System.out.println("Setting employee with ID: " + request.getIdNv());
             NhanVien nhanVien = nhanVienRepository.findById(request.getIdNv())
-                .orElseThrow(() -> new OurException("Nhân viên không tồn tại với ID: " + request.getIdNv()));
+                    .orElseThrow(() -> new OurException("Nhân viên không tồn tại với ID: " + request.getIdNv()));
             phieuDat.setNhanVien(nhanVien);
-            System.out.println("Employee set successfully: " + nhanVien.getIdNv() + " - " + nhanVien.getHo() + " " + nhanVien.getTen());
+            System.out.println("Employee set successfully: " + nhanVien.getIdNv() + " - " + nhanVien.getHo() + " "
+                    + nhanVien.getTen());
 
             PhieuDat savedPhieuDat = phieuDatRepository.save(phieuDat);
             System.out.println("PhieuDat saved with employee ID: " + savedPhieuDat.getNhanVien().getIdNv());
@@ -650,5 +659,167 @@ public class PhieuDatService implements IPhieuDatService {
             response.setMessage("Lỗi khi tạo đặt phòng: " + e.getMessage());
         }
         return response;
+    }
+
+    /**
+     * Create booking from PayPal payment
+     */
+    @Transactional
+    public Response createBookingFromPayPal(CreateBookingRequest request) {
+        Response response = new Response();
+        try {
+            // Debug logs
+            System.out.println("=== PayPal Booking Request Debug ===");
+            System.out.println("CheckIn: " + request.getCheckIn());
+            System.out.println("CheckOut: " + request.getCheckOut());
+            System.out.println("FullName: " + request.getFullName());
+            System.out.println("Phone: " + request.getPhone());
+            System.out.println("Email: " + request.getEmail());
+            System.out.println("IdCard: " + request.getIdCard());
+            if (request.getRoom() != null) {
+                System.out.println("Room ID: " + request.getRoom().getIdHangPhong());
+                System.out.println("Room Price: " + request.getRoom().getGiaPhong());
+            }
+            System.out.println("Total Amount: " + request.getTotalAmount());
+            System.out.println("Deposit Amount: " + request.getDepositAmount());
+            System.out.println("=====================================");
+
+            // Validate request
+            if (request.getCheckIn() == null || request.getCheckOut() == null) {
+                throw new OurException("Ngày nhận phòng và trả phòng không được để trống");
+            }
+
+            System.out.println("Validating booking period...");
+            System.out.println("CheckIn: " + request.getCheckIn() + ", CheckOut: " + request.getCheckOut());
+            System.out.println("Today: " + LocalDate.now());
+
+            if (!isValidBookingPeriod(request.getCheckIn(), request.getCheckOut())) {
+                System.out.println("Booking period validation FAILED");
+                throw new OurException("Ngày đặt không hợp lệ");
+            }
+
+            System.out.println("Booking period validation PASSED");
+
+            // Find or create customer
+            KhachHang khachHang = findOrCreateCustomer(request);
+
+            // Create PhieuDat
+            PhieuDat phieuDat = new PhieuDat();
+            phieuDat.setNgayDat(LocalDate.now());
+            phieuDat.setNgayBdThue(request.getCheckIn());
+            phieuDat.setNgayDi(request.getCheckOut());
+            phieuDat.setTrangThai("Chờ xác nhận");
+            phieuDat.setSoTienCoc(request.getDepositAmount());
+            phieuDat.setKhachHang(khachHang);
+            // Note: nhanVien will be null for online bookings
+
+            PhieuDat savedPhieuDat = phieuDatRepository.save(phieuDat);
+
+            // Create CtPhieuDat
+            if (request.getRoom() != null) {
+                System.out.println("Looking for HangPhong with ID: " + request.getRoom().getIdHangPhong());
+
+                HangPhong hangPhong = hangPhongRepository.findById(request.getRoom().getIdHangPhong())
+                        .orElseThrow(() -> {
+                            System.out.println("HangPhong not found with ID: " + request.getRoom().getIdHangPhong());
+                            System.out.println("Available HangPhong IDs: ");
+                            hangPhongRepository.findAll()
+                                    .forEach(hp -> System.out.println("- ID: " + hp.getIdHangPhong()));
+                            return new OurException(
+                                    "Hạng phòng không tồn tại với ID: " + request.getRoom().getIdHangPhong());
+                        });
+
+                // Kiểm tra số lượng phòng trống
+                int requestedQuantity = request.getRoom().getSoLuongPhongDat() != null
+                        ? request.getRoom().getSoLuongPhongDat()
+                        : 1;
+
+                System.out.println("Found HangPhong: " + hangPhong.getIdHangPhong());
+
+                CtPhieuDat ctPhieuDat = new CtPhieuDat();
+                CtPhieuDatId ctId = new CtPhieuDatId();
+                ctId.setIdPd(savedPhieuDat.getIdPd());
+                ctId.setIdHangPhong(hangPhong.getIdHangPhong());
+
+                ctPhieuDat.setId(ctId);
+                ctPhieuDat.setSoLuongPhongO(
+                        request.getRoom().getSoLuongPhongDat() != null ? request.getRoom().getSoLuongPhongDat() : 1);
+
+                // Lấy đơn giá từ totalAmount hoặc depositAmount
+                BigDecimal donGia = request.getRoom().getGiaPhong();
+                if (donGia == null && request.getTotalAmount() != null) {
+                    // Tính đơn giá từ tổng tiền / (số đêm * số lượng phòng)
+                    int nights = request.getNights() != null ? request.getNights() : 1;
+                    int roomQuantity = request.getRoom().getSoLuongPhongDat() != null
+                            ? request.getRoom().getSoLuongPhongDat()
+                            : 1;
+                    donGia = request.getTotalAmount().divide(
+                            BigDecimal.valueOf(nights * roomQuantity), 2,
+                            RoundingMode.HALF_UP);
+                }
+
+                System.out.println("Setting DON_GIA: " + donGia);
+                ctPhieuDat.setDonGia(donGia);
+                ctPhieuDat.setTrangThai("Chờ xác nhận");
+
+                System.out.println("Saving CtPhieuDat with ID: " + ctId.getIdPd() + ", " + ctId.getIdHangPhong());
+                ctPhieuDatRepository.save(ctPhieuDat);
+                System.out.println("CtPhieuDat saved successfully");
+            }
+
+            response.setStatusCode(200);
+            response.setMessage("Đặt phòng thành công");
+            response.setPhieuDat(EntityDTOMapper.mapPhieuDatToDTO(savedPhieuDat));
+            response.setBookingConfirmationCode("BOOKING_" + savedPhieuDat.getIdPd());
+
+        } catch (OurException e) {
+            response.setStatusCode(400);
+            response.setMessage(e.getMessage());
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi tạo đặt phòng: " + e.getMessage());
+        }
+        return response;
+    }
+
+    private KhachHang findOrCreateCustomer(CreateBookingRequest request) {
+        // Validate required fields
+        if (request.getIdCard() == null || request.getIdCard().trim().isEmpty()) {
+            throw new OurException("CCCD không được để trống");
+        }
+        if (request.getFullName() == null || request.getFullName().trim().isEmpty()) {
+            throw new OurException("Họ tên không được để trống");
+        }
+        if (request.getPhone() == null || request.getPhone().trim().isEmpty()) {
+            throw new OurException("Số điện thoại không được để trống");
+        }
+        if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            throw new OurException("Email không được để trống");
+        }
+
+        // Try to find existing customer by CCCD
+        return khachHangRepository.findByCccd(request.getIdCard().trim())
+                .orElseGet(() -> {
+                    // Create new customer
+                    KhachHang newCustomer = new KhachHang();
+                    newCustomer.setCccd(request.getIdCard().trim());
+
+                    // Parse full name into ho and ten
+                    String fullName = request.getFullName().trim();
+                    String[] nameParts = fullName.split("\\s+");
+                    if (nameParts.length >= 2) {
+                        newCustomer.setHo(nameParts[0]);
+                        newCustomer
+                                .setTen(String.join(" ", java.util.Arrays.copyOfRange(nameParts, 1, nameParts.length)));
+                    } else {
+                        newCustomer.setHo("");
+                        newCustomer.setTen(fullName);
+                    }
+
+                    newCustomer.setSdt(request.getPhone().trim());
+                    newCustomer.setEmail(request.getEmail().trim());
+
+                    return khachHangRepository.save(newCustomer);
+                });
     }
 }

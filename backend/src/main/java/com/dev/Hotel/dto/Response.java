@@ -1,11 +1,11 @@
 package com.dev.Hotel.dto;
 
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import com.dev.Hotel.entity.TrangThai;
 
 @Data
@@ -80,6 +80,9 @@ public class Response {
 
     // Detailed rental info
     private PhieuThueDetailsDTO phieuThueDetails;
+
+    // Available rooms by hang phong
+    private List<AvailableRoomsByHangPhongDTO> availableRoomsByHangPhongList;
 
     // Getters and Setters
     public int getStatusCode() {
@@ -381,5 +384,33 @@ public class Response {
 
     public void setPhieuThueDetails(PhieuThueDetailsDTO phieuThueDetails) {
         this.phieuThueDetails = phieuThueDetails;
+    }
+
+    public Object getGuestList() {
+        return guestList;
+    }
+
+    public void setGuestList(Object guestList) {
+        this.guestList = guestList;
+    }
+
+    public void setGuestList(List<Map<String, Object>> guestList) {
+        this.guestList = guestList;
+    }
+
+    public Object getRoomGuests() {
+        return roomGuests;
+    }
+
+    public void setRoomGuests(Object roomGuests) {
+        this.roomGuests = roomGuests;
+    }
+
+    public List<AvailableRoomsByHangPhongDTO> getAvailableRoomsByHangPhongList() {
+        return availableRoomsByHangPhongList;
+    }
+
+    public void setAvailableRoomsByHangPhongList(List<AvailableRoomsByHangPhongDTO> availableRoomsByHangPhongList) {
+        this.availableRoomsByHangPhongList = availableRoomsByHangPhongList;
     }
 }

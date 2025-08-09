@@ -27,4 +27,37 @@ public class KieuPhong {
     @Max(value = 20, message = "Số lượng khách ở không được quá 20")
     @Column(name = "SO_LUONG_KHACH")
     private Integer soLuongKhach;
+
+    // Manual getters and setters
+    public String getIdKp() {
+        return idKp;
+    }
+
+    public void setIdKp(String idKp) {
+        this.idKp = idKp;
+    }
+
+    public String getTenKp() {
+        return tenKp;
+    }
+
+    public void setTenKp(String tenKp) {
+        this.tenKp = tenKp;
+    }
+
+    public String getMoTa() {
+        return moTa;
+    }
+
+    public void setMoTa(String moTa) {
+        this.moTa = moTa;
+    }
+
+    public Integer getSoLuongKhach() {
+        return soLuongKhach;
+    }
+
+    public void setSoLuongKhach(Integer soLuongKhach) {
+        this.soLuongKhach = soLuongKhach;
+    }
 }

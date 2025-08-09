@@ -2,72 +2,166 @@ import React, { useState, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { roomService } from '../../services/roomService';
-import { Calendar, Users, Home, Star } from 'lucide-react';
+import { formatDateToYMD } from '../../utils/dateUtils';
+
+// CSS cho dual range slider
+const sliderStyles = `
+  .dual-range-slider {
+    position: relative;
+    height: 8px;
+    background: linear-gradient(to right, #e5e7eb 0%, #e5e7eb 100%);
+    border-radius: 4px;
+    margin: 20px 0;
+    padding: 10px 0;
+  }
+
+  .dual-range-slider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    transform: translateY(-50%);
+    z-index: 1;
+  }
+
+  .dual-range-slider input[type="range"] {
+    position: absolute;
+    width: 100%;
+    height: 8px;
+    background: transparent;
+    -webkit-appearance: none;
+    appearance: none;
+    pointer-events: none;
+    outline: none;
+    z-index: 2;
+  }
+
+  .dual-range-slider input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 24px;
+    width: 24px;
+    border-radius: 50%;
+    background: #3B82F6;
+    cursor: pointer;
+    border: 3px solid #ffffff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    pointer-events: all;
+    transition: all 0.2s ease;
+    z-index: 3;
+  }
+
+  .dual-range-slider input[type="range"]::-webkit-slider-thumb:hover {
+    background: #2563EB;
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  }
+
+  .dual-range-slider input[type="range"]::-webkit-slider-thumb:active {
+    transform: scale(1.2);
+  }
+
+  .dual-range-slider input[type="range"]::-moz-range-thumb {
+    height: 24px;
+    width: 24px;
+    border-radius: 50%;
+    background: #3B82F6;
+    cursor: pointer;
+    border: 3px solid #ffffff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    pointer-events: all;
+    transition: all 0.2s ease;
+    -moz-appearance: none;
+  }
+
+  .dual-range-slider input[type="range"]::-moz-range-thumb:hover {
+    background: #2563EB;
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  }
+
+  .dual-range-slider input[type="range"]:focus::-webkit-slider-thumb {
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+  }
+
+  .dual-range-slider .range-min::-webkit-slider-thumb {
+    background: #10B981;
+  }
+
+  .dual-range-slider .range-min::-webkit-slider-thumb:hover {
+    background: #059669;
+  }
+
+  .dual-range-slider .range-min::-moz-range-thumb {
+    background: #10B981;
+  }
+
+  .dual-range-slider .range-min::-moz-range-thumb:hover {
+    background: #059669;
+  }
+
+  .dual-range-slider .range-max::-webkit-slider-thumb {
+    background: #EF4444;
+  }
+
+  .dual-range-slider .range-max::-webkit-slider-thumb:hover {
+    background: #DC2626;
+  }
+
+  .dual-range-slider .range-max::-moz-range-thumb {
+    background: #EF4444;
+  }
+
+  .dual-range-slider .range-max::-moz-range-thumb:hover {
+    background: #DC2626;
+  }
+
+  /* Track styling for Firefox */
+  .dual-range-slider input[type="range"]::-moz-range-track {
+    background: transparent;
+    border: none;
+    height: 8px;
+  }
+
+  /* Active range styling */
+  .dual-range-slider .range-track {
+    position: absolute;
+    top: 50%;
+    height: 8px;
+    background: linear-gradient(to right, #3B82F6, #10B981);
+    border-radius: 4px;
+    transform: translateY(-50%);
+    z-index: 2;
+  }
+`;
 
 const RoomSearch = ({ handleSearchResult }) => {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
-  const [kieuPhong, setKieuPhong] = useState('');
-  const [hangPhong, setHangPhong] = useState('');
-  const [guests, setGuests] = useState(1);
-  const [kieuPhongList, setKieuPhongList] = useState([]);
-  const [hangPhongList, setHangPhongList] = useState([]);
+  const [priceRange, setPriceRange] = useState([0, 10000000]); // Giá từ 0 đến 10 triệu VND
   const [error, setError] = useState('');
 
+  // Inject CSS styles for dual range slider
   useEffect(() => {
-    fetchKieuPhong();
-    fetchHangPhong();
+    const styleElement = document.createElement('style');
+    styleElement.textContent = sliderStyles;
+    document.head.appendChild(styleElement);
+
+    return () => {
+      document.head.removeChild(styleElement);
+    };
   }, []);
 
-  const fetchKieuPhong = async () => {
-    try {
-      const response = await roomService.getAllRoomTypes();
-      if (response.statusCode === 200) {
-        setKieuPhongList(response.kieuPhongList || []);
-      }
-    } catch (error) {
-      console.error('Error fetching kieu phong:', error);
-      // Fallback data
-      setKieuPhongList([
-        { idKp: 'STD', tenKp: 'Standard' },
-        { idKp: 'DLX', tenKp: 'Deluxe' },
-        { idKp: 'SUT', tenKp: 'Suite' },
-        { idKp: 'VIP', tenKp: 'VIP' }
-      ]);
-    }
-  };
-
-  const fetchHangPhong = async () => {
-    try {
-      // Sử dụng API để lấy danh sách hạng phòng
-      const response = await roomService.getAllRooms();
-      if (response.statusCode === 200 && response.phongList) {
-        // Extract unique hang phong from rooms
-        const uniqueHangPhong = [];
-        const seenHangPhong = new Set();
-
-        response.phongList.forEach(room => {
-          if (room.idHangPhong && !seenHangPhong.has(room.idHangPhong)) {
-            seenHangPhong.add(room.idHangPhong);
-            uniqueHangPhong.push({
-              idHangPhong: room.idHangPhong,
-              giaPhong: room.giaPhong || 0
-            });
-          }
-        });
-
-        setHangPhongList(uniqueHangPhong);
-      }
-    } catch (error) {
-      console.error('Error fetching hang phong:', error);
-      // Fallback data
-      setHangPhongList([
-        { idHangPhong: 1, giaPhong: 500000 },
-        { idHangPhong: 2, giaPhong: 800000 },
-        { idHangPhong: 3, giaPhong: 1200000 },
-        { idHangPhong: 4, giaPhong: 2000000 }
-      ]);
-    }
+  // Format giá tiền
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(price);
   };
 
   /**This methods is going to be used to show errors */
@@ -81,7 +175,7 @@ const RoomSearch = ({ handleSearchResult }) => {
   /**THis is going to be used to fetch avaailabe rooms from database base on seach data that'll be passed in */
   const handleInternalSearch = async () => {
     if (!startDate || !endDate) {
-      showError('Vui lòng chọn ngày nhận phòng và trả phòng');
+      showError('Vui lòng chọn ngày nhận phòng và ngày trả phòng');
       return false;
     }
 
@@ -90,37 +184,50 @@ const RoomSearch = ({ handleSearchResult }) => {
       return false;
     }
 
-    try {
-      // Convert startDate to the desired format
-      const formattedStartDate = startDate ? startDate.toISOString().split('T')[0] : null;
-      const formattedEndDate = endDate ? endDate.toISOString().split('T')[0] : null;
+    if (startDate < new Date().setHours(0, 0, 0, 0)) {
+      showError('Ngày nhận phòng không thể là ngày trong quá khứ');
+      return false;
+    }
 
-      // Call the API to fetch available rooms
-      const response = await roomService.getAvailableRoomsByDateRange(formattedStartDate, formattedEndDate);
+    if (priceRange[0] >= priceRange[1]) {
+      showError('Khoảng giá không hợp lệ');
+      return false;
+    }
+    try {
+      // Convert startDate to the desired format (avoid timezone issues)
+      const formattedStartDate = formatDateToYMD(startDate);
+      const formattedEndDate = formatDateToYMD(endDate);
+
+      // Debug: Log price range values
+      console.log('Price range being sent to API:', {
+        minPrice: priceRange[0],
+        maxPrice: priceRange[1],
+        checkIn: formattedStartDate,
+        checkOut: formattedEndDate
+      });
+
+      // Call the API to fetch available rooms by price range
+      const response = await roomService.searchRoomsByPriceRange(
+        formattedStartDate,
+        formattedEndDate,
+        priceRange[0],
+        priceRange[1]
+      );
 
       // Check if the response is successful
       if (response.statusCode === 200) {
-        let filteredRooms = response.phongList || [];
+        // Debug: Log the actual data received from API
+        console.log('API Response Data:', response.availableRoomsByHangPhongList);
 
-        // Apply filters
-        if (kieuPhong) {
-          filteredRooms = filteredRooms.filter(room => room.idKp === kieuPhong);
+        if (response.availableRoomsByHangPhongList && response.availableRoomsByHangPhongList.length === 0) {
+          showError('Không có phòng trống trong khoảng thời gian và mức giá này.');
+          return
         }
-
-        if (hangPhong) {
-          filteredRooms = filteredRooms.filter(room => room.idHangPhong === parseInt(hangPhong));
-        }
-
-        if (guests > 1) {
-          filteredRooms = filteredRooms.filter(room => room.soLuongKhachO >= guests);
-        }
-
-        if (filteredRooms.length === 0) {
-          showError('Không có phòng trống phù hợp với tiêu chí tìm kiếm.');
-          return;
-        }
-
-        handleSearchResult(filteredRooms);
+        handleSearchResult(response.availableRoomsByHangPhongList || [], {
+          startDate,
+          endDate,
+          priceRange
+        });
         setError('');
       }
     } catch (error) {
@@ -130,162 +237,83 @@ const RoomSearch = ({ handleSearchResult }) => {
 
   return (
     <div className="w-full">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-        {/* Check-in Date */}
-        <div className="lg:col-span-1">
-          <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-            <Calendar className="w-4 h-4 mr-1 flex-shrink-0" />
-            <span className="whitespace-nowrap">Nhận phòng</span>
-          </label>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Ngày nhận phòng</label>
           <DatePicker
             selected={startDate}
             onChange={(date) => setStartDate(date)}
             dateFormat="dd/MM/yyyy"
-            placeholderText="Chọn ngày"
-            className="w-full px-4 py-3 border text-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-            minDate={new Date()}
+            placeholderText="Chọn ngày nhận phòng"
+            className="input"
           />
         </div>
-
-        {/* Check-out Date */}
-        <div className="lg:col-span-1">
-          <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-            <Calendar className="w-4 h-4 mr-1 flex-shrink-0" />
-            <span className="whitespace-nowrap">Trả phòng</span>
-          </label>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Ngày trả phòng</label>
           <DatePicker
             selected={endDate}
             onChange={(date) => setEndDate(date)}
             dateFormat="dd/MM/yyyy"
-            placeholderText="Chọn ngày"
-            className="w-full px-4 py-3 border text-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-            minDate={startDate || new Date()}
+            placeholderText="Chọn ngày trả phòng"
+            className="input"
           />
         </div>
 
-        {/* Room Type (Kieu Phong) */}
-        <div className="lg:col-span-1">
-          <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-            <Home className="w-4 h-4 mr-1 flex-shrink-0" />
-            <span className="whitespace-nowrap">Kiểu phòng</span>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Khoảng giá: {formatPrice(priceRange[0])} - {formatPrice(priceRange[1])}
           </label>
-          <select
-            value={kieuPhong}
-            onChange={(e) => setKieuPhong(e.target.value)}
-            className="w-full px-4 py-3 border text-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-          >
-            <option value="">Tất cả kiểu phòng</option>
-            {kieuPhongList.map((kp) => (
-              <option key={kp.idKp} value={kp.idKp}>
-                {kp.tenKp}
-              </option>
-            ))}
-          </select>
-        </div>
+          <div className="px-2">
 
-        {/* Room Category (Hang Phong) */}
-        <div className="lg:col-span-1">
-          <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-            <Star className="w-4 h-4 mr-1 flex-shrink-0" />
-            <span className="whitespace-nowrap">Loại phòng</span>
-          </label>
-          <select
-            value={hangPhong}
-            onChange={(e) => setHangPhong(e.target.value)}
-            className="w-full px-4 py-3 border text-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-          >
-            <option value="">Tất cả loại phòng</option>
-            {hangPhongList.map((hp) => (
-              <option key={hp.idHangPhong} value={hp.idHangPhong}>
-                Loại {hp.idHangPhong} - {hp.giaPhong?.toLocaleString('vi-VN')}₫/đêm
-              </option>
-            ))}
-          </select>
-        </div>
+            <div className="dual-range-slider">
+              <input
+                type="range"
+                min="0"
+                max="10000000"
+                step="500000"
+                value={priceRange[0]}
+                onChange={(e) => {
+                  const newMin = parseInt(e.target.value);
+                  if (newMin < priceRange[1]) {
+                    setPriceRange([newMin, priceRange[1]]);
+                  }
+                }}
+                className="range-min"
+              />
+              <input
+                type="range"
+                min="0"
+                max="10000000"
+                step="500000"
+                value={priceRange[1]}
+                onChange={(e) => {
+                  const newMax = parseInt(e.target.value);
+                  console.log('Max slider changed to:', newMax);
+                  if (newMax > priceRange[0]) {
+                    setPriceRange([priceRange[0], newMax]);
+                    console.log('Updated priceRange:', [priceRange[0], newMax]);
+                  }
+                }}
+                className="range-max"
+              />
+            </div>
+            <div className="flex justify-between text-xs text-gray-500 mt-2">
+              <span>0đ</span>
+              <span>10 triệu</span>
+            </div>
 
-        {/* Guests */}
-        <div className="lg:col-span-1">
-          <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-            <Users className="w-4 h-4 mr-1 flex-shrink-0" />
-            <span className="whitespace-nowrap">Số khách</span>
-          </label>
-          <select
-            value={guests}
-            onChange={(e) => setGuests(parseInt(e.target.value))}
-            className="w-full px-4 py-3 border text-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-          >
-            {[1, 2, 3, 4, 5, 6].map(num => (
-              <option key={num} value={num}>
-                {num} {num === 1 ? 'khách' : 'khách'}
-              </option>
-            ))}
-          </select>
+          </div>
         </div>
-
-        {/* Search Button */}
-        <div className="lg:col-span-1 flex items-end">
-          <button
-            className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
-            onClick={handleInternalSearch}
-          >
-            <span>Tìm Phòng</span>
+        <div className="flex items-end">
+          <button className="btn-primary w-full" onClick={handleInternalSearch}>
+            Tìm phòng
           </button>
         </div>
       </div>
-
-      {/* Advanced Filters - Mobile Layout */}
-      <div className="lg:hidden mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-            <Home className="w-4 h-4 mr-1 flex-shrink-0" />
-            <span className="whitespace-nowrap">Kiểu phòng</span>
-          </label>
-          <select
-            value={kieuPhong}
-            onChange={(e) => setKieuPhong(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-          >
-            <option value="">Tất cả kiểu phòng</option>
-            {kieuPhongList.map((kp) => (
-              <option key={kp.idKp} value={kp.idKp}>
-                {kp.tenKp}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-            <Star className="w-4 h-4 mr-1 flex-shrink-0" />
-            <span className="whitespace-nowrap">Loại phòng</span>
-          </label>
-          <select
-            value={hangPhong}
-            onChange={(e) => setHangPhong(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-          >
-            <option value="">Tất cả loại phòng</option>
-            {hangPhongList.map((hp) => (
-              <option key={hp.idHangPhong} value={hp.idHangPhong}>
-                Loại {hp.idHangPhong} - {hp.giaPhong?.toLocaleString('vi-VN')}₫/đêm
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {error && (
-        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-600 text-sm flex items-center">
-            <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-            {error}
-          </p>
-        </div>
-      )}
+      {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
     </div>
   );
+
 };
 
 export default RoomSearch;

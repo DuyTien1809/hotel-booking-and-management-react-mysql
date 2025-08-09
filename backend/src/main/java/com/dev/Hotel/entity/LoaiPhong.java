@@ -22,4 +22,29 @@ public class LoaiPhong {
     @Size(max = 500, message = "Mô tả không được quá 500 ký tự")
     @Column(name = "MO_TA")
     private String moTa;
+
+    // Manual getters and setters
+    public String getIdLp() {
+        return idLp;
+    }
+
+    public void setIdLp(String idLp) {
+        this.idLp = idLp;
+    }
+
+    public String getTenLp() {
+        return tenLp;
+    }
+
+    public void setTenLp(String tenLp) {
+        this.tenLp = tenLp;
+    }
+
+    public String getMoTa() {
+        return moTa;
+    }
+
+    public void setMoTa(String moTa) {
+        this.moTa = moTa;
+    }
 }

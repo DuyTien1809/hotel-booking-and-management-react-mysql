@@ -61,8 +61,81 @@ public class NhanVien {
     @Size(min = 6, message = "Password phải có ít nhất 6 ký tự")
     @Column(name = "PASSWORD")
     private String password;
-    
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "ID_BP")
     private BoPhan boPhan;
+
+    // Manual getters and setters
+    public String getIdNv() {
+        return idNv;
+    }
+
+    public void setIdNv(String idNv) {
+        this.idNv = idNv;
+    }
+
+    public String getHo() {
+        return ho;
+    }
+
+    public void setHo(String ho) {
+        this.ho = ho;
+    }
+
+    public String getTen() {
+        return ten;
+    }
+
+    public void setTen(String ten) {
+        this.ten = ten;
+    }
+
+    public String getSdt() {
+        return sdt;
+    }
+
+    public void setSdt(String sdt) {
+        this.sdt = sdt;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getDiaChi() {
+        return diaChi;
+    }
+
+    public void setDiaChi(String diaChi) {
+        this.diaChi = diaChi;
+    }
+
+    public LocalDate getNgaySinh() {
+        return ngaySinh;
+    }
+
+    public void setNgaySinh(LocalDate ngaySinh) {
+        this.ngaySinh = ngaySinh;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public BoPhan getBoPhan() {
+        return boPhan;
+    }
+
+    public void setBoPhan(BoPhan boPhan) {
+        this.boPhan = boPhan;
+    }
 }
