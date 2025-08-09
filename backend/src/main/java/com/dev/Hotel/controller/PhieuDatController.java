@@ -1,6 +1,8 @@
 package com.dev.Hotel.controller;
 
 import com.dev.Hotel.dto.Response;
+import com.dev.Hotel.dto.CreateBookingAtReceptionRequest;
+import com.dev.Hotel.dto.UpdateBookingRequest;
 import com.dev.Hotel.entity.PhieuDat;
 import com.dev.Hotel.service.interfac.IPhieuDatService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +39,12 @@ public class PhieuDatController {
     //@PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN') or hasAuthority('CUSTOMER')")
     public ResponseEntity<Response> createPhieuDat(@RequestBody PhieuDat phieuDat) {
         Response response = phieuDatService.createPhieuDat(phieuDat);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    @PostMapping("/create-at-reception")
+    public ResponseEntity<Response> createBookingAtReception(@RequestBody CreateBookingAtReceptionRequest request) {
+        Response response = phieuDatService.createBookingAtReception(request);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
@@ -102,6 +110,13 @@ public class PhieuDatController {
     //@PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
     public ResponseEntity<Response> updateBookingStatus(@PathVariable("idPd") Integer idPd, @RequestParam("trangThai") String trangThai) {
         Response response = phieuDatService.updateBookingStatus(idPd, trangThai);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    @PutMapping("/update-simple/{idPd}")
+    //@PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
+    public ResponseEntity<Response> updateBookingSimple(@PathVariable("idPd") Integer idPd, @RequestBody UpdateBookingRequest request) {
+        Response response = phieuDatService.updateBookingSimple(idPd, request);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 

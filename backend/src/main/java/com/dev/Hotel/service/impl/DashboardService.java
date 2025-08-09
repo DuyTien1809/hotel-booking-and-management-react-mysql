@@ -13,6 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 @Service
@@ -53,12 +56,9 @@ public class DashboardService implements IDashboardService {
             long pendingBookings = phieuDatRepository.countByTrangThai("Chờ xác nhận");
             long confirmedBookings = phieuDatRepository.countByTrangThai("Đã xác nhận");
 
-            // Thống kê check-in/check-out hôm nay
-            // Check-in dựa trên PhieuThue.ngayNhanPhong (ngày thực tế nhận phòng)
-            long todayCheckIns = phieuThueRepository.countByNgayNhanPhong(today);
+            long todayCheckIns = phieuDatRepository.countByNgayBdThueAndTrangThai(today, "Đã xác nhận");
             long todayCheckOuts = phieuThueRepository.countByNgayTraPhong(today);
 
-            // Tính tỷ lệ lấp đầy
             long occupancyRate = totalRooms > 0 ? Math.round((double) occupiedRooms / totalRooms * 100) : 0;
 
             // Đưa tất cả thống kê vào response
@@ -282,8 +282,24 @@ public class DashboardService implements IDashboardService {
                 Map<String, Object> checkOut = new HashMap<>();
                 checkOut.put("idPt", pt.getIdPt());
                 checkOut.put("ngayLap", pt.getNgayLap());
-                checkOut.put("ngayDen", pt.getNgayDen());
-                checkOut.put("ngayDi", pt.getNgayDi());
+                // Lấy ngayDen và ngayDi từ CtPhieuThue
+                LocalDate ngayDenSomNhat = null;
+                LocalDate ngayDiMuonNhat = null;
+                if (pt.getChiTietPhieuThue() != null && !pt.getChiTietPhieuThue().isEmpty()) {
+                    ngayDenSomNhat = pt.getChiTietPhieuThue().stream()
+                        .map(ct -> ct.getNgayDen())
+                        .filter(date -> date != null)
+                        .min(LocalDate::compareTo)
+                        .orElse(null);
+
+                    ngayDiMuonNhat = pt.getChiTietPhieuThue().stream()
+                        .map(ct -> ct.getNgayDi())
+                        .filter(date -> date != null)
+                        .max(LocalDate::compareTo)
+                        .orElse(null);
+                }
+                checkOut.put("ngayDen", ngayDenSomNhat);
+                checkOut.put("ngayDi", ngayDiMuonNhat);
                 checkOut.put("cccd", pt.getKhachHang() != null ? pt.getKhachHang().getCccd() : "");
 
                 // Ghép họ và tên
@@ -300,8 +316,8 @@ public class DashboardService implements IDashboardService {
 
                 // Tính số ngày thuê
                 int soNgayThue = 0;
-                if (pt.getNgayDen() != null && pt.getNgayDi() != null) {
-                    soNgayThue = (int) java.time.temporal.ChronoUnit.DAYS.between(pt.getNgayDen(), pt.getNgayDi());
+                if (ngayDenSomNhat != null && ngayDiMuonNhat != null) {
+                    soNgayThue = (int) java.time.temporal.ChronoUnit.DAYS.between(ngayDenSomNhat, ngayDiMuonNhat);
                 }
                 checkOut.put("soNgayThue", soNgayThue);
 
@@ -333,6 +349,107 @@ public class DashboardService implements IDashboardService {
         } catch (Exception e) {
             response.setStatusCode(500);
             response.setMessage("Lỗi khi lấy danh sách đặt phòng chờ xử lý: " + e.getMessage());
+        }
+        return response;
+    }
+
+    @Override
+    public Response getCurrentGuests() {
+        Response response = new Response();
+        try {
+            // Lấy tất cả phiếu thuê đã có khách check-in (có ngày lập) nhưng chưa check-out
+            // Bao gồm cả những phiếu đã quá ngày dự kiến (có thể thuê thêm)
+            List<PhieuThue> currentRentals = phieuThueRepository.findByNgayLapIsNotNull();
+
+            List<Map<String, Object>> currentGuestsList = new ArrayList<>();
+
+            for (PhieuThue phieuThue : currentRentals) {
+                Map<String, Object> guestInfo = new HashMap<>();
+                guestInfo.put("idPhieuThue", phieuThue.getIdPt());
+                // Thông tin khách hàng - sử dụng HashMap thay vì Map.of để tránh lỗi
+                Map<String, Object> khachHang = new HashMap<>();
+                if (phieuThue.getKhachHang() != null) {
+                    khachHang.put("cccd", phieuThue.getKhachHang().getCccd());
+                    khachHang.put("hoTen", phieuThue.getKhachHang().getHo() + " " + phieuThue.getKhachHang().getTen());
+                    khachHang.put("sdt", phieuThue.getKhachHang().getSdt() != null ? phieuThue.getKhachHang().getSdt() : "");
+                    khachHang.put("email", phieuThue.getKhachHang().getEmail() != null ? phieuThue.getKhachHang().getEmail() : "");
+                }
+                guestInfo.put("khachHang", khachHang);
+                // Lấy ngayDen và ngayDi từ CtPhieuThue
+                LocalDate ngayDenSomNhat = null;
+                LocalDate ngayDiMuonNhat = null;
+                if (phieuThue.getChiTietPhieuThue() != null && !phieuThue.getChiTietPhieuThue().isEmpty()) {
+                    ngayDenSomNhat = phieuThue.getChiTietPhieuThue().stream()
+                        .map(ct -> ct.getNgayDen())
+                        .filter(date -> date != null)
+                        .min(LocalDate::compareTo)
+                        .orElse(null);
+
+                    ngayDiMuonNhat = phieuThue.getChiTietPhieuThue().stream()
+                        .map(ct -> ct.getNgayDi())
+                        .filter(date -> date != null)
+                        .max(LocalDate::compareTo)
+                        .orElse(null);
+                }
+
+                guestInfo.put("ngayDen", ngayDenSomNhat);
+                guestInfo.put("ngayDi", ngayDiMuonNhat);
+                guestInfo.put("ngayLap", phieuThue.getNgayLap()); // Ngày check-in thực tế
+
+                // Kiểm tra xem có quá ngày dự kiến không với logic mới
+                LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+                boolean isOverdue = false;
+                long overdueHours = 0;
+                String overdueStatus = "";
+
+                if (ngayDiMuonNhat != null) {
+                    LocalDateTime expectedCheckOut = ngayDiMuonNhat.atTime(12, 0); // 12h trưa
+
+                    if (now.isAfter(expectedCheckOut)) {
+                        isOverdue = true;
+                        overdueHours = ChronoUnit.HOURS.between(expectedCheckOut, now);
+
+                        if (overdueHours < 24) {
+                            overdueStatus = overdueHours + " giờ";
+                        } else {
+                            long days = overdueHours / 24;
+                            long remainingHours = overdueHours % 24;
+                            if (remainingHours > 0) {
+                                overdueStatus = days + " ngày " + remainingHours + " giờ";
+                            } else {
+                                overdueStatus = days + " ngày";
+                            }
+                        }
+                    }
+                }
+
+                guestInfo.put("isOverdue", isOverdue);
+                guestInfo.put("overdueDays", overdueHours / 24); // Giữ nguyên field này cho backward compatibility
+                guestInfo.put("overdueStatus", overdueStatus);
+
+                // Lấy danh sách phòng
+                if (phieuThue.getChiTietPhieuThue() != null) {
+                    List<Map<String, Object>> rooms = new ArrayList<>();
+                    for (var ct : phieuThue.getChiTietPhieuThue()) {
+                        Map<String, Object> room = new HashMap<>();
+                        room.put("soPhong", ct.getPhong().getSoPhong());
+                        // Tạm thời bỏ qua loại phòng vì có vấn đề với entity mapping
+                        room.put("tenLoaiPhong", "Phòng");
+                        rooms.add(room);
+                    }
+                    guestInfo.put("danhSachPhong", rooms);
+                }
+
+                currentGuestsList.add(guestInfo);
+            }
+
+            response.setStatusCode(200);
+            response.setMessage("Lấy danh sách khách đang lưu trú thành công");
+            response.setActivities(currentGuestsList); // Sử dụng activities thay vì phieuThueList
+
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi lấy danh sách khách đang lưu trú: " + e.getMessage());
         }
         return response;
     }

@@ -17,12 +17,6 @@ public class PhieuThue {
     @Column(name = "NGAY_LAP")
     private LocalDate ngayLap;
     
-    @Column(name = "NGAY_DEN")
-    private LocalDate ngayDen;
-    
-    @Column(name = "NGAY_DI")
-    private LocalDate ngayDi;
-    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_NV")
     private NhanVien nhanVien;

@@ -4,6 +4,8 @@ import { api } from '../../services/api'
 import { User, Mail, Phone, MapPin, Calendar, Edit, Save, X, Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { getUserDisplayName, getRoleDisplayName } from '../../utils/userUtils'
+import DashboardHeader from '../../components/common/DashboardHeader'
+import Footer from '../../components/common/Footer'
 
 const ProfilePage = () => {
   const { user, setUser } = useAuth()
@@ -35,23 +37,37 @@ const ProfilePage = () => {
     try {
       setLoading(true)
 
-      const endpoint = user.role === 'CUSTOMER'
-        ? '/api/khachhang/profile'
-        : '/api/nhanvien/profile'
+
+
+      let endpoint
+      if (user.role === 'CUSTOMER') {
+        endpoint = `/api/khach-hang/get-by-email/${encodeURIComponent(user.email)}`
+      } else {
+        // Nhân viên: kiểm tra có email hay username
+        const loginValue = user.email || user.username
+        if (loginValue && loginValue.includes('@')) {
+          // Đăng nhập bằng email
+          endpoint = `/api/nhanvien/my-info/${encodeURIComponent(loginValue)}`
+        } else {
+          // Đăng nhập bằng username
+          endpoint = `/api/nhanvien/get-by-username/${encodeURIComponent(loginValue)}`
+        }
+      }
 
       const response = await api.get(endpoint)
 
-      if (response.data.success) {
-        const profileData = response.data.data || response.data.profile || {}
+      if (response.data.statusCode === 200) {
+        // API trả về dữ liệu trong nhanVien hoặc khachHang field
+        const profileData = response.data.nhanVien || response.data.khachHang || {}
 
         setFormData({
-          hoTen: profileData.hoTen || profileData.tenNhanVien || profileData.tenKhachHang || user.hoTen || '',
+          hoTen: profileData.hoTen || `${profileData.ho || ''} ${profileData.ten || ''}`.trim() || user.hoTen || '',
           email: profileData.email || user.email || '',
-          soDienThoai: profileData.soDienThoai || profileData.phone || '',
-          diaChi: profileData.diaChi || profileData.address || '',
-          ngaySinh: profileData.ngaySinh || profileData.dateOfBirth || '',
-          gioiTinh: profileData.gioiTinh || profileData.gender || '',
-          cccd: profileData.cccd || profileData.idCard || ''
+          soDienThoai: profileData.sdt || profileData.soDienThoai || '',
+          diaChi: profileData.diaChi || '',
+          ngaySinh: profileData.ngaySinh || '',
+          gioiTinh: profileData.phai || profileData.gioiTinh || '',
+          cccd: profileData.cccd || ''
         })
       } else {
         // Fallback to user context data
@@ -101,19 +117,53 @@ const ProfilePage = () => {
   const handleSaveProfile = async () => {
     try {
       setLoading(true)
-      
-      const endpoint = user.role === 'CUSTOMER' 
-        ? '/api/khach-hang/update-profile' 
-        : '/api/nhanvien/update-profile'
-      
-      const response = await api.put(endpoint, formData)
-      
-      if (response.data.success) {
+
+      let endpoint, updateData
+
+      if (user.role === 'CUSTOMER') {
+        // Khách hàng: sử dụng CCCD làm ID
+        const cccd = user.cccd || user.id
+        if (!cccd) {
+          toast.error('Không tìm thấy CCCD của khách hàng')
+          return
+        }
+        endpoint = `/api/khach-hang/update/${cccd}`
+        updateData = {
+          ho: formData.hoTen.split(' ').slice(0, -1).join(' ') || '',
+          ten: formData.hoTen.split(' ').slice(-1)[0] || '',
+          sdt: formData.soDienThoai,
+          email: formData.email,
+          diaChi: formData.diaChi,
+          ngaySinh: formData.ngaySinh,
+          gioiTinh: formData.gioiTinh
+        }
+      } else {
+        // Nhân viên: sử dụng ID nhân viên
+        const idNv = user.idNv || user.id
+        if (!idNv) {
+          toast.error('Không tìm thấy ID nhân viên')
+          return
+        }
+        endpoint = `/api/nhanvien/update-profile/${idNv}`
+        updateData = {
+          ho: formData.hoTen.split(' ').slice(0, -1).join(' ') || '',
+          ten: formData.hoTen.split(' ').slice(-1)[0] || '',
+          sdt: formData.soDienThoai,
+          email: formData.email,
+          diaChi: formData.diaChi,
+          ngaySinh: formData.ngaySinh,
+          phai: formData.gioiTinh
+        }
+      }
+
+      const response = await api.put(endpoint, updateData)
+
+      if (response.data.statusCode === 200) {
         // Cập nhật user context
         const updatedUser = { ...user, ...formData }
         setUser(updatedUser)
         localStorage.setItem('user', JSON.stringify(updatedUser))
-        
+
         toast.success('Cập nhật thông tin thành công!')
         setIsEditing(false)
       } else {
@@ -140,14 +190,28 @@ const ProfilePage = () => {
 
     try {
       setLoading(true)
-      
-      const endpoint = '/api/auth/change-password'
-      const response = await api.put(endpoint, {
-        currentPassword: passwordData.currentPassword,
-        newPassword: passwordData.newPassword
+
+      if (user.role === 'CUSTOMER') {
+        // Khách hàng chưa có API đổi mật khẩu
+        toast.error('Chức năng đổi mật khẩu cho khách hàng đang được phát triển')
+        return
+      }
+
+      // Nhân viên: sử dụng endpoint có sẵn
+      const idNv = user.idNv || user.id
+      if (!idNv) {
+        toast.error('Không tìm thấy ID nhân viên')
+        return
+      }
+      const endpoint = `/api/nhanvien/change-password/${idNv}`
+      const response = await api.put(endpoint, null, {
+        params: {
+          oldPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword
+        }
       })
-      
-      if (response.data.success) {
+
+      if (response.data.statusCode === 200) {
         toast.success('Đổi mật khẩu thành công!')
         setShowPasswordForm(false)
         setPasswordData({
@@ -160,7 +224,7 @@ const ProfilePage = () => {
       }
     } catch (error) {
       console.error('Change password error:', error)
-      toast.error('Có lỗi xảy ra khi đổi mật khẩu')
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi đổi mật khẩu')
     } finally {
       setLoading(false)
     }
@@ -169,7 +233,10 @@ const ProfilePage = () => {
 
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen flex flex-col">
+      <DashboardHeader />
+      <main className="flex-1 bg-gray-50 py-6">
+        <div className="max-w-4xl mx-auto px-6 space-y-6">
       {/* Header */}
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex items-center justify-between">
@@ -250,7 +317,7 @@ const ProfilePage = () => {
             ) : (
               <div className="flex items-center space-x-2 text-gray-900">
                 <User className="w-4 h-4 text-gray-400" />
-                <span>{user?.hoTen || 'Chưa cập nhật'}</span>
+                <span>{formData.hoTen || 'Chưa cập nhật'}</span>
               </div>
             )}
           </div>
@@ -262,7 +329,7 @@ const ProfilePage = () => {
             </label>
             <div className="flex items-center space-x-2 text-gray-900">
               <Mail className="w-4 h-4 text-gray-400" />
-              <span>{user?.email || 'Chưa cập nhật'}</span>
+              <span>{formData.email || 'Chưa cập nhật'}</span>
             </div>
           </div>
 
@@ -282,7 +349,7 @@ const ProfilePage = () => {
             ) : (
               <div className="flex items-center space-x-2 text-gray-900">
                 <Phone className="w-4 h-4 text-gray-400" />
-                <span>{user?.soDienThoai || user?.phone || 'Chưa cập nhật'}</span>
+                <span>{formData.soDienThoai || 'Chưa cập nhật'}</span>
               </div>
             )}
           </div>
@@ -303,56 +370,60 @@ const ProfilePage = () => {
             ) : (
               <div className="flex items-center space-x-2 text-gray-900">
                 <MapPin className="w-4 h-4 text-gray-400" />
-                <span>{user?.diaChi || user?.address || 'Chưa cập nhật'}</span>
+                <span>{formData.diaChi || 'Chưa cập nhật'}</span>
               </div>
             )}
           </div>
 
-          {/* Ngày sinh */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Ngày sinh
-            </label>
-            {isEditing ? (
-              <input
-                type="date"
-                name="ngaySinh"
-                value={formData.ngaySinh}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            ) : (
-              <div className="flex items-center space-x-2 text-gray-900">
-                <Calendar className="w-4 h-4 text-gray-400" />
-                <span>{user?.ngaySinh || user?.dateOfBirth || 'Chưa cập nhật'}</span>
-              </div>
-            )}
-          </div>
+          {/* Ngày sinh - chỉ hiển thị cho nhân viên */}
+          {user.role !== 'CUSTOMER' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Ngày sinh
+              </label>
+              {isEditing ? (
+                <input
+                  type="date"
+                  name="ngaySinh"
+                  value={formData.ngaySinh}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              ) : (
+                <div className="flex items-center space-x-2 text-gray-900">
+                  <Calendar className="w-4 h-4 text-gray-400" />
+                  <span>{formData.ngaySinh || 'Chưa cập nhật'}</span>
+                </div>
+              )}
+            </div>
+          )}
 
-          {/* Giới tính */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Giới tính
-            </label>
-            {isEditing ? (
-              <select
-                name="gioiTinh"
-                value={formData.gioiTinh}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="">Chọn giới tính</option>
-                <option value="Nam">Nam</option>
-                <option value="Nữ">Nữ</option>
-                <option value="Khác">Khác</option>
-              </select>
-            ) : (
-              <div className="flex items-center space-x-2 text-gray-900">
-                <User className="w-4 h-4 text-gray-400" />
-                <span>{user?.gioiTinh || user?.gender || 'Chưa cập nhật'}</span>
-              </div>
-            )}
-          </div>
+          {/* Giới tính - chỉ hiển thị cho nhân viên */}
+          {user.role !== 'CUSTOMER' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Giới tính
+              </label>
+              {isEditing ? (
+                <select
+                  name="gioiTinh"
+                  value={formData.gioiTinh}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="">Chọn giới tính</option>
+                  <option value="Nam">Nam</option>
+                  <option value="Nữ">Nữ</option>
+                  <option value="Khác">Khác</option>
+                </select>
+              ) : (
+                <div className="flex items-center space-x-2 text-gray-900">
+                  <User className="w-4 h-4 text-gray-400" />
+                  <span>{formData.gioiTinh || 'Chưa cập nhật'}</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -420,6 +491,9 @@ const ProfilePage = () => {
           </div>
         )}
       </div>
+        </div>
+      </main>
+      <Footer />
     </div>
   )
 }

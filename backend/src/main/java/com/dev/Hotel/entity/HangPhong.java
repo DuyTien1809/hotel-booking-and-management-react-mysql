@@ -29,4 +29,7 @@ public class HangPhong {
     @JsonManagedReference("hangphong-anh")
     @OneToMany(mappedBy = "hangPhong", cascade = CascadeType.ALL)
     private List<AnhHangPhong> danhSachAnh;
+
+    @OneToMany(mappedBy = "hangPhong", cascade = CascadeType.ALL)
+    private List<CtPhieuDat> chiTietPhieuDat;
 }

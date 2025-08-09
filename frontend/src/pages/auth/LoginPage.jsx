@@ -98,7 +98,7 @@ const LoginPage = () => {
           <div className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email hoặc Username
+                Email
               </label>
               <input
                 id="email"
@@ -108,7 +108,7 @@ const LoginPage = () => {
                 value={formData.email}
                 onChange={handleChange}
                 className="input mt-1"
-                placeholder="Nhập email hoặc username"
+                placeholder="Nhập email"
               />
             </div>
             

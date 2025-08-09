@@ -25,4 +25,9 @@ public interface HangPhongRepository extends JpaRepository<HangPhong, Integer> {
     
     @Query("SELECT hp FROM HangPhong hp WHERE hp.kieuPhong.idKp = :kieuPhongId AND hp.loaiPhong.idLp = :loaiPhongId")
     List<HangPhong> findByKieuPhongAndLoaiPhong(@Param("kieuPhongId") String kieuPhongId, @Param("loaiPhongId") String loaiPhongId);
+
+    @Query("SELECT DISTINCT hp FROM HangPhong hp " +
+           "LEFT JOIN FETCH hp.kieuPhong kp " +
+           "LEFT JOIN FETCH hp.loaiPhong lp")
+    List<HangPhong> findAllWithDetails();
 }

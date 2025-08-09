@@ -123,7 +123,7 @@ const RegisterPage = () => {
               to="/login"
               className="font-medium text-primary-600 hover:text-primary-500"
             >
-              đăng nhập vào tài khoản có sẵn
+              đăng nhập nếu đã có tài khoản
             </Link>
           </p>
         </div>

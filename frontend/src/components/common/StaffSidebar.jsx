@@ -1,6 +1,6 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
-import { Home, Calendar, UserCheck, UserX, Users, UserPlus, BarChart3 } from 'lucide-react'
+import { Home, Calendar, UserCheck, UserX, Users, UserPlus, Building, Settings, CreditCard, FileText } from 'lucide-react'
 
 const StaffSidebar = () => {
   const menuItems = [
@@ -16,6 +16,12 @@ const StaffSidebar = () => {
       label: 'Quản lý đặt phòng'
     },
     {
+      path: '/staff/rentals',
+      icon: Users,
+      label: 'Quản lý thuê phòng'
+    },
+
+    {
       path: '/staff/checkin',
       icon: UserCheck,
       label: 'Check-in'
@@ -25,16 +31,25 @@ const StaffSidebar = () => {
       icon: UserX,
       label: 'Check-out'
     },
-
+    {
+      path: '/staff/invoices',
+      icon: FileText,
+      label: 'Quản lý hóa đơn'
+    },
     {
       path: '/staff/walkin',
       icon: UserPlus,
       label: 'Walk-in Check-in'
     },
     {
-      path: '/staff/reports',
-      icon: BarChart3,
-      label: 'Báo cáo nhanh'
+      path: '/staff/rooms',
+      icon: Building,
+      label: 'Quản lý phòng'
+    },
+    {
+      path: '/staff/services',
+      icon: Settings,
+      label: 'Dịch vụ & Phụ thu'
     }
   ]
 

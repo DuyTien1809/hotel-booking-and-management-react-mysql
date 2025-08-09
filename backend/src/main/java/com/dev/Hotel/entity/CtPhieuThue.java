@@ -30,10 +30,17 @@ public class CtPhieuThue {
     
     @Column(name = "TT_THANH_TOAN")
     private String ttThanhToan;
-    
+
+    @Column(name = "ID_HD")
+    private String idHd;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_PT")
     private PhieuThue phieuThue;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ID_HD", insertable = false, updatable = false)
+    private HoaDon hoaDon;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "SO_PHONG")

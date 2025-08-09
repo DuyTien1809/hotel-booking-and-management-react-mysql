@@ -35,6 +35,17 @@ export const bookingService = {
     }
   },
 
+  // Create booking at reception
+  createBookingAtReception: async (bookingData) => {
+    try {
+      const response = await api.post('/api/phieu-dat/create-at-reception', bookingData)
+      return response.data
+    } catch (error) {
+      console.error('Error creating booking at reception:', error)
+      throw error
+    }
+  },
+
   // Update booking
   updateBooking: async (id, bookingData) => {
     try {
@@ -130,6 +141,28 @@ export const bookingService = {
       return response.data
     } catch (error) {
       console.error('Error updating booking status:', error)
+      throw error
+    }
+  },
+
+  // Update booking with simple data
+  updateBookingSimple: async (id, bookingData) => {
+    try {
+      const response = await api.put(`/api/phieu-dat/update-simple/${id}`, bookingData)
+      return response.data
+    } catch (error) {
+      console.error('Error updating booking simple:', error)
+      throw error
+    }
+  },
+
+  // Delete booking
+  deleteBooking: async (id) => {
+    try {
+      const response = await api.delete(`/api/phieu-dat/delete/${id}`)
+      return response.data
+    } catch (error) {
+      console.error('Error deleting booking:', error)
       throw error
     }
   },

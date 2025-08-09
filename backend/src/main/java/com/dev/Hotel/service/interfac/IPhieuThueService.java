@@ -1,5 +1,6 @@
 package com.dev.Hotel.service.interfac;
 
+import com.dev.Hotel.dto.CheckInWalkInRequest;
 import com.dev.Hotel.dto.Response;
 import com.dev.Hotel.entity.PhieuThue;
 
@@ -22,8 +23,11 @@ public interface IPhieuThueService {
     
     // Check-in/Check-out management
     Response checkInFromBooking(Integer idPd);
-    Response checkInWalkIn(PhieuThue phieuThue);
+    Response checkInFromBookingWithRoom(com.dev.Hotel.dto.CheckInWithRoomRequest request);
+    Response checkInFromBookingWithMultipleRooms(com.dev.Hotel.dto.CheckInMultipleRoomsRequest request);
+    Response checkInWalkIn(CheckInWalkInRequest request);
     Response checkOut(Integer idPt);
+    Response checkOutWithDate(Integer idPt, LocalDate actualCheckOutDate);
     Response extendStay(Integer idPt, LocalDate newCheckOut);
     
     // Search and filter
@@ -31,8 +35,11 @@ public interface IPhieuThueService {
     Response getPhieuThueByDateRange(LocalDate startDate, LocalDate endDate);
     Response getTodayCheckIns();
     Response getTodayCheckOuts();
+    Response getActiveRentalsWithoutInvoice();
     
     // Reports
     Response getOccupancyReport(LocalDate date);
     Response getRevenueReport(LocalDate startDate, LocalDate endDate);
+    Response getPhieuThueDetails(Integer idPt);
+    Response updatePaymentStatus(Integer idPt, String trangThaiThanhToan);
 }

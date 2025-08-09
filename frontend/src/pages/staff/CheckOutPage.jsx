@@ -1,59 +1,124 @@
 import React, { useState, useEffect } from 'react'
-import { Search, UserX, CreditCard, Receipt, AlertCircle, CheckCircle, Calculator } from 'lucide-react'
+import { Search, UserX, CreditCard, Receipt, AlertCircle, CheckCircle, Calculator, FileText, Download } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { rentalService } from '../../services/rentalService'
+import { invoiceService } from '../../services/invoiceService'
+import { bookingService } from '../../services/bookingService'
+import { dashboardService } from '../../services/dashboardService'
+import InvoiceComponent from '../../components/staff/InvoiceComponent'
+import DetailedInvoiceModal from '../../components/staff/DetailedInvoiceModal'
+import { HOTEL_INFO, INVOICE_STATUS } from '../../constants/hotelInfo'
 
 const CheckOutPage = () => {
+  const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
   const [checkedInGuests, setCheckedInGuests] = useState([])
   const [filteredGuests, setFilteredGuests] = useState([])
   const [selectedGuest, setSelectedGuest] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [filterType, setFilterType] = useState('all') // 'all' or 'today'
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 5
   const [checkOutData, setCheckOutData] = useState({
     actualCheckOut: '',
-    additionalCharges: [],
-    damages: [],
     notes: '',
     paymentMethod: 'cash'
   })
   const [bill, setBill] = useState({
     roomCharges: 0,
     serviceCharges: 0,
-    additionalCharges: 0,
-    damages: 0,
+    surcharges: 0,
+    paidAmount: 0,
     total: 0
   })
+  const [invoice, setInvoice] = useState(null)
+  const [showInvoice, setShowInvoice] = useState(false)
+  const [rentalDetails, setRentalDetails] = useState(null)
+  const [showDetails, setShowDetails] = useState(false)
+  const [selectedRoom, setSelectedRoom] = useState(null)
+  const [showRoomDetails, setShowRoomDetails] = useState(false)
 
   useEffect(() => {
     fetchCheckedInGuests()
   }, [])
 
+  useEffect(() => {
+    applyFilters()
+  }, [checkedInGuests, searchTerm, filterType])
+
   const fetchCheckedInGuests = async () => {
     try {
       setLoading(true)
-      // Lấy danh sách khách đang ở
-      const today = new Date().toISOString().split('T')[0]
+      // Lấy danh sách khách đang ở - sử dụng API cũ để có đầy đủ thông tin
       const response = await rentalService.getCurrentStays()
       const guestData = response.phieuThueList || []
 
-      // Transform data to match frontend format
-      const transformedData = guestData.map(rental => ({
-        id: rental.idPt,
-        maPhieuThue: `PT${rental.idPt}`,
-        customerName: rental.hoTenKhachHang || 'N/A',
-        customerPhone: rental.sdtKhachHang || 'N/A',
-        customerEmail: rental.emailKhachHang || 'N/A',
-        cccd: rental.cccd,
-        checkIn: rental.ngayDen,
-        checkOut: rental.ngayDi,
-        roomNumber: 'TBD', // Will be from room details
-        roomType: 'Standard', // Default value
-        status: 'checkedin',
-        bookingId: rental.idPd,
-        employeeId: rental.idNv,
-        employeeName: rental.hoTenNhanVien,
-        chiTietPhieuThue: rental.chiTietPhieuThue || []
-      }))
+      // Lấy danh sách tất cả hóa đơn để kiểm tra
+      const invoicesResponse = await invoiceService.getAllInvoices()
+      const existingInvoices = invoicesResponse.statusCode === 200 ? invoicesResponse.hoaDonList || [] : []
+      const invoicedRentalIds = new Set(existingInvoices.map(invoice => invoice.idPt))
+
+      // Transform data to match frontend format và loại bỏ khách đã có hóa đơn
+      const transformedData = guestData
+        .filter(rental => !invoicedRentalIds.has(rental.idPt)) // Loại bỏ khách đã có hóa đơn
+        .map(rental => {
+          // Get room information from chiTietPhieuThue
+          const roomInfo = rental.chiTietPhieuThue && rental.chiTietPhieuThue.length > 0
+            ? rental.chiTietPhieuThue.map(ct => ({
+                soPhong: ct.soPhong,
+                tenKieuPhong: ct.tenKieuPhong,
+                tenLoaiPhong: ct.tenLoaiPhong,
+                tang: ct.tang
+              }))
+            : [];
+
+          // Get first room for display
+          const firstRoom = roomInfo.length > 0 ? roomInfo[0] : null;
+
+          // Kiểm tra quá hạn với logic mới (12h trưa)
+          const now = new Date()
+          const expectedCheckOut = new Date(rental.ngayDi)
+          expectedCheckOut.setHours(12, 0, 0, 0) // Set to 12:00 PM
+
+          const isOverdue = now > expectedCheckOut
+          let overdueStatus = ""
+          let overdueDays = 0
+
+          if (isOverdue) {
+            const overdueHours = Math.ceil((now - expectedCheckOut) / (1000 * 60 * 60))
+
+            // Nếu trễ quá 12 tiếng thì tính là trễ hạn 1 ngày
+            if (overdueHours >= 12) {
+              overdueDays = Math.ceil(overdueHours / 24)
+              overdueStatus = `${overdueDays} ngày`
+            } else {
+              overdueStatus = `${overdueHours} giờ`
+            }
+          }
+
+          return {
+            id: rental.idPt,
+            maPhieuThue: `PT${rental.idPt}`,
+            customerName: rental.hoTenKhachHang || 'N/A',
+            customerPhone: rental.sdtKhachHang || 'N/A',
+            customerEmail: rental.emailKhachHang || 'N/A',
+            cccd: rental.cccd,
+            checkIn: rental.ngayDen,
+            checkOut: rental.ngayDi,
+            roomNumber: firstRoom ? firstRoom.soPhong : 'N/A',
+            roomType: firstRoom ? `${firstRoom.tenKieuPhong} - ${firstRoom.tenLoaiPhong}` : 'N/A',
+            status: isOverdue ? 'overdue' : 'checkedin',
+            overdueDays: overdueDays,
+            overdueStatus: overdueStatus,
+            isOverdue: isOverdue,
+            bookingId: rental.idPd,
+            employeeId: rental.idNv,
+            employeeName: rental.hoTenNhanVien,
+            chiTietPhieuThue: rental.chiTietPhieuThue || [],
+            roomInfo: roomInfo
+          }
+        })
 
       setCheckedInGuests(transformedData)
       setFilteredGuests(transformedData)
@@ -66,98 +131,188 @@ const CheckOutPage = () => {
     }
   }
 
-  const handleSearch = (term) => {
-    setSearchTerm(term)
-    if (!term) {
-      setFilteredGuests(checkedInGuests)
-      return
+  // Apply filters
+  const applyFilters = () => {
+    let filtered = checkedInGuests
+
+    // Apply date filter
+    if (filterType === 'today') {
+      const today = new Date().toISOString().split('T')[0]
+      // Filter guests who should check out today or are overdue
+      filtered = filtered.filter(guest => {
+        if (!guest.checkOut) return false
+        return guest.checkOut <= today
+      })
     }
 
-    const filtered = checkedInGuests.filter(guest =>
-      guest.customerName.toLowerCase().includes(term.toLowerCase()) ||
-      guest.maPhieuThue.toLowerCase().includes(term.toLowerCase()) ||
-      guest.roomNumber.includes(term) ||
-      guest.customerPhone.includes(term)
-    )
+    // Apply search filter
+    if (searchTerm.trim()) {
+      filtered = filtered.filter(guest =>
+        guest.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        guest.maPhieuThue.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        guest.customerPhone.includes(searchTerm)
+      )
+    }
+
     setFilteredGuests(filtered)
+    setCurrentPage(1)
   }
 
-  const handleSelectGuest = (guest) => {
+  const handleSearch = (term) => {
+    setSearchTerm(term)
+  }
+
+  const handleFilterChange = (type) => {
+    setFilterType(type)
+  }
+
+  const toDatetimeLocal = (date) => {
+  const offset = date.getTimezoneOffset(); // phút
+  const localDate = new Date(date.getTime() - offset * 60000);
+  return localDate.toISOString().slice(0, 16); // giữ lại yyyy-MM-ddTHH:mm
+}
+
+  const handleSelectGuest = async (guest) => {
     setSelectedGuest(guest)
     setCheckOutData({
-      actualCheckOut: new Date().toISOString().slice(0, 16),
-      additionalCharges: [],
-      damages: [],
+      actualCheckOut: toDatetimeLocal(new Date()),
       notes: '',
       paymentMethod: 'cash'
     })
 
-    // Calculate bill
-    const serviceCharges = guest.services.reduce((sum, service) => sum + service.price, 0)
+    // Calculate bill from chiTietPhieuThue
+    let totalRoomCharges = 0
+    let totalServiceCharges = 0
+    let totalSurcharges = 0
+    let totalPaidAmount = 0
+
+    if (guest.chiTietPhieuThue && guest.chiTietPhieuThue.length > 0) {
+      guest.chiTietPhieuThue.forEach(ct => {
+        // Room charges - tính theo số ngày với logic mới: chỉ tính thêm ngày khi qua 12h đêm
+        if (ct.donGia && ct.ngayDen) {
+          const checkInDate = new Date(ct.ngayDen)
+          checkInDate.setHours(0, 0, 0, 0) // Set to start of day
+
+          // Sử dụng ngày checkout thực tế từ checkOutData, nếu không có thì dùng ngày hiện tại
+          const actualCheckOutDate = checkOutData.actualCheckOut ?
+            new Date(checkOutData.actualCheckOut) : new Date()
+
+          // Tính số ngày: chỉ tính thêm ngày khi checkout qua ngày mới (sau 00:00)
+          const checkOutDateOnly = new Date(actualCheckOutDate)
+          checkOutDateOnly.setHours(0, 0, 0, 0) // Set to start of day for comparison
+
+          const soNgay = Math.max(1, Math.ceil((checkOutDateOnly - checkInDate) / (1000 * 60 * 60 * 24)))
+          const roomTotal = ct.donGia * soNgay
+          totalRoomCharges += roomTotal
+
+          // Nếu phòng đã thanh toán thì cộng vào số tiền đã thanh toán
+          if (ct.ttThanhToan === 'Đã thanh toán') {
+            totalPaidAmount += roomTotal
+          }
+        }
+
+        // Service charges
+        if (ct.danhSachDichVu && ct.danhSachDichVu.length > 0) {
+          ct.danhSachDichVu.forEach(dv => {
+            totalServiceCharges += dv.thanhTien || 0
+            if (dv.ttThanhToan === 'Đã thanh toán') {
+              totalPaidAmount += dv.thanhTien || 0
+            }
+          })
+        }
+
+        // Surcharges
+        if (ct.danhSachPhuThu && ct.danhSachPhuThu.length > 0) {
+          ct.danhSachPhuThu.forEach(pt => {
+            totalSurcharges += pt.thanhTien || 0
+            if (pt.ttThanhToan === 'Đã thanh toán') {
+              totalPaidAmount += pt.thanhTien || 0
+            }
+          })
+        }
+      })
+    }
+
     setBill({
-      roomCharges: guest.roomCharges,
-      serviceCharges: serviceCharges,
-      additionalCharges: 0,
-      damages: 0,
-      total: guest.roomCharges + serviceCharges
+      roomCharges: totalRoomCharges,
+      serviceCharges: totalServiceCharges,
+      surcharges: totalSurcharges,
+      paidAmount: totalPaidAmount,
+      total: totalRoomCharges + totalServiceCharges + totalSurcharges
     })
+
+    // Tự động tải chi tiết phiếu thuê để hiển thị đầy đủ thông tin
+    await fetchRentalDetailsForDisplay(guest.id)
+
+    // Lấy thông tin tiền đặt cọc từ phiếu đặt nếu có
+    if (guest.bookingId) {
+      await fetchDepositAmount(guest.bookingId)
+    }
+
+    // Note: Detailed rental information will be fetched when user clicks "View Chi Tiết" button
   }
 
-  const addAdditionalCharge = () => {
-    setCheckOutData(prev => ({
-      ...prev,
-      additionalCharges: [...prev.additionalCharges, { description: '', amount: 0 }]
-    }))
+  // Hàm tải chi tiết để hiển thị thông tin (không mở modal)
+  const fetchRentalDetailsForDisplay = async (rentalId) => {
+    try {
+      setLoading(true)
+      const response = await rentalService.getRentalDetails(rentalId)
+      const details = response.phieuThueDetails
+      setRentalDetails(details)
+      // Không set setShowDetails(true) ở đây
+
+      // Chỉ cập nhật thông tin bổ sung, không ghi đè bill đã tính toán
+      if (details && selectedGuest) {
+        // Update selected guest with additional info (giữ nguyên depositAmount)
+        setSelectedGuest(prev => ({
+          ...prev,
+          customerEmail: details.emailKhachHang || prev.customerEmail,
+          roomCount: details.rooms ? details.rooms.length : (prev.chiTietPhieuThue?.length || 1),
+          depositAmount: prev.depositAmount || 0 // Giữ nguyên giá trị đã có
+        }))
+      }
+    } catch (error) {
+      console.error('Error fetching rental details:', error)
+      toast.error('Không thể tải thông tin chi tiết phiếu thuê')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const updateAdditionalCharge = (index, field, value) => {
-    setCheckOutData(prev => ({
-      ...prev,
-      additionalCharges: prev.additionalCharges.map((charge, i) =>
-        i === index ? { ...charge, [field]: value } : charge
-      )
-    }))
+  // Hàm lấy thông tin tiền đặt cọc từ phiếu đặt
+  const fetchDepositAmount = async (bookingId) => {
+    try {
+      const response = await bookingService.getBookingById(bookingId)
+      const bookingDetails = response.phieuDat
 
-    // Recalculate bill
-    const additionalTotal = checkOutData.additionalCharges.reduce((sum, charge) => sum + (Number(charge.amount) || 0), 0)
-    const damagesTotal = checkOutData.damages.reduce((sum, damage) => sum + (Number(damage.amount) || 0), 0)
-    setBill(prev => ({
-      ...prev,
-      additionalCharges: additionalTotal,
-      damages: damagesTotal,
-      total: prev.roomCharges + prev.serviceCharges + additionalTotal + damagesTotal
-    }))
+      if (bookingDetails && bookingDetails.soTienCoc) {
+        setSelectedGuest(prev => ({
+          ...prev,
+          depositAmount: bookingDetails.soTienCoc
+        }))
+      }
+    } catch (error) {
+      console.error('Error fetching deposit amount:', error)
+      // Không hiển thị toast error vì đây không phải lỗi nghiêm trọng
+    }
   }
 
-  const removeAdditionalCharge = (index) => {
-    setCheckOutData(prev => ({
-      ...prev,
-      additionalCharges: prev.additionalCharges.filter((_, i) => i !== index)
-    }))
+  // Hàm chỉ để mở modal xem chi tiết (không cập nhật dữ liệu)
+  const fetchRentalDetails = async (rentalId) => {
+    try {
+      if (!rentalDetails) {
+        // Nếu chưa có dữ liệu thì tải
+        await fetchRentalDetailsForDisplay(rentalId)
+      }
+      // Chỉ mở modal
+      setShowDetails(true)
+    } catch (error) {
+      console.error('Error showing rental details:', error)
+      toast.error('Không thể hiển thị thông tin chi tiết phiếu thuê')
+    }
   }
 
-  const addDamage = () => {
-    setCheckOutData(prev => ({
-      ...prev,
-      damages: [...prev.damages, { description: '', amount: 0 }]
-    }))
-  }
 
-  const updateDamage = (index, field, value) => {
-    setCheckOutData(prev => ({
-      ...prev,
-      damages: prev.damages.map((damage, i) =>
-        i === index ? { ...damage, [field]: value } : damage
-      )
-    }))
-  }
-
-  const removeDamage = (index) => {
-    setCheckOutData(prev => ({
-      ...prev,
-      damages: prev.damages.filter((_, i) => i !== index)
-    }))
-  }
 
   const handleCheckOut = async () => {
     if (!selectedGuest) return
@@ -165,11 +320,43 @@ const CheckOutPage = () => {
     try {
       setLoading(true)
 
-      // Call API to perform check-out
-      const response = await rentalService.checkOut(selectedGuest.id)
+      // Call API to perform check-out with actual checkout date
+      const actualCheckOutDate = checkOutData.actualCheckOut ?
+        new Date(checkOutData.actualCheckOut).toISOString().split('T')[0] :
+        new Date().toISOString().split('T')[0]
+
+      const response = await rentalService.checkOutWithDate(selectedGuest.id, actualCheckOutDate)
 
       if (response.statusCode === 200) {
         toast.success(`Check-out thành công cho ${selectedGuest.customerName}!`)
+
+        // Create invoice after successful checkout
+        const invoiceResult = await handleCreateInvoice(selectedGuest.id)
+
+        // Update invoice status to "Đã thanh toán" after successful checkout
+        if (invoiceResult && invoiceResult.idHd) {
+          try {
+            await invoiceService.updateInvoiceStatus(invoiceResult.idHd, INVOICE_STATUS.PAID)
+            toast.success('Trạng thái hóa đơn đã được cập nhật!')
+
+            // Cập nhật trạng thái phiếu đặt nếu có
+            if (selectedGuest.bookingId) {
+              try {
+                await bookingService.updateBookingStatus(selectedGuest.bookingId, 'Đã hoàn thành')
+              } catch (error) {
+                console.error('Error updating booking status:', error)
+                // Không hiển thị lỗi vì đây không phải lỗi nghiêm trọng
+              }
+            }
+
+            // Chuyển hướng đến trang hóa đơn và highlight hóa đơn vừa tạo
+            navigate(`/staff/invoices?highlight=${invoiceResult.idHd}`)
+            return // Không cần thực hiện các bước tiếp theo vì đã chuyển trang
+          } catch (error) {
+            console.error('Error updating invoice status:', error)
+            toast.error('Không thể cập nhật trạng thái hóa đơn')
+          }
+        }
 
         // Update guest status - remove from checked-in list
         setCheckedInGuests(prev =>
@@ -179,16 +366,14 @@ const CheckOutPage = () => {
         setSelectedGuest(null)
         setCheckOutData({
           actualCheckOut: '',
-          additionalCharges: [],
-          damages: [],
           notes: '',
           paymentMethod: 'cash'
         })
         setBill({
           roomCharges: 0,
           serviceCharges: 0,
-          additionalCharges: 0,
-          damages: 0,
+          surcharges: 0,
+          paidAmount: 0,
           total: 0
         })
 
@@ -203,6 +388,320 @@ const CheckOutPage = () => {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleCreateInvoice = async (rentalId) => {
+    try {
+      const response = await invoiceService.createInvoiceFromCheckout(rentalId)
+      if (response.statusCode === 200) {
+        setInvoice(response.hoaDon)
+        toast.success('Hóa đơn đã được tạo thành công!')
+        setShowInvoice(true)
+        return response.hoaDon // Trả về thông tin hóa đơn
+      } else {
+        toast.error('Không thể tạo hóa đơn: ' + response.message)
+        return null
+      }
+    } catch (error) {
+      console.error('Error creating invoice:', error)
+      toast.error('Có lỗi xảy ra khi tạo hóa đơn')
+      return null
+    }
+  }
+
+  const handleViewRoomDetails = (room) => {
+    setSelectedRoom(room)
+    setShowRoomDetails(true)
+  }
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(amount || 0)
+  }
+
+  const RoomDetailsModal = () => {
+    if (!showRoomDetails || !selectedRoom) return null
+
+    // Find services and surcharges for this room
+    const roomServices = rentalDetails?.services?.filter(service => service.idPhong === selectedRoom.idPhong) || []
+    const roomSurcharges = rentalDetails?.surcharges?.filter(surcharge => surcharge.idPhong === selectedRoom.idPhong) || []
+
+    return (
+      <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div className="relative top-10 mx-auto p-5 border w-4/5 max-w-4xl shadow-lg rounded-md bg-white">
+          <div className="mt-3">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900">
+                Tình trạng phòng {selectedRoom.tenPhong}
+              </h3>
+              <button
+                onClick={() => setShowRoomDetails(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+
+            {/* Room Basic Info */}
+            <div className="bg-gray-50 p-4 rounded-lg mb-6">
+              <h4 className="text-lg font-semibold text-gray-900 mb-3">Thông tin phòng</h4>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div><span className="font-medium">Số phòng:</span> {selectedRoom.tenPhong}</div>
+                <div><span className="font-medium">Loại phòng:</span> {selectedRoom.loaiPhong || 'N/A'}</div>
+                <div><span className="font-medium">Ngày đến:</span> {new Date(selectedRoom.ngayDen).toLocaleDateString('vi-VN')}</div>
+                <div><span className="font-medium">Ngày đi:</span> {new Date().toLocaleDateString('vi-VN')} (hôm nay)</div>
+                <div><span className="font-medium">Số ngày:</span> {selectedRoom.soNgay}</div>
+                <div><span className="font-medium">Đơn giá:</span> {formatCurrency(selectedRoom.donGia)}</div>
+                <div><span className="font-medium">Thành tiền:</span> {formatCurrency(selectedRoom.thanhTien)}</div>
+                <div>
+                  <span className="font-medium">Trạng thái thanh toán:</span>
+                  <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
+                    selectedRoom.trangThaiThanhToan === 'Đã thanh toán'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {selectedRoom.trangThaiThanhToan}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Services and Surcharges */}
+            <div className="space-y-4">
+              {/* Services */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="text-lg font-semibold text-blue-900 mb-3">Dịch vụ đang sử dụng</h4>
+                {roomServices.length > 0 ? (
+                  <div className="space-y-2">
+                    {roomServices.map((service, index) => (
+                      <div key={index} className="bg-white p-3 rounded border">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <p className="font-medium">{service.tenDichVu}</p>
+                            <p className="text-sm text-gray-500">
+                              {service.soLuong} × {formatCurrency(service.gia)}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              Ngày sử dụng: {new Date(service.ngaySD).toLocaleDateString('vi-VN')}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-blue-600">
+                              {formatCurrency(service.thanhTien)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm">Không có dịch vụ nào</p>
+                )}
+              </div>
+
+              {/* Surcharges */}
+              <div className="bg-red-50 p-4 rounded-lg">
+                <h4 className="text-lg font-semibold text-red-900 mb-3">Phụ thu</h4>
+                {roomSurcharges.length > 0 ? (
+                  <div className="space-y-2">
+                    {roomSurcharges.map((surcharge, index) => (
+                      <div key={index} className="bg-white p-3 rounded border">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <p className="font-medium">{surcharge.loaiPhuThu}</p>
+                            <p className="text-sm text-gray-500">{surcharge.moTa}</p>
+                            <p className="text-sm text-gray-500">
+                              {surcharge.soLuong} × {formatCurrency(surcharge.donGia)}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              Ngày phát sinh: {new Date(surcharge.ngayPhatSinh).toLocaleDateString('vi-VN')}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-red-600">
+                              {formatCurrency(surcharge.thanhTien)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm">Không có phụ thu nào</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const RentalDetailsModal = () => {
+    if (!showDetails || !rentalDetails) return null
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Chi tiết phiếu thuê #{rentalDetails.idPt}</h2>
+            <button
+              onClick={() => setShowDetails(false)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Customer Information */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold mb-3 text-blue-600">Thông tin khách hàng</h3>
+            <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+              <div>
+                <span className="font-medium">Họ tên:</span> {rentalDetails.hoTenKhachHang}
+              </div>
+              <div>
+                <span className="font-medium">CCCD:</span> {rentalDetails.cccdKhachHang}
+              </div>
+              <div>
+                <span className="font-medium">SĐT:</span> {rentalDetails.sdtKhachHang}
+              </div>
+              <div>
+                <span className="font-medium">Email:</span> {rentalDetails.emailKhachHang}
+              </div>
+            </div>
+          </div>
+
+          {/* Room Information */}
+          {rentalDetails.rooms && rentalDetails.rooms.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3 text-blue-600">Thông tin phòng</h3>
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Phòng</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Loại phòng</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Ngày đến</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Ngày đi</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Số ngày</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Đơn giá</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Thành tiền</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {rentalDetails.rooms.map((room, index) => (
+                      <tr key={index} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{room.tenPhong}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{room.loaiPhong}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{new Date(room.ngayDen).toLocaleDateString('vi-VN')}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{new Date().toLocaleDateString('vi-VN')}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">{room.soNgay}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(room.donGia)}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right font-medium">{formatCurrency(room.thanhTien)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Services Information */}
+          {rentalDetails.services && rentalDetails.services.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3 text-blue-600">Dịch vụ sử dụng</h3>
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Dịch vụ</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Phòng</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Ngày sử dụng</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Đơn giá</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Số lượng</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Thành tiền</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {rentalDetails.services.map((service, index) => (
+                      <tr key={index} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{service.tenDichVu}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{service.tenPhong}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{new Date(service.ngaySD).toLocaleDateString('vi-VN')}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(service.gia)}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">{service.soLuong}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right font-medium">{formatCurrency(service.thanhTien)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Surcharges Information */}
+          {rentalDetails.surcharges && rentalDetails.surcharges.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3 text-blue-600">Phụ thu</h3>
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Loại phụ thu</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Phòng</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Ngày phát sinh</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Đơn giá</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Số lượng</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Thành tiền</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {rentalDetails.surcharges.map((surcharge, index) => (
+                      <tr key={index} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{surcharge.loaiPhuThu}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{surcharge.tenPhong}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{new Date(surcharge.ngayPhatSinh).toLocaleDateString('vi-VN')}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(surcharge.donGia)}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">{surcharge.soLuong}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right font-medium">{formatCurrency(surcharge.thanhTien)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Total Summary */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="text-lg font-semibold mb-3 text-blue-600 ">Tổng kết chi phí</h3>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span>Tiền phòng:</span>
+                <span className="font-medium">{formatCurrency(rentalDetails.tongTienPhong)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Tiền dịch vụ:</span>
+                <span className="font-medium">{formatCurrency(rentalDetails.tongTienDichVu)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Phụ thu:</span>
+                <span className="font-medium">{formatCurrency(rentalDetails.tongTienPhuThu)}</span>
+              </div>
+              <div className="flex justify-between text-lg font-bold border-t pt-2 text-blue-600">
+                <span>Tổng cộng:</span>
+                <span className="text-blue-600">{formatCurrency(rentalDetails.tongTien)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -221,11 +720,35 @@ const CheckOutPage = () => {
             <h2 className="text-xl font-semibold text-gray-900">Khách đang lưu trú</h2>
           </div>
 
+          {/* Filter Buttons */}
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => handleFilterChange('all')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                filterType === 'all'
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Tất cả
+            </button>
+            <button
+              onClick={() => handleFilterChange('today')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                filterType === 'today'
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Hôm nay
+            </button>
+          </div>
+
           {/* Search Input */}
           <div className="mb-6">
             <input
               type="text"
-              placeholder="Tìm theo tên, mã đặt phòng, số phòng, SĐT..."
+              placeholder="Tìm theo tên, mã đặt phòng, SĐT..."
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
               className="input"
@@ -233,51 +756,95 @@ const CheckOutPage = () => {
           </div>
 
           {/* Guests List */}
-          <div className="space-y-3 max-h-96 overflow-y-auto">
-            {filteredGuests.length > 0 ? (
-              filteredGuests.map((guest) => (
-                <div
-                  key={guest.id}
-                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                    selectedGuest?.id === guest.id
-                      ? 'border-primary-500 bg-primary-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                  onClick={() => handleSelectGuest(guest)}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{guest.customerName}</h3>
-                      <p className="text-sm text-gray-600">{guest.maPhieuThue}</p>
-                    </div>
-                    <span className="px-2 py-1 text-xs font-semibold rounded-full text-green-600 bg-green-100">
-                      Đang lưu trú
-                    </span>
-                  </div>
+          <div className="space-y-3">
+            {(() => {
+              const startIndex = (currentPage - 1) * itemsPerPage
+              const endIndex = startIndex + itemsPerPage
+              const currentGuests = filteredGuests.slice(startIndex, endIndex)
 
-                  <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                    <div>
-                      <span className="font-medium">Phòng:</span> {guest.roomNumber} ({guest.roomType})
+              return currentGuests.length > 0 ? (
+                currentGuests.map((guest) => (
+                  <div
+                    key={guest.id}
+                    className={`p-4 border rounded-lg transition-colors ${
+                      selectedGuest?.id === guest.id
+                        ? 'border-primary-500 bg-primary-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1 cursor-pointer" onClick={() => handleSelectGuest(guest)}>
+                        <h3 className="font-semibold text-gray-900">{guest.customerName}</h3>
+                        <p className="text-sm text-gray-600">{guest.maPhieuThue}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full text-green-600 bg-green-100">
+                          Đang lưu trú
+                        </span>
+                        {guest.isOverdue && (
+                          <span className="px-2 py-1 text-xs font-semibold rounded-full text-orange-600 bg-orange-100">
+                            Quá hạn {guest.overdueStatus || `${guest.overdueDays} ngày`}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <span className="font-medium">SĐT:</span> {guest.customerPhone}
-                    </div>
-                    <div>
-                      <span className="font-medium">Check-in:</span> {guest.checkIn}
-                    </div>
-                    <div>
-                      <span className="font-medium">Check-out dự kiến:</span> {guest.checkOut}
+
+                    <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 cursor-pointer" onClick={() => handleSelectGuest(guest)}>
+                      <div>
+                        <span className="font-medium">SĐT:</span> {guest.customerPhone}
+                      </div>
+                      <div>
+                        <span className="font-medium">Check-in:</span> {guest.checkIn}
+                      </div>
+                      <div>
+                        <span className="font-medium">Check-out dự kiến:</span> {guest.checkOut}
+                      </div>
                     </div>
                   </div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <UserX className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-500">Không có khách nào đang lưu trú</p>
                 </div>
-              ))
-            ) : (
-              <div className="text-center py-8">
-                <UserX className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-500">Không có khách nào đang lưu trú</p>
-              </div>
-            )}
+              )
+            })()}
           </div>
+
+          {/* Pagination */}
+          {filteredGuests.length > itemsPerPage && (
+            <div className="flex justify-center items-center mt-6 space-x-2">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 rounded border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Trước
+              </button>
+
+              {Array.from({ length: Math.ceil(filteredGuests.length / itemsPerPage) }, (_, i) => (
+                <button
+                  key={i + 1}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`px-3 py-1 rounded border ${
+                    currentPage === i + 1
+                      ? 'bg-primary-500 text-white border-primary-500'
+                      : 'hover:bg-gray-50'
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredGuests.length / itemsPerPage)))}
+                disabled={currentPage === Math.ceil(filteredGuests.length / itemsPerPage)}
+                className="px-3 py-1 rounded border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Sau
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Check-out Form */}
@@ -291,44 +858,177 @@ const CheckOutPage = () => {
             <div className="space-y-6">
               {/* Customer Info */}
               <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-gray-900 mb-3">Thông tin khách hàng</h3>
-                <div className="grid grid-cols-1 gap-2 text-sm">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="font-semibold text-gray-900">Thông tin khách hàng</h3>
+                  <button
+                    onClick={() => fetchRentalDetails(selectedGuest.id)}
+                    className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors flex items-center"
+                  >
+                    <FileText className="w-4 h-4 mr-1" />
+                    Xem Chi Tiết
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-4 text-sm">
                   <div><span className="font-medium">Tên:</span> {selectedGuest.customerName}</div>
                   <div><span className="font-medium">SĐT:</span> {selectedGuest.customerPhone}</div>
-                  <div><span className="font-medium">Phòng:</span> {selectedGuest.roomNumber} ({selectedGuest.roomType})</div>
-                  <div><span className="font-medium">Check-in:</span> {selectedGuest.actualCheckIn}</div>
+                  <div><span className="font-medium">Email:</span> {selectedGuest.customerEmail || 'N/A'}</div>
+                  <div><span className="font-medium">CCCD:</span> {selectedGuest.cccd || 'N/A'}</div>
+                  <div><span className="font-medium">Số lượng phòng:</span> {selectedGuest.chiTietPhieuThue?.length || 0}</div>
+                  <div><span className="font-medium">Check-in:</span> {selectedGuest.checkIn}</div>
+                  <div><span className="font-medium">Check-out dự kiến:</span> {selectedGuest.checkOut}</div>
+                  <div className="col-span-2">
+                    <span className="font-medium text-green-600">Trạng thái:</span>
+                    <span className="text-green-600 ml-2">Đang lưu trú</span>
+                    {selectedGuest.isOverdue && (
+                      <span className="text-orange-600 ml-2">
+                        - Quá hạn {selectedGuest.overdueStatus || `${selectedGuest.overdueDays} ngày`}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* Bill Summary */}
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <div className="flex items-center mb-3">
-                  <Calculator className="w-5 h-5 text-blue-600 mr-2" />
-                  <h3 className="font-semibold text-gray-900">Hóa đơn</h3>
-                </div>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Tiền phòng:</span>
-                    <span>{bill.roomCharges.toLocaleString('vi-VN')} VNĐ</span>
+              {/* Room Information */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-gray-900 mb-3">Phòng đã sử dụng</h3>
+                {selectedGuest.chiTietPhieuThue && selectedGuest.chiTietPhieuThue.length > 0 ? (
+                  <div className="space-y-2">
+                    {selectedGuest.chiTietPhieuThue.map((ct, index) => (
+                      <div key={index} className="flex justify-between items-center bg-white p-3 rounded border">
+                        <div className="text-sm">
+                          <span className="font-medium">Phòng {ct.soPhong}</span>
+                          <span className="text-gray-600"> - {ct.tenKieuPhong} {ct.tenLoaiPhong}</span>
+                          <div className="text-xs text-gray-500 mt-1">
+                            Tầng {ct.tang} | {ct.ngayDen} - {new Date().toLocaleDateString('vi-VN')}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            Đơn giá: {ct.donGia?.toLocaleString('vi-VN')} VNĐ/đêm
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            Số ngày: {(() => {
+                              if (ct.ngayDen) {
+                                const checkInDate = new Date(ct.ngayDen)
+                                checkInDate.setHours(0, 0, 0, 0)
+
+                                const actualCheckOut = checkOutData.actualCheckOut ?
+                                  new Date(checkOutData.actualCheckOut) : new Date()
+                                const checkOutDateOnly = new Date(actualCheckOut)
+                                checkOutDateOnly.setHours(0, 0, 0, 0)
+
+                                // Chỉ tính thêm ngày khi qua ngày mới (sau 00:00)
+                                return Math.max(1, Math.ceil((checkOutDateOnly - checkInDate) / (1000 * 60 * 60 * 24)))
+                              }
+                              return 1
+                            })()} ngày
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-medium">
+                            {(() => {
+                              if (ct.donGia && ct.ngayDen) {
+                                const checkInDate = new Date(ct.ngayDen)
+                                checkInDate.setHours(0, 0, 0, 0)
+
+                                const actualCheckOut = checkOutData.actualCheckOut ?
+                                  new Date(checkOutData.actualCheckOut) : new Date()
+                                const checkOutDateOnly = new Date(actualCheckOut)
+                                checkOutDateOnly.setHours(0, 0, 0, 0)
+
+                                // Chỉ tính thêm ngày khi qua ngày mới (sau 00:00)
+                                const soNgay = Math.max(1, Math.ceil((checkOutDateOnly - checkInDate) / (1000 * 60 * 60 * 24)))
+                                const thanhTien = ct.donGia * soNgay
+                                return thanhTien.toLocaleString('vi-VN')
+                              }
+                              return (ct.donGia || 0).toLocaleString('vi-VN')
+                            })()} VNĐ
+                          </div>
+                          <div className={`text-xs px-2 py-1 rounded-full ${
+                            ct.ttThanhToan === 'Đã thanh toán'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {ct.ttThanhToan}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex justify-between">
-                    <span>Dịch vụ:</span>
-                    <span>{bill.serviceCharges.toLocaleString('vi-VN')} VNĐ</span>
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-gray-500">Không có thông tin phòng</p>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Phí phát sinh:</span>
-                    <span>{bill.additionalCharges.toLocaleString('vi-VN')} VNĐ</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Bồi thường:</span>
-                    <span>{bill.damages.toLocaleString('vi-VN')} VNĐ</span>
-                  </div>
-                  <div className="border-t pt-2 flex justify-between font-semibold">
-                    <span>Tổng cộng:</span>
-                    <span>{bill.total.toLocaleString('vi-VN')} VNĐ</span>
-                  </div>
-                </div>
+                )}
               </div>
+
+              {/* Services and Surcharges Details - Show when data is available */}
+              {selectedGuest.chiTietPhieuThue && selectedGuest.chiTietPhieuThue.some(ct =>
+                (ct.danhSachDichVu && ct.danhSachDichVu.length > 0) ||
+                (ct.danhSachPhuThu && ct.danhSachPhuThu.length > 0)
+              ) && (
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-gray-900 mb-3">Chi tiết dịch vụ & phụ thu</h3>
+                  {selectedGuest.chiTietPhieuThue.map((ct, ctIndex) => (
+                    <div key={ctIndex} className="mb-4">
+                      {/* Services */}
+                      {ct.danhSachDichVu && ct.danhSachDichVu.length > 0 && (
+                        <div className="mb-3">
+                          <h4 className="text-sm font-medium text-gray-700 mb-2">Phòng {ct.soPhong}:</h4>
+                          <p className="text-xs text-blue-600 font-medium mb-1">Dịch vụ:</p>
+                          {ct.danhSachDichVu.map((dv, dvIndex) => (
+                            <div key={dvIndex} className="flex justify-between text-xs bg-white p-2 rounded mb-1">
+                              <div>
+                                <span className="font-medium">{dv.tenDv}</span>
+                                <span className="text-gray-500 ml-2">
+                                  {dv.soLuong} x {dv.gia?.toLocaleString('vi-VN')} VNĐ
+                                </span>
+                                <div className="text-gray-400">Ngày: {dv.ngaySuDung}</div>
+                              </div>
+                              <div className="text-right">
+                                <div className="font-medium">{dv.thanhTien?.toLocaleString('vi-VN')} VNĐ</div>
+                                <div className={`text-xs px-1 rounded ${
+                                  dv.ttThanhToan === 'Đã thanh toán'
+                                    ? 'bg-green-100 text-green-800'
+                                    : 'bg-yellow-100 text-yellow-800'
+                                }`}>
+                                  {dv.ttThanhToan}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Surcharges */}
+                      {ct.danhSachPhuThu && ct.danhSachPhuThu.length > 0 && (
+                        <div className="mb-3">
+                          <p className="text-xs text-red-600 font-medium mb-1">Phụ thu:</p>
+                          {ct.danhSachPhuThu.map((pt, ptIndex) => (
+                            <div key={ptIndex} className="flex justify-between text-xs bg-white p-2 rounded mb-1">
+                              <div>
+                                <span className="font-medium">{pt.tenPhuThu}</span>
+                                <span className="text-gray-500 ml-2">
+                                  {pt.soLuong} x {pt.donGia?.toLocaleString('vi-VN')} VNĐ
+                                </span>
+                              </div>
+                              <div className="text-right">
+                                <div className="font-medium">{pt.thanhTien?.toLocaleString('vi-VN')} VNĐ</div>
+                                <div className={`text-xs px-1 rounded ${
+                                  pt.ttThanhToan === 'Đã thanh toán'
+                                    ? 'bg-green-100 text-green-800'
+                                    : 'bg-yellow-100 text-yellow-800'
+                                }`}>
+                                  {pt.ttThanhToan}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
 
               {/* Check-out Form */}
               <div className="space-y-4">
@@ -344,85 +1044,6 @@ const CheckOutPage = () => {
                     required
                   />
                 </div>
-
-                {/* Additional Charges */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Phí phát sinh
-                    </label>
-                    <button
-                      onClick={addAdditionalCharge}
-                      className="text-sm text-primary-600 hover:text-primary-700"
-                    >
-                      + Thêm
-                    </button>
-                  </div>
-                  {checkOutData.additionalCharges.map((charge, index) => (
-                    <div key={index} className="flex space-x-2 mb-2">
-                      <input
-                        type="text"
-                        placeholder="Mô tả"
-                        value={charge.description}
-                        onChange={(e) => updateAdditionalCharge(index, 'description', e.target.value)}
-                        className="input flex-1"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Số tiền"
-                        value={charge.amount}
-                        onChange={(e) => updateAdditionalCharge(index, 'amount', e.target.value)}
-                        className="input w-32"
-                      />
-                      <button
-                        onClick={() => removeAdditionalCharge(index)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Damages */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Bồi thường hư hỏng
-                    </label>
-                    <button
-                      onClick={addDamage}
-                      className="text-sm text-primary-600 hover:text-primary-700"
-                    >
-                      + Thêm
-                    </button>
-                  </div>
-                  {checkOutData.damages.map((damage, index) => (
-                    <div key={index} className="flex space-x-2 mb-2">
-                      <input
-                        type="text"
-                        placeholder="Mô tả hư hỏng"
-                        value={damage.description}
-                        onChange={(e) => updateDamage(index, 'description', e.target.value)}
-                        className="input flex-1"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Số tiền"
-                        value={damage.amount}
-                        onChange={(e) => updateDamage(index, 'amount', e.target.value)}
-                        className="input w-32"
-                      />
-                      <button
-                        onClick={() => removeDamage(index)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Phương thức thanh toán
@@ -433,45 +1054,20 @@ const CheckOutPage = () => {
                     className="input"
                   >
                     <option value="cash">Tiền mặt</option>
-                    <option value="card">Thẻ tín dụng</option>
                     <option value="transfer">Chuyển khoản</option>
                   </select>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Ghi chú check-out
-                  </label>
-                  <textarea
-                    value={checkOutData.notes}
-                    onChange={(e) => setCheckOutData(prev => ({ ...prev, notes: e.target.value }))}
-                    className="input min-h-[80px]"
-                    placeholder="Ghi chú thêm về quá trình check-out..."
-                  />
-                </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => setSelectedGuest(null)}
-                  className="btn-outline flex-1"
-                >
-                  Hủy
-                </button>
-                <button
-                  onClick={handleCheckOut}
-                  disabled={loading || !checkOutData.actualCheckOut}
-                  className="btn-primary flex-1"
-                >
-                  {loading ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  ) : (
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                  )}
-                  Xác nhận check-out
-                </button>
-              </div>
+              {/* Invoice Component */}
+              <InvoiceComponent
+                selectedGuest={selectedGuest}
+                bill={bill}
+                checkOutData={checkOutData}
+                onCheckOut={handleCheckOut}
+                onCancel={() => setSelectedGuest(null)}
+                loading={loading}
+              />
             </div>
           ) : (
             <div className="text-center py-12">
@@ -486,6 +1082,19 @@ const CheckOutPage = () => {
           )}
         </div>
       </div>
+
+      {/* Detailed Invoice Modal */}
+      <DetailedInvoiceModal
+        isOpen={showInvoice}
+        onClose={() => setShowInvoice(false)}
+        invoice={invoice}
+        selectedGuest={selectedGuest}
+        bill={bill}
+        checkOutData={checkOutData}
+      />
+
+      <RentalDetailsModal />
+      <RoomDetailsModal />
     </div>
   )
 }

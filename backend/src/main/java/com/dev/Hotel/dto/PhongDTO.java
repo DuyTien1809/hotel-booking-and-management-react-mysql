@@ -8,31 +8,32 @@ import java.util.List;
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PhongDTO {
-    
+
+    // Basic room info
     private String soPhong;
     private Integer tang;
-    
-    // Hang phong info
+
+    // Room category info
     private Integer idHangPhong;
-    
-    // Kieu phong info
+    private Double giaPhong;
+    private Double gia; // Alias for giaPhong for frontend compatibility
+
+    // Room type info (Kieu phong)
     private String idKp;
     private String tenKp;
     private String moTaKp;
     private Integer soLuongKhachO;
-    
-    // Loai phong info
+
+    // Bed type info (Loai phong)
     private String idLp;
     private String tenLp;
     private String moTaLp;
-    
-    // Trang thai info
+
+    // Status info
     private String idTt;
     private String tenTrangThai;
-    
-    // Images
-    private List<String> danhSachAnhUrl;
-    
-    // Availability info
     private Boolean isAvailable;
+
+    // Additional info
+    private List<String> danhSachAnhUrl;
 }

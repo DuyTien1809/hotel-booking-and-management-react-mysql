@@ -9,31 +9,35 @@ import java.time.LocalDate;
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CtDichVuDTO {
-    
-    private String idCtDv;
+
+    // Composite key fields
+    private Integer idCtPt;
+    private String idDv;
+
     private LocalDate ngaySuDung;
-    private String ghiChu;
-    private BigDecimal gia;
+    private BigDecimal donGia;
     private Integer soLuong;
     private String ttThanhToan;
-    
-    // Chi tiet phieu thue info
-    private Integer idCtPt;
-    
+
+    // Phong info
+    private String soPhong;
+    private String tenKieuPhong;
+    private String tenLoaiPhong;
+
+    // Khach hang info
+    private String tenKhachHang;
+    private String cccd;
+
     // Dich vu info
-    private String idDv;
     private String tenDv;
     private String donViTinh;
-    
-    // Hoa don info
-    private String idHd;
-    
+
     // Computed fields
     private BigDecimal thanhTien;
-    
+
     public BigDecimal getThanhTien() {
-        if (gia != null && soLuong != null) {
-            return gia.multiply(BigDecimal.valueOf(soLuong));
+        if (donGia != null && soLuong != null) {
+            return donGia.multiply(BigDecimal.valueOf(soLuong));
         }
         return BigDecimal.ZERO;
     }

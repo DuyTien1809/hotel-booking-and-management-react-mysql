@@ -5,7 +5,6 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -27,13 +26,15 @@ public class PhieuDatDTO {
     // Nhan vien info
     private String idNv;
     private String hoTenNhanVien;
-    
-    // Audit info
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    private String createdBy;
-    private String updatedBy;
-    
+
+    // Chi tiet phieu dat info (from CtPhieuDat)
+    private Integer soLuongPhongO;
+    private String tenKp; // Ten kieu phong
+    private String tenLp; // Ten loai phong
+    private String idKp; // ID kieu phong
+    private String idLp; // ID loai phong
+    private Integer idHangPhong;
+
     // Computed fields
     private Long soNgayThue;
     

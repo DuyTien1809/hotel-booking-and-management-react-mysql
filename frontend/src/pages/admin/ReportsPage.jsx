@@ -68,7 +68,7 @@ const ReportsPage = () => {
 
   const exportReport = (format) => {
     // TODO: Implement export functionality
-    console.log(`Exporting ${reportType} report as ${format}`)
+    // Export report logic here
   }
 
   const getGrowthIcon = (growth) => {
@@ -284,7 +284,7 @@ const ReportsPage = () => {
       {/* Export Options */}
       <div className="card">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Xuất báo cáo</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <button
             onClick={() => exportReport('pdf')}
             className="flex items-center justify-center p-4 border border-gray-300 rounded-lg hover:bg-gray-50"
@@ -292,13 +292,7 @@ const ReportsPage = () => {
             <FileText className="w-6 h-6 text-red-600 mr-2" />
             <span className="font-medium">PDF</span>
           </button>
-          <button
-            onClick={() => exportReport('excel')}
-            className="flex items-center justify-center p-4 border border-gray-300 rounded-lg hover:bg-gray-50"
-          >
-            <FileText className="w-6 h-6 text-green-600 mr-2" />
-            <span className="font-medium">Excel</span>
-          </button>
+
           <button
             onClick={() => exportReport('csv')}
             className="flex items-center justify-center p-4 border border-gray-300 rounded-lg hover:bg-gray-50"

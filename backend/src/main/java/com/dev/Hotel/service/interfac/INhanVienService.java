@@ -27,4 +27,9 @@ public interface INhanVienService {
     // Admin functions
     Response activateNhanVien(String idNv);
     Response deactivateNhanVien(String idNv);
+
+    // Password reset
+    Response forgotPassword(String email);
+    Response resetPassword(String token, String newPassword);
+    String extractEmailFromToken(String token);
 }

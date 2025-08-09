@@ -9,7 +9,9 @@ import {
   UserCheck,
   UserX,
   UserPlus,
-  BarChart3
+  Building,
+  Settings,
+  Users
 } from 'lucide-react'
 
 const StaffDashboard = () => {
@@ -30,13 +32,10 @@ const StaffDashboard = () => {
   }, [])
 
   const fetchDashboardData = async () => {
-    console.log('🔄 Fetching dashboard data...')
-
     // Fetch stats API (priority - this one works)
     let statsResponse = null
     try {
       statsResponse = await dashboardService.getStaffStats()
-      console.log('✅ Stats API successful:', statsResponse)
     } catch (error) {
       console.error('❌ Stats API failed:', error)
     }
@@ -45,7 +44,6 @@ const StaffDashboard = () => {
     let checkInsResponse = { phieuDatList: [] }
     try {
       checkInsResponse = await dashboardService.getTodayCheckIns()
-      console.log('✅ Check-ins API successful')
     } catch (error) {
       console.error('⚠️ Check-ins API failed (using empty data):', error.message)
     }
@@ -54,7 +52,6 @@ const StaffDashboard = () => {
     let checkOutsResponse = { phieuThueList: [] }
     try {
       checkOutsResponse = await dashboardService.getTodayCheckOuts()
-      console.log('✅ Check-outs API successful')
     } catch (error) {
       console.error('⚠️ Check-outs API failed (using empty data):', error.message)
     }
@@ -62,8 +59,6 @@ const StaffDashboard = () => {
     // Process stats data if available
     if (statsResponse) {
       const apiStats = statsResponse.stats || statsResponse
-      console.log('Raw statsResponse:', statsResponse)
-      console.log('Extracted apiStats:', apiStats)
 
       const newStats = {
         totalReservations: apiStats.confirmedBookings || 0, // Đặt phòng đã xác nhận chưa check-in
@@ -79,11 +74,9 @@ const StaffDashboard = () => {
         occupancyRate: apiStats.occupancyRate || 0 // Tỷ lệ lấp đầy
       }
 
-      console.log('Setting stats to:', newStats)
       setStats(newStats)
     } else {
       // Fallback if stats API fails
-      console.log('⚠️ Using fallback stats (all zeros)')
       setStats({
         totalReservations: 0,
         checkInsToday: 0,
@@ -102,8 +95,6 @@ const StaffDashboard = () => {
     // Set list data (even if empty)
     setTodayActivities(checkInsResponse.activities || [])
     setUpcomingTasks(checkOutsResponse.activities || [])
-
-    console.log('🏁 Dashboard data fetch completed')
   }
 
 
@@ -167,13 +158,33 @@ const StaffDashboard = () => {
           </div>
         </Link>
 
-        <Link to="/staff/reports" className="card hover:shadow-lg transition-shadow">
+        <Link to="/staff/rooms" className="card hover:shadow-lg transition-shadow">
           <div className="text-center">
             <div className="p-4 bg-indigo-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <BarChart3 className="w-8 h-8 text-indigo-600" />
+              <Building className="w-8 h-8 text-indigo-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Báo cáo nhanh</h3>
-            <p className="text-gray-600">Thống kê và báo cáo hôm nay</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Quản lý phòng</h3>
+            <p className="text-gray-600">Quản lý thông tin phòng khách sạn</p>
+          </div>
+        </Link>
+
+        <Link to="/staff/services" className="card hover:shadow-lg transition-shadow">
+          <div className="text-center">
+            <div className="p-4 bg-purple-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <Settings className="w-8 h-8 text-purple-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Dịch vụ & Phụ thu</h3>
+            <p className="text-gray-600">Quản lý dịch vụ và phụ thu khách sạn</p>
+          </div>
+        </Link>
+
+        <Link to="/staff/rentals" className="card hover:shadow-lg transition-shadow">
+          <div className="text-center">
+            <div className="p-4 bg-orange-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <Users className="w-8 h-8 text-orange-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Quản lý thuê phòng</h3>
+            <p className="text-gray-600">Quản lý chi tiết phiếu thuê và khách ở</p>
           </div>
         </Link>
       </div>

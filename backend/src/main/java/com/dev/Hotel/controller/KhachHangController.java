@@ -37,6 +37,8 @@ public class KhachHangController {
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
+
+
     @GetMapping("/get-by-sdt/{sdt}")
     //@PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
     public ResponseEntity<Response> getKhachHangBySdt(@PathVariable("sdt") String sdt) {

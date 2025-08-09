@@ -1,20 +1,23 @@
 package com.dev.Hotel.service.impl;
 
+import com.dev.Hotel.dto.CheckInWalkInRequest;
 import com.dev.Hotel.dto.Response;
-import com.dev.Hotel.entity.PhieuThue;
-import com.dev.Hotel.entity.PhieuDat;
-import com.dev.Hotel.entity.NhanVien;
+import com.dev.Hotel.dto.PhieuThueDetailsDTO;
+import com.dev.Hotel.entity.*;
 import com.dev.Hotel.exception.OurException;
-import com.dev.Hotel.repo.PhieuThueRepository;
-import com.dev.Hotel.repo.PhieuDatRepository;
-import com.dev.Hotel.repo.KhachHangRepository;
-import com.dev.Hotel.repo.NhanVienRepository;
+import com.dev.Hotel.repo.*;
+import com.dev.Hotel.service.interfac.IPhieuDatService;
 import com.dev.Hotel.service.interfac.IPhieuThueService;
 import com.dev.Hotel.utils.EntityDTOMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -22,15 +25,38 @@ public class PhieuThueService implements IPhieuThueService {
 
     @Autowired
     private PhieuThueRepository phieuThueRepository;
-    
+
     @Autowired
     private PhieuDatRepository phieuDatRepository;
-    
+
     @Autowired
     private KhachHangRepository khachHangRepository;
-    
+
     @Autowired
     private NhanVienRepository nhanVienRepository;
+
+    @Autowired
+    private CtPhieuThueRepository ctPhieuThueRepository;
+
+    @Autowired
+    private PhongRepository phongRepository;
+
+    @Autowired
+    private GiaHangPhongRepository giaHangPhongRepository;
+
+
+
+    @Autowired
+    private TrangThaiRepository trangThaiRepository;
+
+    @Autowired
+    private IPhieuDatService phieuDatService;
+
+    @Autowired
+    private CtDichVuRepository ctDichVuRepository;
+
+    @Autowired
+    private CtPhuThuRepository ctPhuThuRepository;
 
     @Override
     public Response getAllPhieuThue() {
@@ -91,10 +117,8 @@ public class PhieuThueService implements IPhieuThueService {
             PhieuThue existingPhieuThue = phieuThueRepository.findById(idPt)
                 .orElseThrow(() -> new OurException("Phiếu thuê không tồn tại"));
             
-            // Update fields
+            // Update fields (ngayDen và ngayDi giờ được quản lý trong CtPhieuThue)
             existingPhieuThue.setNgayLap(phieuThue.getNgayLap());
-            existingPhieuThue.setNgayDen(phieuThue.getNgayDen());
-            existingPhieuThue.setNgayDi(phieuThue.getNgayDi());
             existingPhieuThue.setKhachHang(phieuThue.getKhachHang());
             existingPhieuThue.setNhanVien(phieuThue.getNhanVien());
             existingPhieuThue.setPhieuDat(phieuThue.getPhieuDat());
@@ -215,16 +239,14 @@ public class PhieuThueService implements IPhieuThueService {
         try {
             PhieuDat phieuDat = phieuDatRepository.findById(idPd)
                 .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
-            
+
             if (!"Đã xác nhận".equals(phieuDat.getTrangThai())) {
                 throw new OurException("Phiếu đặt chưa được xác nhận");
             }
             
-            // Create new PhieuThue from PhieuDat
+            // Create new PhieuThue from PhieuDat (ngayDen và ngayDi sẽ được set trong CtPhieuThue)
             PhieuThue phieuThue = new PhieuThue();
             phieuThue.setNgayLap(LocalDate.now());
-            phieuThue.setNgayDen(phieuDat.getNgayBdThue());
-            phieuThue.setNgayDi(phieuDat.getNgayDi());
             phieuThue.setKhachHang(phieuDat.getKhachHang());
             phieuThue.setNhanVien(phieuDat.getNhanVien());
             phieuThue.setPhieuDat(phieuDat);
@@ -250,37 +272,359 @@ public class PhieuThueService implements IPhieuThueService {
     }
 
     @Override
-    public Response checkInWalkIn(PhieuThue phieuThue) {
+    public Response checkInFromBookingWithRoom(com.dev.Hotel.dto.CheckInWithRoomRequest request) {
         Response response = new Response();
         try {
+            // Find the booking
+            PhieuDat phieuDat = phieuDatRepository.findById(request.getIdPhieuDat())
+                .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
+
+            // Find the room
+            Phong phong = phongRepository.findById(request.getSoPhong())
+                .orElseThrow(() -> new OurException("Phòng không tồn tại"));
+
+            // Check if room is available (support both TT01 and TT001 formats)
+            String roomStatus = phong.getTrangThai().getIdTt();
+            if (!"TT01".equals(roomStatus) && !"TT001".equals(roomStatus)) {
+                throw new OurException("Phòng không có sẵn. Trạng thái hiện tại: " + roomStatus);
+            }
+
+            // Create PhieuThue from PhieuDat (ngayDen và ngayDi sẽ được set trong CtPhieuThue)
+            PhieuThue phieuThue = new PhieuThue();
             phieuThue.setNgayLap(LocalDate.now());
+            phieuThue.setNhanVien(phieuDat.getNhanVien());
+            phieuThue.setKhachHang(phieuDat.getKhachHang());
+            phieuThue.setPhieuDat(phieuDat);
+
             PhieuThue savedPhieuThue = phieuThueRepository.save(phieuThue);
-            
+
+            // Create CtPhieuThue for the specific room
+            CtPhieuThue ctPhieuThue = new CtPhieuThue();
+            ctPhieuThue.setPhieuThue(savedPhieuThue);
+            ctPhieuThue.setPhong(phong);
+            ctPhieuThue.setNgayDen(phieuDat.getNgayBdThue());
+            ctPhieuThue.setNgayDi(phieuDat.getNgayDi());
+
+            ctPhieuThueRepository.save(ctPhieuThue);
+
+            // Update room status to occupied (try both TT02 and TT002 formats)
+            TrangThai occupiedStatus = trangThaiRepository.findById("TT02")
+                .orElse(trangThaiRepository.findById("TT002")
+                    .orElseThrow(() -> new OurException("Trạng thái 'Đã có khách' không tồn tại (TT02 hoặc TT002)")));
+            phong.setTrangThai(occupiedStatus);
+            phongRepository.save(phong);
+
+            // Update booking status to checked-in
+            phieuDat.setTrangThai("Đã check-in");
+            phieuDatRepository.save(phieuDat);
+
             response.setStatusCode(200);
-            response.setMessage("Check-in walk-in thành công");
+            response.setMessage("Check-in thành công vào phòng " + request.getSoPhong());
             response.setPhieuThue(EntityDTOMapper.mapPhieuThueToDTO(savedPhieuThue));
-            
+
+        } catch (OurException e) {
+            response.setStatusCode(400);
+            response.setMessage(e.getMessage());
         } catch (Exception e) {
             response.setStatusCode(500);
-            response.setMessage("Lỗi khi check-in walk-in: " + e.getMessage());
+            response.setMessage("Lỗi khi check-in: " + e.getMessage());
+        }
+        return response;
+    }
+
+    @Override
+    public Response checkInFromBookingWithMultipleRooms(com.dev.Hotel.dto.CheckInMultipleRoomsRequest request) {
+        Response response = new Response();
+        try {
+            System.out.println("=== DEBUG: Check-in request received ===");
+            System.out.println("Request ID: " + request.getIdPhieuDat());
+            System.out.println("Request ngayDen: " + request.getNgayDen());
+            System.out.println("Request rooms: " + request.getDanhSachSoPhong());
+
+            // Validate request
+            if (request.getIdPhieuDat() == null) {
+                throw new OurException("ID phiếu đặt không được để trống");
+            }
+
+
+
+            if (request.getNgayDen() == null || request.getNgayDen().trim().isEmpty()) {
+                throw new OurException("Ngày đến không được để trống");
+            }
+
+            // Validate rooms
+            if (request.getDanhSachSoPhong() == null || request.getDanhSachSoPhong().isEmpty()) {
+                throw new OurException("Danh sách phòng không được để trống");
+            }
+
+            // Find the booking
+            PhieuDat phieuDat = phieuDatRepository.findById(request.getIdPhieuDat())
+                .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại với ID: " + request.getIdPhieuDat()));
+
+            System.out.println("Found booking with status: " + phieuDat.getTrangThai());
+
+            if (!"Đã xác nhận".equals(phieuDat.getTrangThai())) {
+                throw new OurException("Phiếu đặt chưa được xác nhận. Trạng thái hiện tại: " + phieuDat.getTrangThai());
+            }
+
+            // Check all rooms exist and are available
+            List<Phong> roomsToCheckIn = new ArrayList<>();
+            for (String soPhong : request.getDanhSachSoPhong()) {
+                System.out.println("Checking room: " + soPhong);
+                Phong phong = phongRepository.findById(soPhong)
+                    .orElseThrow(() -> new OurException("Phòng không tồn tại: " + soPhong));
+
+                System.out.println("Room " + soPhong + " status: " + phong.getTrangThai().getIdTt());
+                // Check for both TT01 and TT001 formats for available status
+                String roomStatus = phong.getTrangThai().getIdTt();
+                if (!"TT01".equals(roomStatus) && !"TT001".equals(roomStatus)) {
+                    throw new OurException("Phòng " + soPhong + " không có sẵn. Trạng thái hiện tại: " + roomStatus);
+                }
+                roomsToCheckIn.add(phong);
+            }
+
+            // Parse and validate date
+            LocalDate ngayDen;
+            try {
+                ngayDen = LocalDate.parse(request.getNgayDen());
+                System.out.println("Parsed date: " + ngayDen);
+            } catch (Exception e) {
+                throw new OurException("Định dạng ngày đến không hợp lệ: " + request.getNgayDen() + ". Vui lòng sử dụng định dạng YYYY-MM-DD");
+            }
+
+            // Create PhieuThue (ngayDen và ngayDi sẽ được set trong CtPhieuThue)
+            PhieuThue phieuThue = new PhieuThue();
+            phieuThue.setNgayLap(LocalDate.now());
+            phieuThue.setKhachHang(phieuDat.getKhachHang());
+            phieuThue.setNhanVien(phieuDat.getNhanVien());
+            phieuThue.setPhieuDat(phieuDat);
+
+            PhieuThue savedPhieuThue = phieuThueRepository.save(phieuThue);
+
+            // Create CtPhieuThue for each room and update room status
+            // Try both TT02 and TT002 formats for occupied status
+            TrangThai occupiedStatus = trangThaiRepository.findById("TT02")
+                .orElse(trangThaiRepository.findById("TT002")
+                    .orElseThrow(() -> new OurException("Trạng thái 'Đã có khách' không tồn tại (TT02 hoặc TT002)")));
+
+            for (Phong phong : roomsToCheckIn) {
+                // Create CtPhieuThue
+                CtPhieuThue ctPhieuThue = new CtPhieuThue();
+                ctPhieuThue.setPhieuThue(savedPhieuThue);
+                ctPhieuThue.setPhong(phong);
+                ctPhieuThue.setNgayDen(ngayDen); // Use the already parsed date
+                ctPhieuThue.setGioDen(LocalTime.now());
+                ctPhieuThue.setNgayDi(phieuDat.getNgayDi());
+
+                // Get room price
+                var giaHangPhong = giaHangPhongRepository.findLatestPriceByHangPhong(
+                    phong.getHangPhong().getIdHangPhong(),
+                    LocalDate.now()
+                );
+                if (giaHangPhong.isPresent()) {
+                    ctPhieuThue.setDonGia(giaHangPhong.get().getGia());
+                } else {
+                    ctPhieuThue.setDonGia(new BigDecimal("500000")); // Default price
+                }
+
+                ctPhieuThue.setTtThanhToan("Chưa thanh toán");
+                ctPhieuThueRepository.save(ctPhieuThue);
+
+                // Update room status to occupied
+                phong.setTrangThai(occupiedStatus);
+                phongRepository.save(phong);
+            }
+
+            // Update booking status to checked-in
+            phieuDat.setTrangThai("Đã check-in");
+            phieuDatRepository.save(phieuDat);
+
+            response.setStatusCode(200);
+            response.setMessage("Check-in thành công cho " + request.getDanhSachSoPhong().size() + " phòng");
+            response.setPhieuThue(EntityDTOMapper.mapPhieuThueToDTO(savedPhieuThue));
+
+        } catch (OurException e) {
+            response.setStatusCode(400);
+            response.setMessage(e.getMessage());
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi check-in: " + e.getMessage());
+        }
+        return response;
+    }
+
+    @Override
+    public Response checkInWalkIn(CheckInWalkInRequest request) {
+        System.out.println("=== checkInWalkIn called ===");
+        System.out.println("Request: " + request);
+
+        Response response = new Response();
+        try {
+            LocalDate today = LocalDate.now();
+
+            // Validate request
+            if (request.getNgayDen() == null || request.getNgayDi() == null) {
+                throw new OurException("Ngày đến và ngày đi không được để trống");
+            }
+
+            if (request.getNgayDi().isBefore(request.getNgayDen())) {
+                throw new OurException("Ngày đi không thể trước ngày đến");
+            }
+
+            if (request.getNhanVien() == null || request.getNhanVien().getIdNv() == null || request.getNhanVien().getIdNv().trim().isEmpty()) {
+                throw new OurException("ID nhân viên không được để trống");
+            }
+
+            if (request.getKhachHang() == null || request.getKhachHang().getCccd() == null || request.getKhachHang().getCccd().trim().isEmpty()) {
+                throw new OurException("CCCD khách hàng không được để trống");
+            }
+
+            // Check if check-in is today or future
+            boolean isImmediateCheckIn = request.getNgayDen().equals(today);
+
+            if (isImmediateCheckIn) {
+                // Case 1: Immediate check-in - Create PhieuThue
+                response = createPhieuThueFromRequest(request);
+            } else {
+                // Case 2: Future check-in - Create PhieuDat
+                response = createPhieuDatFromRequest(request);
+            }
+
+        } catch (OurException e) {
+            response.setStatusCode(400);
+            response.setMessage(e.getMessage());
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi xử lý check-in walk-in: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return response;
+    }
+
+    private Response createPhieuDatFromRequest(CheckInWalkInRequest request) {
+        Response response = new Response();
+        try {
+            // Load or create customer
+            KhachHang khachHang = getOrCreateKhachHang(request.getKhachHang());
+
+            // Load employee
+            String employeeId = request.getNhanVien().getIdNv();
+            System.out.println("Loading employee with ID: " + employeeId);
+            NhanVien nhanVien = nhanVienRepository.findById(employeeId)
+                .orElseThrow(() -> new OurException("Nhân viên không tồn tại với ID: " + employeeId));
+            System.out.println("Employee loaded successfully: " + nhanVien.getIdNv() + " - " + nhanVien.getHo() + " " + nhanVien.getTen());
+
+            // Create PhieuDat
+            PhieuDat phieuDat = new PhieuDat();
+            phieuDat.setNgayDat(LocalDate.now());
+            phieuDat.setNgayBdThue(request.getNgayDen());
+            phieuDat.setNgayDi(request.getNgayDi());
+            phieuDat.setTrangThai("Đã xác nhận");
+            phieuDat.setSoTienCoc(BigDecimal.ZERO); // Can be set based on business rules
+            phieuDat.setKhachHang(khachHang);
+            phieuDat.setNhanVien(nhanVien);
+
+            PhieuDat savedPhieuDat = phieuDatRepository.save(phieuDat);
+
+            response.setStatusCode(200);
+            response.setMessage("Tạo phiếu đặt thành công");
+            response.setPhieuDatSimple(EntityDTOMapper.mapPhieuDatToSimpleDTO(savedPhieuDat));
+
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi tạo phiếu đặt: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return response;
+    }
+
+    private Response createPhieuThueFromRequest(CheckInWalkInRequest request) {
+        Response response = new Response();
+        try {
+            // Load or create customer
+            KhachHang khachHang = getOrCreateKhachHang(request.getKhachHang());
+
+            // Load employee
+            String employeeId = request.getNhanVien().getIdNv();
+            System.out.println("Loading employee for rental with ID: " + employeeId);
+            NhanVien nhanVien = nhanVienRepository.findById(employeeId)
+                .orElseThrow(() -> new OurException("Nhân viên không tồn tại với ID: " + employeeId));
+            System.out.println("Employee loaded for rental: " + nhanVien.getIdNv() + " - " + nhanVien.getHo() + " " + nhanVien.getTen());
+
+            // Create PhieuThue (ngayDen và ngayDi sẽ được set trong CtPhieuThue)
+            PhieuThue phieuThue = new PhieuThue();
+            phieuThue.setNgayLap(LocalDate.now());
+            phieuThue.setKhachHang(khachHang);
+            phieuThue.setNhanVien(nhanVien);
+            phieuThue.setPhieuDat(null); // No booking for walk-in
+
+            PhieuThue savedPhieuThue = phieuThueRepository.save(phieuThue);
+            System.out.println("PhieuThue saved with employee ID: " + savedPhieuThue.getNhanVien().getIdNv());
+
+            // Create CtPhieuThue for each room
+            if (request.getDanhSachPhong() != null && !request.getDanhSachPhong().isEmpty()) {
+                createCtPhieuThueFromRooms(savedPhieuThue, request);
+            } else {
+                // If no rooms specified, this is an error for check-in
+                throw new OurException("Danh sách phòng không được để trống khi check-in");
+            }
+
+            response.setStatusCode(200);
+            response.setMessage("Check-in walk-in thành công");
+            response.setPhieuThueSimple(EntityDTOMapper.mapPhieuThueToSimpleDTO(savedPhieuThue));
+
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi tạo phiếu thuê: " + e.getMessage());
+            e.printStackTrace();
         }
         return response;
     }
 
     @Override
     public Response checkOut(Integer idPt) {
+        return checkOutWithDate(idPt, LocalDate.now());
+    }
+
+    @Override
+    public Response checkOutWithDate(Integer idPt, LocalDate actualCheckOutDate) {
         Response response = new Response();
         try {
             PhieuThue phieuThue = phieuThueRepository.findById(idPt)
                 .orElseThrow(() -> new OurException("Phiếu thuê không tồn tại"));
-            
-            // Update check-out date to today
-            phieuThue.setNgayDi(LocalDate.now());
-            PhieuThue updatedPhieuThue = phieuThueRepository.save(phieuThue);
+
+            // Update payment status for all CtPhieuThue to "Đã thanh toán"
+            List<CtPhieuThue> ctPhieuThueList = ctPhieuThueRepository.findByPhieuThue(phieuThue);
+            for (CtPhieuThue ctPhieuThue : ctPhieuThueList) {
+                // Update check-out date to actual checkout date và payment status
+                ctPhieuThue.setNgayDi(actualCheckOutDate);
+                ctPhieuThue.setTtThanhToan("Đã thanh toán");
+                ctPhieuThueRepository.save(ctPhieuThue);
+
+                // Update all services payment status for this room
+                List<CtDichVu> ctDichVuList = ctDichVuRepository.findByCtPhieuThue(ctPhieuThue);
+                for (CtDichVu ctDichVu : ctDichVuList) {
+                    ctDichVu.setTtThanhToan("Đã thanh toán");
+                    ctDichVuRepository.save(ctDichVu);
+                }
+
+                // Update all surcharges payment status for this room
+                List<CtPhuThu> ctPhuThuList = ctPhuThuRepository.findByCtPhieuThue(ctPhieuThue);
+                for (CtPhuThu ctPhuThu : ctPhuThuList) {
+                    ctPhuThu.setTtThanhToan("Đã thanh toán");
+                    ctPhuThuRepository.save(ctPhuThu);
+                }
+
+                // Update room status to "Đang dọn dẹp" (cleaning)
+                if (ctPhieuThue.getPhong() != null) {
+                    ctPhieuThue.getPhong().setTrangThai(trangThaiRepository.findById("TT003").orElse(null)); // Đang dọn dẹp
+                    phongRepository.save(ctPhieuThue.getPhong());
+                }
+            }
             
             response.setStatusCode(200);
             response.setMessage("Check-out thành công");
-            response.setPhieuThue(EntityDTOMapper.mapPhieuThueToDTO(updatedPhieuThue));
+            response.setPhieuThue(EntityDTOMapper.mapPhieuThueToDTO(phieuThue));
             
         } catch (OurException e) {
             response.setStatusCode(404);
@@ -298,17 +642,32 @@ public class PhieuThueService implements IPhieuThueService {
         try {
             PhieuThue phieuThue = phieuThueRepository.findById(idPt)
                 .orElseThrow(() -> new OurException("Phiếu thuê không tồn tại"));
-            
-            if (newCheckOut.isBefore(phieuThue.getNgayDi())) {
+
+            // Lấy ngày check-out hiện tại từ CtPhieuThue
+            List<CtPhieuThue> ctPhieuThueList = ctPhieuThueRepository.findByPhieuThue(phieuThue);
+            if (ctPhieuThueList.isEmpty()) {
+                throw new OurException("Không tìm thấy chi tiết phiếu thuê");
+            }
+
+            LocalDate currentCheckOut = ctPhieuThueList.stream()
+                .map(ct -> ct.getNgayDi())
+                .filter(date -> date != null)
+                .max(LocalDate::compareTo)
+                .orElse(null);
+
+            if (currentCheckOut != null && newCheckOut.isBefore(currentCheckOut)) {
                 throw new OurException("Ngày check-out mới phải sau ngày check-out hiện tại");
             }
-            
-            phieuThue.setNgayDi(newCheckOut);
-            PhieuThue updatedPhieuThue = phieuThueRepository.save(phieuThue);
+
+            // Cập nhật ngày check-out trong tất cả CtPhieuThue
+            for (CtPhieuThue ctPhieuThue : ctPhieuThueList) {
+                ctPhieuThue.setNgayDi(newCheckOut);
+                ctPhieuThueRepository.save(ctPhieuThue);
+            }
             
             response.setStatusCode(200);
             response.setMessage("Gia hạn lưu trú thành công");
-            response.setPhieuThue(EntityDTOMapper.mapPhieuThueToDTO(updatedPhieuThue));
+            response.setPhieuThue(EntityDTOMapper.mapPhieuThueToDTO(phieuThue));
             
         } catch (OurException e) {
             response.setStatusCode(400);
@@ -413,4 +772,233 @@ public class PhieuThueService implements IPhieuThueService {
         }
         return response;
     }
+
+    private KhachHang getOrCreateKhachHang(CheckInWalkInRequest.KhachHangInfo khachHangInfo) {
+        if (khachHangInfo == null || khachHangInfo.getCccd() == null) {
+            throw new OurException("Thông tin khách hàng không hợp lệ");
+        }
+
+        // Try to find existing customer, create if not exists
+        return khachHangRepository.findById(khachHangInfo.getCccd())
+            .orElseGet(() -> {
+                // Create new customer if not exists
+                KhachHang newKhachHang = new KhachHang();
+                newKhachHang.setCccd(khachHangInfo.getCccd());
+                newKhachHang.setHo(khachHangInfo.getHo());
+                newKhachHang.setTen(khachHangInfo.getTen());
+                newKhachHang.setSdt(khachHangInfo.getSdt());
+                newKhachHang.setEmail(khachHangInfo.getEmail());
+                newKhachHang.setDiaChi(khachHangInfo.getDiaChi());
+                return khachHangRepository.save(newKhachHang);
+            });
+    }
+
+    private void createCtPhieuThueFromRooms(PhieuThue phieuThue, CheckInWalkInRequest request) {
+        if (request.getDanhSachPhong() == null) return;
+
+        for (CheckInWalkInRequest.PhongInfo phongInfo : request.getDanhSachPhong()) {
+            // Load room
+            Phong phong = phongRepository.findById(phongInfo.getSoPhong())
+                .orElseThrow(() -> new OurException("Phòng không tồn tại: " + phongInfo.getSoPhong()));
+
+            // Get room price
+            BigDecimal donGia = getRoomPrice(phong);
+
+            // Create CtPhieuThue
+            CtPhieuThue ctPhieuThue = new CtPhieuThue();
+            ctPhieuThue.setNgayDen(request.getNgayDen());
+            ctPhieuThue.setGioDen(LocalTime.now());
+            ctPhieuThue.setNgayDi(request.getNgayDi());
+            ctPhieuThue.setDonGia(donGia);
+            ctPhieuThue.setTtThanhToan("Chưa thanh toán");
+            ctPhieuThue.setPhieuThue(phieuThue);
+            ctPhieuThue.setPhong(phong);
+
+            CtPhieuThue savedCtPhieuThue = ctPhieuThueRepository.save(ctPhieuThue);
+
+            // Update room status to occupied (TT002)
+            TrangThai occupiedStatus = trangThaiRepository.findById("TT002")
+                .orElseThrow(() -> new OurException("Trạng thái 'Đã có khách' không tồn tại (TT002)"));
+            phong.setTrangThai(occupiedStatus);
+            phongRepository.save(phong);
+
+            // Create CtKhachO for guests in this room
+            if (phongInfo.getDanhSachKhachCccd() != null) {
+                createCtKhachOFromGuests(savedCtPhieuThue, phongInfo.getDanhSachKhachCccd());
+            }
+        }
+    }
+
+    private BigDecimal getRoomPrice(Phong phong) {
+        try {
+            if (phong.getHangPhong() != null) {
+                return giaHangPhongRepository.findLatestPriceByHangPhong(
+                    phong.getHangPhong().getIdHangPhong(),
+                    LocalDate.now()
+                ).map(giaHangPhong -> giaHangPhong.getGia())
+                .orElse(BigDecimal.valueOf(500000)); // Default price
+            }
+        } catch (Exception e) {
+            System.err.println("Error getting room price: " + e.getMessage());
+        }
+        return BigDecimal.valueOf(500000); // Default price
+    }
+
+    private void createCtKhachOFromGuests(CtPhieuThue ctPhieuThue, List<String> guestCccds) {
+        // Guest assignment to rooms - to be implemented when needed
+    }
+
+    @Override
+    public Response getPhieuThueDetails(Integer idPt) {
+        Response response = new Response();
+        try {
+            PhieuThue phieuThue = phieuThueRepository.findById(idPt)
+                .orElseThrow(() -> new OurException("Phiếu thuê không tồn tại"));
+
+            PhieuThueDetailsDTO dto = EntityDTOMapper.mapPhieuThueToDetailsDTO(phieuThue);
+
+            // Get services for all rooms in this rental
+            List<PhieuThueDetailsDTO.ServiceDetailDTO> services = new ArrayList<>();
+            BigDecimal tongTienDichVu = BigDecimal.ZERO;
+
+            for (CtPhieuThue ctPhieuThue : phieuThue.getChiTietPhieuThue()) {
+                List<CtDichVu> ctDichVuList = ctDichVuRepository.findByCtPhieuThue(ctPhieuThue);
+                for (CtDichVu ctDichVu : ctDichVuList) {
+                    PhieuThueDetailsDTO.ServiceDetailDTO serviceDto = new PhieuThueDetailsDTO.ServiceDetailDTO();
+                    // Set composite key info
+                    if (ctDichVu.getId() != null) {
+                        serviceDto.setIdCtPt(ctDichVu.getId().getIdCtPt());
+                        serviceDto.setIdDv(ctDichVu.getId().getIdDv());
+                    }
+
+                    if (ctDichVu.getDichVu() != null) {
+                        serviceDto.setIdDv(ctDichVu.getDichVu().getIdDv());
+                        serviceDto.setTenDichVu(ctDichVu.getDichVu().getTenDv());
+                    }
+
+                    serviceDto.setGia(ctDichVu.getDonGia());
+                    serviceDto.setSoLuong(ctDichVu.getSoLuong());
+                    serviceDto.setNgaySD(ctDichVu.getNgaySuDung());
+
+                    if (ctPhieuThue.getPhong() != null) {
+                        serviceDto.setIdPhong(ctPhieuThue.getPhong().getSoPhong());
+                        serviceDto.setTenPhong(ctPhieuThue.getPhong().getSoPhong());
+                    }
+
+                    if (ctDichVu.getDonGia() != null && ctDichVu.getSoLuong() != null) {
+                        BigDecimal thanhTien = ctDichVu.getDonGia().multiply(BigDecimal.valueOf(ctDichVu.getSoLuong()));
+                        serviceDto.setThanhTien(thanhTien);
+                        tongTienDichVu = tongTienDichVu.add(thanhTien);
+                    }
+
+                    services.add(serviceDto);
+                }
+            }
+
+            // Get surcharges for all rooms in this rental
+            List<PhieuThueDetailsDTO.SurchargeDetailDTO> surcharges = new ArrayList<>();
+            BigDecimal tongTienPhuThu = BigDecimal.ZERO;
+
+            for (CtPhieuThue ctPhieuThue : phieuThue.getChiTietPhieuThue()) {
+                List<CtPhuThu> ctPhuThuList = ctPhuThuRepository.findByCtPhieuThue(ctPhieuThue);
+                for (CtPhuThu ctPhuThu : ctPhuThuList) {
+                    PhieuThueDetailsDTO.SurchargeDetailDTO surchargeDto = new PhieuThueDetailsDTO.SurchargeDetailDTO();
+                    // Set composite key info
+                    if (ctPhuThu.getId() != null) {
+                        surchargeDto.setIdPhuThu(ctPhuThu.getId().getIdPhuThu());
+                        surchargeDto.setIdCtPt(ctPhuThu.getId().getIdCtPt());
+                    }
+
+                    if (ctPhuThu.getPhuThu() != null) {
+                        surchargeDto.setLoaiPhuThu(ctPhuThu.getPhuThu().getTenPhuThu());
+                        surchargeDto.setMoTa(ctPhuThu.getPhuThu().getTenPhuThu()); // Use tenPhuThu as description
+                    }
+
+                    surchargeDto.setDonGia(ctPhuThu.getDonGia());
+                    surchargeDto.setSoLuong(ctPhuThu.getSoLuong());
+                    // Note: CtPhuThu doesn't have ngayPhatSinh field, using current date
+                    surchargeDto.setNgayPhatSinh(LocalDate.now());
+
+                    if (ctPhieuThue.getPhong() != null) {
+                        surchargeDto.setIdPhong(ctPhieuThue.getPhong().getSoPhong());
+                        surchargeDto.setTenPhong(ctPhieuThue.getPhong().getSoPhong());
+                    }
+
+                    if (ctPhuThu.getDonGia() != null && ctPhuThu.getSoLuong() != null) {
+                        BigDecimal thanhTien = ctPhuThu.getDonGia().multiply(BigDecimal.valueOf(ctPhuThu.getSoLuong()));
+                        surchargeDto.setThanhTien(thanhTien);
+                        tongTienPhuThu = tongTienPhuThu.add(thanhTien);
+                    }
+
+                    surcharges.add(surchargeDto);
+                }
+            }
+
+            // Update DTO with services and surcharges
+            dto.setServices(services);
+            dto.setTongTienDichVu(tongTienDichVu);
+            dto.setSurcharges(surcharges);
+            dto.setTongTienPhuThu(tongTienPhuThu);
+
+            // Recalculate total
+            BigDecimal tongTien = dto.getTongTienPhong().add(tongTienDichVu).add(tongTienPhuThu);
+            dto.setTongTien(tongTien);
+
+            response.setStatusCode(200);
+            response.setMessage("Thành công");
+            response.setPhieuThueDetails(dto);
+
+        } catch (OurException e) {
+            response.setStatusCode(404);
+            response.setMessage(e.getMessage());
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi lấy chi tiết phiếu thuê: " + e.getMessage());
+        }
+        return response;
+    }
+
+    @Override
+    public Response updatePaymentStatus(Integer idPt, String trangThaiThanhToan) {
+        Response response = new Response();
+        try {
+            PhieuThue phieuThue = phieuThueRepository.findById(idPt)
+                .orElseThrow(() -> new OurException("Phiếu thuê không tồn tại"));
+
+            // Update payment status for all CtPhieuThue
+            List<CtPhieuThue> ctPhieuThueList = ctPhieuThueRepository.findByPhieuThue(phieuThue);
+            for (CtPhieuThue ctPhieuThue : ctPhieuThueList) {
+                ctPhieuThue.setTtThanhToan(trangThaiThanhToan);
+                ctPhieuThueRepository.save(ctPhieuThue);
+            }
+
+            response.setStatusCode(200);
+            response.setMessage("Cập nhật trạng thái thanh toán thành công");
+
+        } catch (OurException e) {
+            response.setStatusCode(404);
+            response.setMessage(e.getMessage());
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi cập nhật trạng thái thanh toán: " + e.getMessage());
+        }
+        return response;
+    }
+
+    @Override
+    public Response getActiveRentalsWithoutInvoice() {
+        Response response = new Response();
+        try {
+            List<PhieuThue> phieuThueList = phieuThueRepository.findActiveRentalsWithoutInvoice();
+            response.setStatusCode(200);
+            response.setMessage("Thành công");
+            response.setPhieuThueList(EntityDTOMapper.mapPhieuThueListToDTO(phieuThueList));
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi lấy danh sách phiếu thuê chưa xuất hóa đơn: " + e.getMessage());
+        }
+        return response;
+    }
+
+
 }

@@ -2,21 +2,59 @@ package com.dev.Hotel.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import java.io.Serializable;
 
 @Data
 @Entity
 @Table(name = "ctkhacho")
+@IdClass(CtKhachO.CtKhachOId.class)
 public class CtKhachO {
-    @EmbeddedId
-    private CtKhachOId id;
-    
+
+    @Id
+    @Column(name = "ID_CT_PT")
+    private Integer idCtPt;
+
+    @Id
+    @Column(name = "CCCD")
+    private String cccd;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("idCtPt")
-    @JoinColumn(name = "ID_CT_PT")
+    @JoinColumn(name = "ID_CT_PT", insertable = false, updatable = false)
     private CtPhieuThue ctPhieuThue;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("cccd")
-    @JoinColumn(name = "CCCD")
+    @JoinColumn(name = "CCCD", insertable = false, updatable = false)
     private KhachHang khachHang;
+
+    // Composite Key Class as inner class
+    @Data
+    public static class CtKhachOId implements Serializable {
+        private Integer idCtPt;
+        private String cccd;
+
+        public CtKhachOId() {}
+
+        public CtKhachOId(Integer idCtPt, String cccd) {
+            this.idCtPt = idCtPt;
+            this.cccd = cccd;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            CtKhachOId that = (CtKhachOId) o;
+
+            if (!idCtPt.equals(that.idCtPt)) return false;
+            return cccd.equals(that.cccd);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = idCtPt.hashCode();
+            result = 31 * result + cccd.hashCode();
+            return result;
+        }
+    }
 }

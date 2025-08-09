@@ -21,7 +21,12 @@ public class CtPhieuThueDTO {
     
     // Phieu thue info
     private Integer idPt;
-    
+
+    // Khach hang info
+    private String tenKhachHang;
+    private String cccd;
+    private String sdtKhachHang;
+
     // Phong info
     private String soPhong;
     private Integer tang;

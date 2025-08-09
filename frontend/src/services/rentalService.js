@@ -112,6 +112,28 @@ export const rentalService = {
     }
   },
 
+  // Check-in from booking with specific room
+  checkInFromBookingWithRoom: async (checkInData) => {
+    try {
+      const response = await api.post('/api/phieu-thue/checkin-from-booking-with-room', checkInData)
+      return response.data
+    } catch (error) {
+      console.error('Error check-in from booking with room:', error)
+      throw error
+    }
+  },
+
+  // Check-in from booking with multiple rooms
+  checkInFromBookingWithMultipleRooms: async (checkInData) => {
+    try {
+      const response = await api.post('/api/phieu-thue/checkin-from-booking-multiple-rooms', checkInData)
+      return response.data
+    } catch (error) {
+      console.error('Error checking in from booking with multiple rooms:', error)
+      throw error
+    }
+  },
+
   // Walk-in check-in
   checkInWalkIn: async (rentalData) => {
     try {
@@ -130,6 +152,17 @@ export const rentalService = {
       return response.data
     } catch (error) {
       console.error('Error checking out:', error)
+      throw error
+    }
+  },
+
+  // Check-out with specific date
+  checkOutWithDate: async (rentalId, actualCheckOut) => {
+    try {
+      const response = await api.put(`/api/phieu-thue/checkout-with-date/${rentalId}?actualCheckOut=${actualCheckOut}`)
+      return response.data
+    } catch (error) {
+      console.error('Error checking out with date:', error)
       throw error
     }
   },
@@ -207,6 +240,28 @@ export const rentalService = {
       return response.data
     } catch (error) {
       console.error('Error fetching revenue report:', error)
+      throw error
+    }
+  },
+
+  // Get rental details with services and surcharges
+  getRentalDetails: async (rentalId) => {
+    try {
+      const response = await api.get(`/api/phieu-thue/details/${rentalId}`)
+      return response.data
+    } catch (error) {
+      console.error('Error fetching rental details:', error)
+      throw error
+    }
+  },
+
+  // Update payment status
+  updatePaymentStatus: async (rentalId, paymentStatus) => {
+    try {
+      const response = await api.put(`/api/phieu-thue/update-payment-status/${rentalId}?trangThaiThanhToan=${paymentStatus}`)
+      return response.data
+    } catch (error) {
+      console.error('Error updating payment status:', error)
       throw error
     }
   }

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PhieuDatRepository extends JpaRepository<PhieuDat, Integer> {
@@ -42,6 +43,39 @@ public interface PhieuDatRepository extends JpaRepository<PhieuDat, Integer> {
     @Query("SELECT COUNT(pd) FROM PhieuDat pd WHERE pd.ngayBdThue = :date AND pd.trangThai = :trangThai")
     long countByNgayBdThueAndTrangThai(@Param("date") LocalDate date, @Param("trangThai") String trangThai);
 
+    @Query("SELECT COUNT(pd) FROM PhieuDat pd WHERE pd.ngayDi = :date AND pd.trangThai = :trangThai")
+    long countByNgayDiAndTrangThai(@Param("date") LocalDate date, @Param("trangThai") String trangThai);
+
     @Query("SELECT pd FROM PhieuDat pd WHERE pd.ngayBdThue = :date AND pd.trangThai = :trangThai ORDER BY pd.ngayDat ASC")
     List<PhieuDat> findByNgayBdThueAndTrangThai(@Param("date") LocalDate date, @Param("trangThai") String trangThai);
+
+    // Query with JOIN to fetch chi tiet phieu dat and hang phong info
+    @Query("SELECT DISTINCT pd FROM PhieuDat pd " +
+           "LEFT JOIN FETCH pd.chiTietPhieuDat ctpd " +
+           "LEFT JOIN FETCH ctpd.hangPhong hp " +
+           "LEFT JOIN FETCH hp.kieuPhong kp " +
+           "LEFT JOIN FETCH hp.loaiPhong lp " +
+           "LEFT JOIN FETCH pd.khachHang kh " +
+           "LEFT JOIN FETCH pd.nhanVien nv")
+    List<PhieuDat> findAllWithDetails();
+
+    @Query("SELECT DISTINCT pd FROM PhieuDat pd " +
+           "LEFT JOIN FETCH pd.chiTietPhieuDat ctpd " +
+           "LEFT JOIN FETCH ctpd.hangPhong hp " +
+           "LEFT JOIN FETCH hp.kieuPhong kp " +
+           "LEFT JOIN FETCH hp.loaiPhong lp " +
+           "LEFT JOIN FETCH pd.khachHang kh " +
+           "LEFT JOIN FETCH pd.nhanVien nv " +
+           "WHERE pd.trangThai = :trangThai")
+    List<PhieuDat> findByTrangThaiWithDetails(@Param("trangThai") String trangThai);
+
+    @Query("SELECT DISTINCT pd FROM PhieuDat pd " +
+           "LEFT JOIN FETCH pd.chiTietPhieuDat ctpd " +
+           "LEFT JOIN FETCH ctpd.hangPhong hp " +
+           "LEFT JOIN FETCH hp.kieuPhong kp " +
+           "LEFT JOIN FETCH hp.loaiPhong lp " +
+           "LEFT JOIN FETCH pd.khachHang kh " +
+           "LEFT JOIN FETCH pd.nhanVien nv " +
+           "WHERE pd.idPd = :idPd")
+    Optional<PhieuDat> findByIdWithDetails(@Param("idPd") Integer idPd);
 }

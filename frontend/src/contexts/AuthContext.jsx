@@ -45,8 +45,6 @@ export const AuthProvider = ({ children }) => {
       if (response.statusCode === 200 || response.success) {
         const { token, role, nhanVien, khachHang, user } = response
 
-
-
         // Xử lý dữ liệu user từ backend
         let userData = {}
 

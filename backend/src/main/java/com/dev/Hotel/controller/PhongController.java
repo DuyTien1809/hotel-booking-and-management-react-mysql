@@ -15,7 +15,7 @@ import java.time.LocalDate;
 @RequestMapping("/api/phong")
 public class PhongController {
     
-    @Autowired
+    @Autowired      
     private IPhongService phongService;
     
     @GetMapping("/all")
@@ -26,11 +26,20 @@ public class PhongController {
     }
     
     @GetMapping("/get-by-id/{soPhong}")
-   // @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('EMPLOYEE')")
+   // @PreAuthorize("hasAuthorit    y('ADMIN') or hasAuthority('EMPLOYEE')")
     public ResponseEntity<Response> getPhongById(@PathVariable("soPhong") String soPhong) {
         Response response = phongService.getPhongById(soPhong);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
+
+    @GetMapping("/get-details/{soPhong}")
+    //@PreAuthorize("hasAuthority('ADMIN') or hasAuthority('EMPLOYEE')")
+    public ResponseEntity<Response> getPhongDetails(@PathVariable String soPhong) {
+        Response response = phongService.getPhongDetails(soPhong);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+
     
     @PostMapping("/create")
     //@PreAuthorize("hasAuthority('ADMIN')")
@@ -43,6 +52,15 @@ public class PhongController {
    // @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Response> updatePhong(@PathVariable("soPhong") String soPhong, @RequestBody Phong phong) {
         Response response = phongService.updatePhong(soPhong, phong);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    @PutMapping("/update-type-category/{soPhong}")
+    public ResponseEntity<Response> updateRoomTypeAndCategory(
+            @PathVariable String soPhong,
+            @RequestParam(required = false) String idKieuPhong,
+            @RequestParam(required = false) String idLoaiPhong) {
+        Response response = phongService.updateRoomTypeAndCategory(soPhong, idKieuPhong, idLoaiPhong);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
     
@@ -83,8 +101,10 @@ public class PhongController {
     @GetMapping("/available-by-date")
     public ResponseEntity<Response> getAvailableRoomsByDateRange(
             @RequestParam("checkIn") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
-            @RequestParam("checkOut") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut) {
-        Response response = phongService.getAvailableRoomsByDateRange(checkIn, checkOut);
+            @RequestParam("checkOut") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut,
+            @RequestParam(value = "idKp", required = false) String idKp,
+            @RequestParam(value = "idLp", required = false) String idLp) {
+        Response response = phongService.getAvailableRoomsByDateRange(checkIn, checkOut, idKp, idLp);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
     

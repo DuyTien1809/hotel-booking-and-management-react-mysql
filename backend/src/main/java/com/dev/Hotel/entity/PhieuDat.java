@@ -5,12 +5,12 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
-@EqualsAndHashCode(callSuper = false)
 @Entity
 @Table(name = "phieudat")
-public class PhieuDat extends BaseAuditEntity {
+public class PhieuDat {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ID_PD")
@@ -38,4 +38,7 @@ public class PhieuDat extends BaseAuditEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_NV")
     private NhanVien nhanVien;
+
+    @OneToMany(mappedBy = "phieuDat", cascade = CascadeType.ALL)
+    private List<CtPhieuDat> chiTietPhieuDat;
 }

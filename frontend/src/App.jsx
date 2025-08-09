@@ -11,6 +11,8 @@ import RoomListPage from './pages/public/RoomListPage'
 import RoomDetailPage from './pages/public/RoomDetailPage'
 import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
+import ForgotPassword from './pages/auth/ForgotPassword'
+import ResetPassword from './pages/auth/ResetPassword'
 
 // Common pages
 import ProfilePage from './pages/common/ProfilePage'
@@ -25,9 +27,13 @@ import CustomerProfile from './pages/customer/CustomerProfile'
 import StaffDashboard from './pages/staff/StaffDashboard'
 import ReservationManagement from './pages/staff/ReservationManagement'
 import CheckInPage from './pages/staff/CheckInPage'
+import RentalManagement from './pages/staff/RentalManagement'
+
 import CheckOutPage from './pages/staff/CheckOutPage'
+import InvoicePage from './pages/staff/InvoicePage'
 import WalkInCheckIn from './pages/staff/WalkInCheckIn'
-import QuickReports from './pages/staff/QuickReports'
+import StaffRoomManagement from './pages/staff/RoomManagement'
+import StaffServiceManagement from './pages/staff/ServiceManagement'
 
 // Admin pages (Quản lý)
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -55,6 +61,8 @@ function App() {
             <Route path="rooms/:id" element={<RoomDetailPage />} />
             <Route path="login" element={<LoginPage />} />
             <Route path="register" element={<RegisterPage />} />
+            <Route path="forgot-password" element={<ForgotPassword />} />
+            <Route path="reset-password/:token" element={<ResetPassword />} />
           </Route>
 
           {/* Customer Routes */}
@@ -78,9 +86,13 @@ function App() {
             <Route index element={<StaffDashboard />} />
             <Route path="reservations" element={<ReservationManagement />} />
             <Route path="checkin" element={<CheckInPage />} />
+            <Route path="rentals" element={<RentalManagement />} />
+
             <Route path="checkout" element={<CheckOutPage />} />
+            <Route path="invoices" element={<InvoicePage />} />
             <Route path="walkin" element={<WalkInCheckIn />} />
-            <Route path="reports" element={<QuickReports />} />
+            <Route path="rooms" element={<StaffRoomManagement />} />
+            <Route path="services" element={<StaffServiceManagement />} />
           </Route>
 
           {/* Admin Routes (Quản lý) */}

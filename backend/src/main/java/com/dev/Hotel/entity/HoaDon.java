@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
 
 @Data
 @Entity
@@ -28,12 +27,6 @@ public class HoaDon {
     private NhanVien nhanVien;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_CT_PT")
-    private CtPhieuThue ctPhieuThue;
-    
-    @OneToMany(mappedBy = "hoaDon", cascade = CascadeType.ALL)
-    private List<CtDichVu> danhSachDichVu;
-    
-    @OneToMany(mappedBy = "hoaDon", cascade = CascadeType.ALL)
-    private List<CtPhuThu> danhSachPhuThu;
+    @JoinColumn(name = "ID_PT")
+    private PhieuThue phieuThue;
 }

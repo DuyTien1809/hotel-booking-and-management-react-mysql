@@ -64,6 +64,33 @@ public class JWTUtils {
         }
     }
 
+    // Tạo JWT token cho reset password (hết hạn sau 1 giờ)
+    public String generatePasswordResetToken(String email) {
+        return Jwts.builder()
+                .subject(email)
+                .claim("type", "password_reset")
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + (1000 * 60 * 60))) // 1 giờ
+                .signWith(Key)
+                .compact();
+    }
+
+    // Validate password reset token
+    public boolean isPasswordResetTokenValid(String token, String email) {
+        try {
+            String extractedEmail = extractClaims(token, Claims::getSubject);
+            String tokenType = extractClaims(token, claims -> (String) claims.get("type"));
+
+            return extractedEmail.equals(email) &&
+                   "password_reset".equals(tokenType) &&
+                   !isTokenExpired(token);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+
+
     private <T> T extractClaims(String token, Function<Claims, T> claimsTFunction) {
         try {
             return claimsTFunction.apply(Jwts.parser().verifyWith(Key).build().parseSignedClaims(token).getPayload());

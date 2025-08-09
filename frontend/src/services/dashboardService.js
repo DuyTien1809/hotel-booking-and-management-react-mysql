@@ -6,7 +6,7 @@ export const dashboardService = {
   getStaffStats: async () => {
     try {
       const response = await api.get('/api/dashboard/staff/stats')
-      console.log('Dashboard API response:', response.data) // Debug log
+
       return response.data
     } catch (error) {
       console.error('Error fetching staff stats:', error)
@@ -32,6 +32,17 @@ export const dashboardService = {
       return response.data
     } catch (error) {
       console.error('Error fetching today check-outs:', error)
+      throw error
+    }
+  },
+
+  // Get current guests (checked-in but not checked-out) for checkout page
+  getCurrentGuests: async () => {
+    try {
+      const response = await api.get('/api/dashboard/staff/current-guests')
+      return response.data
+    } catch (error) {
+      console.error('Error fetching current guests:', error)
       throw error
     }
   }

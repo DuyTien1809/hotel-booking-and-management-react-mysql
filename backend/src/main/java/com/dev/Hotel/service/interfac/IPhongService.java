@@ -10,6 +10,7 @@ public interface IPhongService {
     // CRUD operations
     Response getAllPhong();
     Response getPhongById(String soPhong);
+    Response getPhongDetails(String soPhong);
     Response createPhong(Phong phong);
     Response updatePhong(String soPhong, Phong phong);
     Response deletePhong(String soPhong);
@@ -20,12 +21,14 @@ public interface IPhongService {
     Response getMaintenanceRooms();
     Response getCleaningRooms();
     Response getAvailableRoomsByDateRange(LocalDate checkIn, LocalDate checkOut);
+    Response getAvailableRoomsByDateRange(LocalDate checkIn, LocalDate checkOut, String idKp, String idLp);
     Response getPhongByHangPhong(Integer idHangPhong);
     Response getPhongByTang(Integer tang);
     Response getPhongByTrangThai(String idTrangThai);
     
     // Room management
     Response updateRoomStatus(String soPhong, String idTrangThai);
+    Response updateRoomTypeAndCategory(String soPhong, String idKieuPhong, String idLoaiPhong);
     Response getRoomsByType(String idKieuPhong);
     Response getRoomsByCategory(String idLoaiPhong);
     

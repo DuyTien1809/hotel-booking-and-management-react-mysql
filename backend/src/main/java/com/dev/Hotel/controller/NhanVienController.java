@@ -10,20 +10,21 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/nhanvien")
+@CrossOrigin(origins = "*")
 public class NhanVienController {
     
     @Autowired
     private INhanVienService nhanVienService;
     
     @PostMapping("/register")
-//    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Response> register(@RequestBody NhanVien nhanVien) {
         Response response = nhanVienService.register(nhanVien);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
     
     @GetMapping("/all")
-//    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Response> getAllNhanVien() {
         Response response = nhanVienService.getAllNhanVien();
         return ResponseEntity.status(response.getStatusCode()).body(response);
@@ -87,6 +88,8 @@ public class NhanVienController {
         Response response = nhanVienService.getMyInfo(email);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
+
+
     
     @GetMapping("/by-bo-phan/{idBp}")
 //    @PreAuthorize("hasAuthority('ADMIN')")

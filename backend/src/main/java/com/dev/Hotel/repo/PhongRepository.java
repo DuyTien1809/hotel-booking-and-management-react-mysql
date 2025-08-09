@@ -37,6 +37,9 @@ public interface PhongRepository extends JpaRepository<Phong, String> {
     @Query("SELECT p FROM Phong p WHERE p.trangThai.tenTrangThai = 'Đang dọn dẹp'")
     List<Phong> findCleaningRooms();
 
+    @Query("SELECT p FROM Phong p JOIN FETCH p.trangThai JOIN FETCH p.hangPhong hp JOIN FETCH hp.kieuPhong JOIN FETCH hp.loaiPhong")
+    List<Phong> findAllWithTrangThai();
+
     // Dashboard specific queries
     @Query("SELECT COUNT(p) FROM Phong p WHERE p.trangThai.idTt = :trangThaiId")
     long countByTrangThai_IdTrangThai(@Param("trangThaiId") String trangThaiId);

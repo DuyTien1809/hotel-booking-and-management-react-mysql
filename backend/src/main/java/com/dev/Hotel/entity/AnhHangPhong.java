@@ -1,5 +1,6 @@
 package com.dev.Hotel.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -14,6 +15,7 @@ public class AnhHangPhong {
     @Column(name = "URL_ANH")
     private String urlAnh;
     
+    @JsonBackReference("hangphong-anh")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_HANG_PHONG")
     private HangPhong hangPhong;

@@ -43,4 +43,41 @@ public class AuthController {
         }
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Response> forgotPassword(@RequestParam("email") String email) {
+        // Thử tìm khách hàng trước
+        Response response = customerService.forgotPassword(email);
+
+        // Nếu không tìm thấy khách hàng, thử tìm nhân viên
+        if (response.getStatusCode() == 404) {
+            response = nhanVienService.forgotPassword(email);
+        }
+
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Response> resetPassword(
+            @RequestParam("token") String token,
+            @RequestParam("newPassword") String newPassword) {
+
+        try {
+            // Thử reset cho khách hàng trước
+            Response response = customerService.resetPassword(token, newPassword);
+
+            // Nếu không tìm thấy khách hàng, thử nhân viên
+            if (response.getStatusCode() == 404) {
+                response = nhanVienService.resetPassword(token, newPassword);
+            }
+
+            return ResponseEntity.status(response.getStatusCode()).body(response);
+
+        } catch (Exception e) {
+            Response response = new Response();
+            response.setStatusCode(400);
+            response.setMessage("Token không hợp lệ");
+            return ResponseEntity.status(400).body(response);
+        }
+    }
 }

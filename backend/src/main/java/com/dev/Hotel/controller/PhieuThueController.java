@@ -1,5 +1,8 @@
 package com.dev.Hotel.controller;
 
+import com.dev.Hotel.dto.CheckInWalkInRequest;
+import com.dev.Hotel.dto.CheckInWithRoomRequest;
+import com.dev.Hotel.dto.CheckInMultipleRoomsRequest;
 import com.dev.Hotel.dto.Response;
 import com.dev.Hotel.entity.PhieuThue;
 import com.dev.Hotel.service.interfac.IPhieuThueService;
@@ -25,12 +28,21 @@ public class PhieuThueController {
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
+    @GetMapping("/active-without-invoice")
+    //@PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
+    public ResponseEntity<Response> getActiveRentalsWithoutInvoice() {
+        Response response = phieuThueService.getActiveRentalsWithoutInvoice();
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
     @GetMapping("/get-by-id/{idPt}")
     //@PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN') or hasAuthority('CUSTOMER')")
     public ResponseEntity<Response> getPhieuThueById(@PathVariable("idPt") Integer idPt) {
         Response response = phieuThueService.getPhieuThueById(idPt);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
+
+
 
     @PostMapping("/create")
     //@PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
@@ -89,10 +101,24 @@ public class PhieuThueController {
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
+    @PostMapping("/checkin-from-booking-with-room")
+    //@PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
+    public ResponseEntity<Response> checkInFromBookingWithRoom(@RequestBody CheckInWithRoomRequest request) {
+        Response response = phieuThueService.checkInFromBookingWithRoom(request);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    @PostMapping("/checkin-from-booking-multiple-rooms")
+    //@PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
+    public ResponseEntity<Response> checkInFromBookingWithMultipleRooms(@RequestBody CheckInMultipleRoomsRequest request) {
+        Response response = phieuThueService.checkInFromBookingWithMultipleRooms(request);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
     @PostMapping("/checkin-walkin")
     //@PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
-    public ResponseEntity<Response> checkInWalkIn(@RequestBody PhieuThue phieuThue) {
-        Response response = phieuThueService.checkInWalkIn(phieuThue);
+    public ResponseEntity<Response> checkInWalkIn(@RequestBody CheckInWalkInRequest request) {
+        Response response = phieuThueService.checkInWalkIn(request);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
@@ -100,6 +126,15 @@ public class PhieuThueController {
     //@PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
     public ResponseEntity<Response> checkOut(@PathVariable("idPt") Integer idPt) {
         Response response = phieuThueService.checkOut(idPt);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    @PutMapping("/checkout-with-date/{idPt}")
+    //@PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
+    public ResponseEntity<Response> checkOutWithDate(
+            @PathVariable("idPt") Integer idPt,
+            @RequestParam("actualCheckOut") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate actualCheckOut) {
+        Response response = phieuThueService.checkOutWithDate(idPt, actualCheckOut);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
@@ -154,6 +189,21 @@ public class PhieuThueController {
             @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         Response response = phieuThueService.getRevenueReport(startDate, endDate);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    @GetMapping("/details/{idPt}")
+    //@PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
+    public ResponseEntity<Response> getPhieuThueDetails(@PathVariable("idPt") Integer idPt) {
+        Response response = phieuThueService.getPhieuThueDetails(idPt);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    @PutMapping("/update-payment-status/{idPt}")
+    //@PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
+    public ResponseEntity<Response> updatePaymentStatus(@PathVariable("idPt") Integer idPt,
+                                                       @RequestParam("trangThaiThanhToan") String trangThaiThanhToan) {
+        Response response = phieuThueService.updatePaymentStatus(idPt, trangThaiThanhToan);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 }

@@ -73,6 +73,28 @@ export const roomService = {
     }
   },
 
+  // Get room details with full information (including prices)
+  async getRoomDetails(roomId) {
+    try {
+      const response = await api.get(`/api/phong/get-details/${roomId}`)
+      return response.data
+    } catch (error) {
+      throw error.response?.data || error.message
+    }
+  },
+
+  // Update room status
+  async updateRoomStatus(roomId, statusId) {
+    try {
+      const response = await api.put(`/api/phong/update-status/${roomId}`, null, {
+        params: { idTrangThai: statusId }
+      })
+      return response.data
+    } catch (error) {
+      throw error.response?.data || error.message
+    }
+  },
+
   // Get rooms by hang phong (room category)
   async getRoomsByHangPhong(hangPhongId) {
     try {
@@ -103,17 +125,7 @@ export const roomService = {
     }
   },
 
-  // Update room status
-  async updateRoomStatus(roomId, statusId) {
-    try {
-      const response = await api.put(`/api/phong/update-status/${roomId}`, null, {
-        params: { idTrangThai: statusId }
-      })
-      return response.data
-    } catch (error) {
-      throw error.response?.data || error.message
-    }
-  },
+
 
   // Check room availability
   async checkRoomAvailability(roomId, checkIn, checkOut) {
@@ -173,6 +185,40 @@ export const roomService = {
   async deleteRoom(roomId) {
     try {
       const response = await api.delete(`/api/phong/delete/${roomId}`)
+      return response.data
+    } catch (error) {
+      throw error.response?.data || error.message
+    }
+  },
+
+  // Get all room types (KieuPhong)
+  async getAllRoomTypes() {
+    try {
+      const response = await api.get('/api/kieu-phong/all')
+      return response.data
+    } catch (error) {
+      throw error.response?.data || error.message
+    }
+  },
+
+  // Get all room categories (LoaiPhong)
+  async getAllRoomCategories() {
+    try {
+      const response = await api.get('/api/loai-phong/all')
+      return response.data
+    } catch (error) {
+      throw error.response?.data || error.message
+    }
+  },
+
+  // Update room type and category only
+  async updateRoomTypeAndCategory(roomId, roomData) {
+    try {
+      const params = new URLSearchParams()
+      if (roomData.idKieuPhong) params.append('idKieuPhong', roomData.idKieuPhong)
+      if (roomData.idLoaiPhong) params.append('idLoaiPhong', roomData.idLoaiPhong)
+
+      const response = await api.put(`/api/phong/update-type-category/${roomId}?${params.toString()}`)
       return response.data
     } catch (error) {
       throw error.response?.data || error.message

@@ -5,10 +5,12 @@ import com.dev.Hotel.dto.Response;
 import com.dev.Hotel.entity.NhanVien;
 import com.dev.Hotel.exception.OurException;
 import com.dev.Hotel.repo.NhanVienRepository;
+import com.dev.Hotel.service.EmailService;
 import com.dev.Hotel.service.interfac.INhanVienService;
 import com.dev.Hotel.utils.EntityDTOMapper;
 import com.dev.Hotel.utils.JWTUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,12 +24,17 @@ public class NhanVienService implements INhanVienService {
     
     @Autowired
     private NhanVienRepository nhanVienRepository;
+
+
     
     @Autowired
     private PasswordEncoder passwordEncoder;
     
     @Autowired
     private JWTUtils jwtUtils;
+
+    @Autowired
+    private EmailService emailService;
     
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -330,5 +337,82 @@ public class NhanVienService implements INhanVienService {
             response.setMessage("Lỗi khi vô hiệu hóa nhân viên: " + e.getMessage());
         }
         return response;
+    }
+
+    @Override
+    public Response forgotPassword(String email) {
+        Response response = new Response();
+        try {
+            // Tìm nhân viên theo email
+            NhanVien nhanVien = nhanVienRepository.findByEmail(email).orElse(null);
+            if (nhanVien == null) {
+                response.setStatusCode(404);
+                response.setMessage("Không tìm thấy tài khoản với email này");
+                return response;
+            }
+
+            // Tạo JWT token cho reset password (hết hạn sau 1 giờ)
+            String resetToken = jwtUtils.generatePasswordResetToken(email);
+
+            // Gửi email với link reset password
+            emailService.sendPasswordResetEmail(email, resetToken);
+
+            response.setStatusCode(200);
+            response.setMessage("Link đặt lại mật khẩu đã được gửi đến email của bạn");
+            response.setToken(resetToken); // Tạm thời trả về token để test
+
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi xử lý yêu cầu đặt lại mật khẩu: " + e.getMessage());
+        }
+        return response;
+    }
+
+    @Override
+    public Response resetPassword(String token, String newPassword) {
+        Response response = new Response();
+        try {
+            // Extract email từ JWT token
+            String email;
+            try {
+                email = jwtUtils.extractUsername(token);
+            } catch (Exception e) {
+                response.setStatusCode(400);
+                response.setMessage("Token không hợp lệ");
+                return response;
+            }
+
+            // Validate token
+            if (!jwtUtils.isPasswordResetTokenValid(token, email)) {
+                response.setStatusCode(400);
+                response.setMessage("Token không hợp lệ hoặc đã hết hạn");
+                return response;
+            }
+
+            // Tìm nhân viên
+            NhanVien nhanVien = nhanVienRepository.findByEmail(email).orElse(null);
+            if (nhanVien == null) {
+                response.setStatusCode(404);
+                response.setMessage("Không tìm thấy tài khoản");
+                return response;
+            }
+
+            // Cập nhật mật khẩu
+            nhanVien.setPassword(passwordEncoder.encode(newPassword));
+            nhanVienRepository.save(nhanVien);
+
+            response.setStatusCode(200);
+            response.setMessage("Đặt lại mật khẩu thành công");
+
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi đặt lại mật khẩu: " + e.getMessage());
+        }
+        return response;
+    }
+
+    @Override
+    public String extractEmailFromToken(String token) {
+        return jwtUtils.extractUsername(token);
     }
 }

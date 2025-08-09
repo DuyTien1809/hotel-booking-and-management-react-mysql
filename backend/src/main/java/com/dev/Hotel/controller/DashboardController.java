@@ -89,6 +89,13 @@ public class DashboardController {
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
+    @GetMapping("/staff/current-guests")
+    //@PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
+    public ResponseEntity<Response> getCurrentGuests() {
+        Response response = dashboardService.getCurrentGuests();
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
     @GetMapping("/staff/pending-reservations")
     //@PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
     public ResponseEntity<Response> getPendingReservations() {

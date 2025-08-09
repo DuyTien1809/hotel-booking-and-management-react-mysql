@@ -20,7 +20,7 @@ public class KhachHang {
     private String ho;
 
     @NotBlank(message = "Tên không được để trống")
-    @Size(max = 50, message = "Tên không được quá 50 ký tự")
+    @Size(max = 10, message = "Tên không được quá 50 ký tự")
     @Column(name = "TEN")
     private String ten;
 
@@ -29,11 +29,11 @@ public class KhachHang {
     private String sdt;
 
     @Email(message = "Email không hợp lệ")
-    @Size(max = 100, message = "Email không được quá 100 ký tự")
+    @Size(max = 50, message = "Email không được quá 100 ký tự")
     @Column(name = "EMAIL")
     private String email;
 
-    @Size(max = 200, message = "Địa chỉ không được quá 200 ký tự")
+    @Size(max = 100, message = "Địa chỉ không được quá 200 ký tự")
     @Column(name = "DIA_CHI")
     private String diaChi;
 

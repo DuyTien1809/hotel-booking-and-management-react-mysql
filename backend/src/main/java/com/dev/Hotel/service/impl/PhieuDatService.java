@@ -1,19 +1,33 @@
 package com.dev.Hotel.service.impl;
 
 import com.dev.Hotel.dto.Response;
+import com.dev.Hotel.dto.CreateBookingAtReceptionRequest;
+import com.dev.Hotel.dto.UpdateBookingRequest;
 import com.dev.Hotel.entity.PhieuDat;
+import com.dev.Hotel.entity.KhachHang;
+import com.dev.Hotel.entity.CtPhieuDat;
 import com.dev.Hotel.entity.NhanVien;
+import com.dev.Hotel.entity.HangPhong;
+import com.dev.Hotel.entity.GiaHangPhong;
+import com.dev.Hotel.entity.CtPhieuDatId;
 import com.dev.Hotel.exception.OurException;
 import com.dev.Hotel.repo.PhieuDatRepository;
 import com.dev.Hotel.repo.KhachHangRepository;
 import com.dev.Hotel.repo.NhanVienRepository;
+import com.dev.Hotel.repo.HangPhongRepository;
+import com.dev.Hotel.repo.GiaHangPhongRepository;
+import com.dev.Hotel.repo.CtPhieuDatRepository;
+import com.dev.Hotel.repo.KieuPhongRepository;
+import com.dev.Hotel.repo.LoaiPhongRepository;
 import com.dev.Hotel.service.interfac.IPhieuDatService;
 import com.dev.Hotel.utils.EntityDTOMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class PhieuDatService implements IPhieuDatService {
@@ -27,11 +41,26 @@ public class PhieuDatService implements IPhieuDatService {
     @Autowired
     private NhanVienRepository nhanVienRepository;
 
+    @Autowired
+    private HangPhongRepository hangPhongRepository;
+
+    @Autowired
+    private GiaHangPhongRepository giaHangPhongRepository;
+
+    @Autowired
+    private CtPhieuDatRepository ctPhieuDatRepository;
+
+    @Autowired
+    private KieuPhongRepository kieuPhongRepository;
+
+    @Autowired
+    private LoaiPhongRepository loaiPhongRepository;
+
     @Override
     public Response getAllPhieuDat() {
         Response response = new Response();
         try {
-            List<PhieuDat> phieuDatList = phieuDatRepository.findAll();
+            List<PhieuDat> phieuDatList = phieuDatRepository.findAllWithDetails();
             response.setStatusCode(200);
             response.setMessage("Thành công");
             response.setPhieuDatList(EntityDTOMapper.mapPhieuDatListToDTO(phieuDatList));
@@ -46,13 +75,13 @@ public class PhieuDatService implements IPhieuDatService {
     public Response getPhieuDatById(Integer idPd) {
         Response response = new Response();
         try {
-            PhieuDat phieuDat = phieuDatRepository.findById(idPd)
+            PhieuDat phieuDat = phieuDatRepository.findByIdWithDetails(idPd)
                 .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
-            
+
             response.setStatusCode(200);
             response.setMessage("Thành công");
             response.setPhieuDat(EntityDTOMapper.mapPhieuDatToDTO(phieuDat));
-            
+
         } catch (OurException e) {
             response.setStatusCode(404);
             response.setMessage(e.getMessage());
@@ -91,7 +120,7 @@ public class PhieuDatService implements IPhieuDatService {
     public Response updatePhieuDat(Integer idPd, PhieuDat phieuDat) {
         Response response = new Response();
         try {
-            PhieuDat existingPhieuDat = phieuDatRepository.findById(idPd)
+            PhieuDat existingPhieuDat = phieuDatRepository.findByIdWithDetails(idPd)
                 .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
             
             // Update fields
@@ -180,7 +209,7 @@ public class PhieuDatService implements IPhieuDatService {
     public Response getPhieuDatByTrangThai(String trangThai) {
         Response response = new Response();
         try {
-            List<PhieuDat> phieuDatList = phieuDatRepository.findByTrangThai(trangThai);
+            List<PhieuDat> phieuDatList = phieuDatRepository.findByTrangThaiWithDetails(trangThai);
             response.setStatusCode(200);
             response.setMessage("Thành công");
             response.setPhieuDatList(EntityDTOMapper.mapPhieuDatListToDTO(phieuDatList));
@@ -260,20 +289,154 @@ public class PhieuDatService implements IPhieuDatService {
         try {
             PhieuDat phieuDat = phieuDatRepository.findById(idPd)
                 .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
-            
+
             phieuDat.setTrangThai(trangThai);
             PhieuDat updatedPhieuDat = phieuDatRepository.save(phieuDat);
-            
+
             response.setStatusCode(200);
             response.setMessage("Cập nhật trạng thái thành công");
             response.setPhieuDat(EntityDTOMapper.mapPhieuDatToDTO(updatedPhieuDat));
-            
+
         } catch (OurException e) {
             response.setStatusCode(404);
             response.setMessage(e.getMessage());
         } catch (Exception e) {
             response.setStatusCode(500);
             response.setMessage("Lỗi khi cập nhật trạng thái: " + e.getMessage());
+        }
+        return response;
+    }
+
+    @Override
+    public Response updateBookingSimple(Integer idPd, UpdateBookingRequest request) {
+        Response response = new Response();
+        try {
+            PhieuDat phieuDat = phieuDatRepository.findByIdWithDetails(idPd)
+                .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
+
+            // Update basic booking info
+            if (request.getCheckIn() != null) {
+                phieuDat.setNgayBdThue(request.getCheckIn());
+            }
+            if (request.getCheckOut() != null) {
+                phieuDat.setNgayDi(request.getCheckOut());
+            }
+            if (request.getStatus() != null) {
+                phieuDat.setTrangThai(request.getStatus());
+            }
+            if (request.getSoTienCoc() != null) {
+                phieuDat.setSoTienCoc(request.getSoTienCoc());
+            }
+
+            // Update customer info
+            if (phieuDat.getKhachHang() != null &&
+                (request.getCustomerName() != null || request.getCustomerPhone() != null || request.getCustomerEmail() != null)) {
+
+                KhachHang khachHang = phieuDat.getKhachHang();
+
+                if (request.getCustomerName() != null) {
+                    String[] nameParts = request.getCustomerName().trim().split("\\s+");
+                    if (nameParts.length > 1) {
+                        khachHang.setHo(String.join(" ", java.util.Arrays.copyOf(nameParts, nameParts.length - 1)));
+                        khachHang.setTen(nameParts[nameParts.length - 1]);
+                    } else {
+                        khachHang.setTen(request.getCustomerName());
+                    }
+                }
+                if (request.getCustomerPhone() != null) {
+                    khachHang.setSdt(request.getCustomerPhone());
+                }
+                if (request.getCustomerEmail() != null) {
+                    khachHang.setEmail(request.getCustomerEmail());
+                }
+            }
+
+            // Update room info in CtPhieuDat if needed
+            if (!phieuDat.getChiTietPhieuDat().isEmpty()) {
+                CtPhieuDat ctPhieuDat = phieuDat.getChiTietPhieuDat().get(0);
+
+                // Update số lượng phòng ở
+                if (request.getSoLuongPhongO() != null) {
+                    ctPhieuDat.setSoLuongPhongO(request.getSoLuongPhongO());
+                }
+
+                // Update kiểu phòng và loại phòng nếu có
+                if (request.getKieuPhong() != null || request.getLoaiPhong() != null) {
+                    // Lấy thông tin hiện tại của hạng phòng
+                    HangPhong currentHangPhong = ctPhieuDat.getHangPhong();
+                    String currentIdKp = currentHangPhong != null ? currentHangPhong.getKieuPhong().getIdKp() : null;
+                    String currentIdLp = currentHangPhong != null ? currentHangPhong.getLoaiPhong().getIdLp() : null;
+
+                    // Tìm kiểu phòng mới nếu có
+                    String newIdKp = currentIdKp;
+                    if (request.getKieuPhong() != null) {
+                        var kieuPhong = kieuPhongRepository.findByTenKp(request.getKieuPhong());
+                        if (kieuPhong.isPresent()) {
+                            newIdKp = kieuPhong.get().getIdKp();
+                        }
+                    }
+
+                    // Tìm loại phòng mới nếu có
+                    String newIdLp = currentIdLp;
+                    if (request.getLoaiPhong() != null) {
+                        var loaiPhong = loaiPhongRepository.findByTenLp(request.getLoaiPhong());
+                        if (loaiPhong.isPresent()) {
+                            newIdLp = loaiPhong.get().getIdLp();
+                        }
+                    }
+
+                    // Nếu kiểu phòng hoặc loại phòng thay đổi, cần tạo record mới
+                    if ((newIdKp != null && !newIdKp.equals(currentIdKp)) ||
+                        (newIdLp != null && !newIdLp.equals(currentIdLp))) {
+
+                        // Tìm hạng phòng tương ứng với kiểu phòng và loại phòng mới
+                        if (newIdKp != null && newIdLp != null) {
+                            List<HangPhong> hangPhongList = hangPhongRepository.findByKieuPhongAndLoaiPhong(newIdKp, newIdLp);
+                            if (!hangPhongList.isEmpty()) {
+                                HangPhong newHangPhong = hangPhongList.get(0);
+
+                                // Xóa record cũ
+                                ctPhieuDatRepository.delete(ctPhieuDat);
+                                phieuDat.getChiTietPhieuDat().remove(ctPhieuDat);
+
+                                // Tạo record mới với hạng phòng mới
+                                CtPhieuDat newCtPhieuDat = new CtPhieuDat();
+                                CtPhieuDatId newId = new CtPhieuDatId();
+                                newId.setIdPd(phieuDat.getIdPd());
+                                newId.setIdHangPhong(newHangPhong.getIdHangPhong());
+
+                                newCtPhieuDat.setId(newId);
+                                newCtPhieuDat.setPhieuDat(phieuDat);
+                                newCtPhieuDat.setHangPhong(newHangPhong);
+                                newCtPhieuDat.setSoLuongPhongO(ctPhieuDat.getSoLuongPhongO());
+                                newCtPhieuDat.setDonGia(ctPhieuDat.getDonGia());
+
+                                // Cập nhật số lượng phòng nếu có
+                                if (request.getSoLuongPhongO() != null) {
+                                    newCtPhieuDat.setSoLuongPhongO(request.getSoLuongPhongO());
+                                }
+
+                                // Save record mới
+                                ctPhieuDatRepository.save(newCtPhieuDat);
+                                phieuDat.getChiTietPhieuDat().add(newCtPhieuDat);
+                            }
+                        }
+                    }
+                }
+            }
+
+            PhieuDat updatedPhieuDat = phieuDatRepository.save(phieuDat);
+
+            response.setStatusCode(200);
+            response.setMessage("Cập nhật đặt phòng thành công");
+            response.setPhieuDat(EntityDTOMapper.mapPhieuDatToDTO(updatedPhieuDat));
+
+        } catch (OurException e) {
+            response.setStatusCode(404);
+            response.setMessage(e.getMessage());
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi cập nhật đặt phòng: " + e.getMessage());
         }
         return response;
     }
@@ -345,7 +508,7 @@ public class PhieuDatService implements IPhieuDatService {
     public Response getConfirmedBookings() {
         Response response = new Response();
         try {
-            List<PhieuDat> phieuDatList = phieuDatRepository.findByTrangThai("Đã xác nhận");
+            List<PhieuDat> phieuDatList = phieuDatRepository.findByTrangThaiWithDetails("Đã xác nhận");
             // Sắp xếp theo ngày bắt đầu thuê
             phieuDatList.sort((a, b) -> {
                 if (a.getNgayBdThue() == null && b.getNgayBdThue() == null) return 0;
@@ -370,5 +533,122 @@ public class PhieuDatService implements IPhieuDatService {
             return false;
         }
         return checkIn.isBefore(checkOut) && !checkIn.isBefore(LocalDate.now());
+    }
+
+    @Override
+    public Response createBookingAtReception(CreateBookingAtReceptionRequest request) {
+        Response response = new Response();
+        try {
+            // Validate input
+            if (request.getCccd() == null || request.getCccd().trim().isEmpty()) {
+                throw new OurException("CCCD không được để trống");
+            }
+            if (request.getNgayBdThue() == null || request.getNgayDi() == null) {
+                throw new OurException("Ngày bắt đầu và ngày kết thúc không được để trống");
+            }
+            if (!isValidBookingPeriod(request.getNgayBdThue(), request.getNgayDi())) {
+                throw new OurException("Khoảng thời gian đặt phòng không hợp lệ");
+            }
+
+            // Validate employee ID
+            if (request.getIdNv() == null || request.getIdNv().trim().isEmpty()) {
+                throw new OurException("ID nhân viên không được để trống");
+            }
+
+            // Validate room type and category
+            if (request.getIdKp() == null || request.getIdLp() == null) {
+                throw new OurException("Kiểu phòng và loại phòng không được để trống");
+            }
+
+            // Get room category and validate deposit
+            List<HangPhong> hangPhongList = hangPhongRepository.findByKieuPhongAndLoaiPhong(request.getIdKp(), request.getIdLp());
+            if (hangPhongList.isEmpty()) {
+                throw new OurException("Không tìm thấy hạng phòng với kiểu phòng và loại phòng này");
+            }
+
+            HangPhong hangPhong = hangPhongList.get(0);
+
+            // Get current room price
+            Optional<GiaHangPhong> giaHangPhong = giaHangPhongRepository.findLatestPriceByHangPhong(
+                hangPhong.getIdHangPhong(),
+                LocalDate.now()
+            );
+
+            BigDecimal roomPrice;
+            if (giaHangPhong.isPresent()) {
+                roomPrice = giaHangPhong.get().getGia();
+            } else {
+                roomPrice = BigDecimal.valueOf(500000); // Default price
+            }
+
+            // Validate deposit amount (must be >= 20% of room price)
+            BigDecimal minDeposit = roomPrice.multiply(BigDecimal.valueOf(0.2));
+            if (request.getTienDatCoc() == null || request.getTienDatCoc().compareTo(minDeposit) < 0) {
+                throw new OurException("Tiền đặt cọc phải ít nhất " + minDeposit.longValue() + " VNĐ (20% giá phòng)");
+            }
+
+            // Handle customer (new or existing)
+            KhachHang khachHang;
+            if (request.isNewCustomer()) {
+                // Create new customer
+                khachHang = new KhachHang();
+                khachHang.setCccd(request.getCccd());
+                khachHang.setHo(request.getHo());
+                khachHang.setTen(request.getTen());
+                khachHang.setSdt(request.getSdt());
+                khachHang.setEmail(request.getEmail());
+                khachHang.setDiaChi(request.getDiaChi());
+                khachHang = khachHangRepository.save(khachHang);
+            } else {
+                // Find existing customer
+                khachHang = khachHangRepository.findById(request.getCccd())
+                    .orElseThrow(() -> new OurException("Khách hàng không tồn tại"));
+            }
+
+            // Create PhieuDat
+            PhieuDat phieuDat = new PhieuDat();
+            phieuDat.setNgayDat(LocalDate.now());
+            phieuDat.setNgayBdThue(request.getNgayBdThue());
+            phieuDat.setNgayDi(request.getNgayDi());
+            phieuDat.setSoTienCoc(request.getTienDatCoc());
+            phieuDat.setTrangThai("Đã xác nhận");
+            phieuDat.setKhachHang(khachHang);
+
+            // Set employee
+            System.out.println("Setting employee with ID: " + request.getIdNv());
+            NhanVien nhanVien = nhanVienRepository.findById(request.getIdNv())
+                .orElseThrow(() -> new OurException("Nhân viên không tồn tại với ID: " + request.getIdNv()));
+            phieuDat.setNhanVien(nhanVien);
+            System.out.println("Employee set successfully: " + nhanVien.getIdNv() + " - " + nhanVien.getHo() + " " + nhanVien.getTen());
+
+            PhieuDat savedPhieuDat = phieuDatRepository.save(phieuDat);
+            System.out.println("PhieuDat saved with employee ID: " + savedPhieuDat.getNhanVien().getIdNv());
+
+            // Create CtPhieuDat
+            CtPhieuDat ctPhieuDat = new CtPhieuDat();
+            CtPhieuDatId ctPhieuDatId = new CtPhieuDatId();
+            ctPhieuDatId.setIdPd(savedPhieuDat.getIdPd());
+            ctPhieuDatId.setIdHangPhong(hangPhong.getIdHangPhong());
+
+            ctPhieuDat.setId(ctPhieuDatId);
+            ctPhieuDat.setPhieuDat(savedPhieuDat);
+            ctPhieuDat.setHangPhong(hangPhong);
+            ctPhieuDat.setSoLuongPhongO(request.getSoLuongPhongO());
+            ctPhieuDat.setDonGia(roomPrice);
+
+            ctPhieuDatRepository.save(ctPhieuDat);
+
+            response.setStatusCode(200);
+            response.setMessage("Tạo đặt phòng tại quầy lễ tân thành công");
+            response.setPhieuDat(EntityDTOMapper.mapPhieuDatToDTO(savedPhieuDat));
+
+        } catch (OurException e) {
+            response.setStatusCode(400);
+            response.setMessage(e.getMessage());
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi tạo đặt phòng: " + e.getMessage());
+        }
+        return response;
     }
 }

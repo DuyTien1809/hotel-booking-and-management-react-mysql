@@ -16,5 +16,5 @@ public class PhuThu {
     private String tenPhuThu;
     
     @OneToMany(mappedBy = "phuThu", cascade = CascadeType.ALL)
-    private List<ThayDoiGiaPhuThu> danhSachGia;
+    private List<GiaPhuThu> danhSachGia;
 }

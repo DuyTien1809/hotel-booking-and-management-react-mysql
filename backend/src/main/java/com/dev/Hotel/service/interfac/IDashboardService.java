@@ -22,4 +22,5 @@ public interface IDashboardService {
     Response getTodayCheckIns();
     Response getTodayCheckOuts();
     Response getPendingReservations();
+    Response getCurrentGuests(); // Khách đang lưu trú (đã check-in, chưa check-out)
 }

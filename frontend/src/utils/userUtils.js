@@ -35,7 +35,7 @@ export const getUserDisplayName = (user) => {
     case 'ADMIN':
       return 'Quản lý'
     case 'EMPLOYEE':
-      return 'Nhân viên'
+      return 'Lễ tân'
     case 'CUSTOMER':
       return 'Khách hàng'
     default:
@@ -53,7 +53,7 @@ export const getRoleDisplayName = (role) => {
     case 'ADMIN':
       return 'Quản lý'
     case 'EMPLOYEE':
-      return 'Nhân viên'
+      return 'Lễ tân'
     case 'CUSTOMER':
       return 'Khách hàng'
     default:
@@ -77,7 +77,11 @@ export const normalizeUserData = (userData, role) => {
     role: role || userData.role || 'CUSTOMER',
     hoTen: displayName,
     email: userData.email || '',
-    id: userData.id || userData.maNhanVien || userData.maKhachHang || userData.userId,
+    username: userData.username || '',
+    id: userData.id || userData.idNv || userData.maNhanVien || userData.maKhachHang || userData.userId,
+    idNv: userData.idNv || userData.maNhanVien || userData.id,
+    maNhanVien: userData.maNhanVien || userData.idNv || userData.id,
+    cccd: userData.cccd || userData.id,
     soDienThoai: userData.soDienThoai || userData.phone || userData.phoneNumber || '',
     diaChi: userData.diaChi || userData.address || '',
     ngaySinh: userData.ngaySinh || userData.dateOfBirth || userData.birthDate || '',

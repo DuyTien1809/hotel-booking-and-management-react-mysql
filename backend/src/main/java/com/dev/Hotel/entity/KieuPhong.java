@@ -25,6 +25,6 @@ public class KieuPhong {
 
     @Positive(message = "Số lượng khách ở phải là số dương")
     @Max(value = 20, message = "Số lượng khách ở không được quá 20")
-    @Column(name = "SO_LUONG_KHACH_O")
-    private Integer soLuongKhachO;
+    @Column(name = "SO_LUONG_KHACH")
+    private Integer soLuongKhach;
 }
