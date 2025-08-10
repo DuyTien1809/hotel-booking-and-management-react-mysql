@@ -45,6 +45,9 @@ public class RoomAvailabilityService implements IRoomAvailabilityService {
     @Autowired
     private KhuyenMaiRepository khuyenMaiRepository;
 
+    @Autowired
+    private RoomPricingService roomPricingService;
+
     @Override
     public Response getAvailableRoomsByHangPhongAndPriceRange(LocalDate checkIn, LocalDate checkOut,
             BigDecimal minPrice, BigDecimal maxPrice) {
@@ -110,18 +113,24 @@ public class RoomAvailabilityService implements IRoomAvailabilityService {
 
                         boolean shouldAdd = false;
 
-                        // Lấy giá hiện tại
+                        // Lấy giá hiện tại và tính giá cho khoảng thời gian
                         try {
-                            Optional<GiaHangPhong> giaHangPhong = giaHangPhongRepository.findLatestPriceByHangPhong(
-                                    idHangPhong, LocalDate.now());
+                            // Get current price for display
+                            BigDecimal giaHienTai = roomPricingService.getCurrentPrice(idHangPhong);
+                            dto.setGiaHienTai(giaHienTai);
 
-                            if (giaHangPhong.isPresent()) {
-                                BigDecimal giaHienTai = giaHangPhong.get().getGia();
-                                dto.setGiaHienTai(giaHienTai);
-                                System.out.println("Found price for room " + idHangPhong + ": " + giaHienTai);
-                            } else {
-                                System.out.println("No price found for room " + idHangPhong);
-                            }
+                            // Calculate total price for the date range
+                            BigDecimal totalPrice = roomPricingService.calculateTotalPriceForDateRange(idHangPhong,
+                                    checkIn, checkOut);
+                            dto.setTotalPrice(totalPrice);
+
+                            // Calculate average price per night
+                            BigDecimal averagePrice = roomPricingService.getAveragePricePerNight(idHangPhong, checkIn,
+                                    checkOut);
+                            dto.setAveragePrice(averagePrice);
+
+                            System.out.println("Found price for room " + idHangPhong + ": current=" + giaHienTai
+                                    + ", total=" + totalPrice);
                         } catch (Exception priceException) {
                             System.err.println(
                                     "Error getting price for room " + idHangPhong + ": " + priceException.getMessage());

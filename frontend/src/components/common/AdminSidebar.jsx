@@ -1,6 +1,6 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
-import { Home, Building, Users, Settings, BarChart3, Coffee, Star } from 'lucide-react'
+import { Home, Building, Users, Settings, BarChart3, Coffee, Star, DollarSign } from 'lucide-react'
 
 const AdminSidebar = () => {
   const menuItems = [
@@ -29,6 +29,11 @@ const AdminSidebar = () => {
       path: '/admin/amenities',
       icon: Star,
       label: 'Quản lý tiện nghi'
+    },
+    {
+      path: '/admin/room-prices',
+      icon: DollarSign,
+      label: 'Quản lý giá phòng'
     },
     {
       path: '/admin/reports',

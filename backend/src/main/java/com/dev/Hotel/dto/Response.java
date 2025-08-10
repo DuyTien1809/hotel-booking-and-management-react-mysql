@@ -43,6 +43,7 @@ public class Response {
     private List<HangPhongDTO> hangPhongList;
     private List<KieuPhongDTO> kieuPhongList;
     private List<LoaiPhongDTO> loaiPhongList;
+    private List<GiaHangPhongDTO> giaHangPhongList;
 
     // Single entities
     private KieuPhongDTO kieuPhong;

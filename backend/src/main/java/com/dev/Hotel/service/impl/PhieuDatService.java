@@ -59,6 +59,9 @@ public class PhieuDatService implements IPhieuDatService {
     @Autowired
     private LoaiPhongRepository loaiPhongRepository;
 
+    @Autowired
+    private RoomPricingService roomPricingService;
+
     @Override
     public Response getAllPhieuDat() {
         Response response = new Response();
@@ -577,17 +580,18 @@ public class PhieuDatService implements IPhieuDatService {
 
             HangPhong hangPhong = hangPhongList.get(0);
 
-            // Get current room price
-            Optional<GiaHangPhong> giaHangPhong = giaHangPhongRepository.findLatestPriceByHangPhong(
+            // Calculate room price for the booking period using new pricing logic
+            BigDecimal totalRoomPrice = roomPricingService.calculateTotalPriceForDateRange(
                     hangPhong.getIdHangPhong(),
-                    LocalDate.now());
+                    request.getNgayBdThue(),
+                    request.getNgayDi());
 
-            BigDecimal roomPrice;
-            if (giaHangPhong.isPresent()) {
-                roomPrice = giaHangPhong.get().getGia();
-            } else {
-                roomPrice = BigDecimal.valueOf(500000); // Default price
-            }
+            // Calculate price per room per night (average)
+            long numberOfNights = java.time.temporal.ChronoUnit.DAYS.between(request.getNgayBdThue(),
+                    request.getNgayDi());
+            BigDecimal roomPrice = numberOfNights > 0
+                    ? totalRoomPrice.divide(BigDecimal.valueOf(numberOfNights), 2, java.math.RoundingMode.HALF_UP)
+                    : roomPricingService.getCurrentPrice(hangPhong.getIdHangPhong());
 
             // Validate deposit amount (must be >= 20% of room price)
             BigDecimal minDeposit = roomPrice.multiply(BigDecimal.valueOf(0.2));

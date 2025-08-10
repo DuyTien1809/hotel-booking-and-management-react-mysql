@@ -11,18 +11,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class HangPhongService implements IHangPhongService {
 
     @Autowired
     private HangPhongRepository hangPhongRepository;
-    
+
     @Autowired
     private GiaHangPhongRepository giaHangPhongRepository;
+
+    @Autowired
+    private RoomPricingService roomPricingService;
 
     @Override
     public Response getAllHangPhong() {
@@ -170,28 +176,18 @@ public class HangPhongService implements IHangPhongService {
                 response.setMessage("Không tìm thấy hạng phòng với kiểu phòng và loại phòng này");
                 return response;
             }
-            
+
             // Get the first matching room category
             HangPhong hangPhong = hangPhongList.get(0);
-            
-            // Get current price
-            Optional<GiaHangPhong> giaHangPhong = giaHangPhongRepository.findLatestPriceByHangPhong(
-                hangPhong.getIdHangPhong(), 
-                LocalDate.now()
-            );
-            
-            BigDecimal roomPrice;
-            if (giaHangPhong.isPresent()) {
-                roomPrice = giaHangPhong.get().getGia();
-            } else {
-                roomPrice = BigDecimal.valueOf(500000); // Default price
-            }
-            
+
+            // Get current price using new pricing service
+            BigDecimal roomPrice = roomPricingService.getCurrentPrice(hangPhong.getIdHangPhong());
+
             response.setStatusCode(200);
             response.setMessage("Thành công");
             response.setRoomPrice(roomPrice);
             response.setMinDeposit(roomPrice.multiply(BigDecimal.valueOf(0.2))); // 20% minimum deposit
-            
+
         } catch (Exception e) {
             response.setStatusCode(500);
             response.setMessage("Lỗi khi lấy giá phòng: " + e.getMessage());
@@ -243,5 +239,141 @@ public class HangPhongService implements IHangPhongService {
         } else {
             return getAllHangPhong();
         }
+    }
+
+    // ===== ROOM PRICE MANAGEMENT METHODS =====
+
+    @Transactional(readOnly = true)
+    public Response getRoomPrices(Integer idHangPhong) {
+        Response response = new Response();
+        try {
+            List<GiaHangPhong> prices = giaHangPhongRepository.findByIdHangPhongOrderByNgayApDungDesc(idHangPhong);
+            response.setStatusCode(200);
+            response.setMessage("Thành công");
+            response.setGiaHangPhongList(EntityDTOMapper.mapGiaHangPhongListToDTO(prices));
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi lấy danh sách giá: " + e.getMessage());
+            e.printStackTrace(); // Log the full exception for debugging
+        }
+        return response;
+    }
+
+    @Transactional
+    public Response addRoomPrice(Integer idHangPhong, Map<String, Object> request) {
+        Response response = new Response();
+        try {
+            // Validate hang phong exists
+            Optional<HangPhong> hangPhongOpt = hangPhongRepository.findById(idHangPhong);
+            if (!hangPhongOpt.isPresent()) {
+                response.setStatusCode(404);
+                response.setMessage("Không tìm thấy hạng phòng");
+                return response;
+            }
+
+            LocalDate ngayApDung = LocalDate.parse(request.get("ngayApDung").toString());
+            BigDecimal gia = new BigDecimal(request.get("gia").toString());
+            String idNv = request.get("idNv").toString();
+
+            // Kiểm tra ngày áp dụng phải là tương lai
+            if (ngayApDung.isBefore(LocalDate.now()) || ngayApDung.isEqual(LocalDate.now())) {
+                response.setStatusCode(400);
+                response.setMessage("Ngày áp dụng phải là ngày trong tương lai");
+                return response;
+            }
+
+            // Check if price already exists for this date
+            Optional<GiaHangPhong> existingPrice = giaHangPhongRepository.findByIdHangPhongAndNgayApDung(idHangPhong,
+                    ngayApDung);
+            if (existingPrice.isPresent()) {
+                response.setStatusCode(400);
+                response.setMessage("Đã có giá cho ngày này");
+                return response;
+            }
+
+            GiaHangPhong giaHangPhong = new GiaHangPhong();
+            giaHangPhong.setIdHangPhong(idHangPhong);
+            giaHangPhong.setNgayApDung(ngayApDung);
+            giaHangPhong.setGia(gia);
+            giaHangPhong.setNgayThietLap(LocalDate.now());
+            giaHangPhong.setIdNv(idNv);
+
+            giaHangPhongRepository.save(giaHangPhong);
+
+            response.setStatusCode(200);
+            response.setMessage("Thêm giá thành công");
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi thêm giá: " + e.getMessage());
+            e.printStackTrace(); // Log the full exception for debugging
+        }
+        return response;
+    }
+
+    @Transactional
+    public Response updateRoomPrice(Integer idHangPhong, LocalDate ngayApDung, Map<String, Object> request) {
+        Response response = new Response();
+        try {
+            // Kiểm tra ngày áp dụng phải là tương lai
+            if (ngayApDung.isBefore(LocalDate.now()) || ngayApDung.isEqual(LocalDate.now())) {
+                response.setStatusCode(400);
+                response.setMessage("Chỉ có thể sửa giá cho ngày áp dụng trong tương lai");
+                return response;
+            }
+
+            Optional<GiaHangPhong> giaHangPhongOpt = giaHangPhongRepository.findByIdHangPhongAndNgayApDung(idHangPhong,
+                    ngayApDung);
+            if (!giaHangPhongOpt.isPresent()) {
+                response.setStatusCode(404);
+                response.setMessage("Không tìm thấy giá cho ngày này");
+                return response;
+            }
+
+            GiaHangPhong giaHangPhong = giaHangPhongOpt.get();
+            BigDecimal gia = new BigDecimal(request.get("gia").toString());
+            String idNv = request.get("idNv").toString();
+
+            giaHangPhong.setGia(gia);
+            giaHangPhong.setNgayThietLap(LocalDate.now());
+            giaHangPhong.setIdNv(idNv);
+
+            giaHangPhongRepository.save(giaHangPhong);
+
+            response.setStatusCode(200);
+            response.setMessage("Cập nhật giá thành công");
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi cập nhật giá: " + e.getMessage());
+            e.printStackTrace(); // Log the full exception for debugging
+        }
+        return response;
+    }
+
+    public Response calculateRoomPriceForDateRange(Integer idHangPhong, LocalDate checkIn, LocalDate checkOut) {
+        Response response = new Response();
+        try {
+            BigDecimal totalPrice = roomPricingService.calculateTotalPriceForDateRange(idHangPhong, checkIn, checkOut);
+            BigDecimal averagePrice = roomPricingService.getAveragePricePerNight(idHangPhong, checkIn, checkOut);
+            long numberOfNights = java.time.temporal.ChronoUnit.DAYS.between(checkIn, checkOut);
+            boolean hasPriceChanges = roomPricingService.hasPriceChanges(idHangPhong, checkIn, checkOut);
+
+            response.setStatusCode(200);
+            response.setMessage("Thành công");
+            response.setRoomPrice(totalPrice);
+            response.setMinDeposit(totalPrice.multiply(BigDecimal.valueOf(0.2))); // 20% deposit
+
+            // Add additional info
+            Map<String, Object> priceDetails = new java.util.HashMap<>();
+            priceDetails.put("totalPrice", totalPrice);
+            priceDetails.put("numberOfNights", numberOfNights);
+            priceDetails.put("averagePricePerNight", averagePrice);
+            priceDetails.put("hasPriceChanges", hasPriceChanges);
+            response.setStats(priceDetails);
+
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi tính giá: " + e.getMessage());
+        }
+        return response;
     }
 }

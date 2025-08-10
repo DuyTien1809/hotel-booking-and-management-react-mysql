@@ -2,10 +2,15 @@ package com.dev.Hotel.controller;
 
 import com.dev.Hotel.dto.Response;
 import com.dev.Hotel.entity.HangPhong;
+import com.dev.Hotel.entity.GiaHangPhong;
 import com.dev.Hotel.service.impl.HangPhongService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.format.annotation.DateTimeFormat;
+import java.time.LocalDate;
+import java.math.BigDecimal;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/hang-phong")
@@ -33,7 +38,8 @@ public class HangPhongController {
     }
 
     @PutMapping("/update/{idHangPhong}")
-    public ResponseEntity<Response> updateHangPhong(@PathVariable("idHangPhong") Integer idHangPhong, @RequestBody HangPhong hangPhong) {
+    public ResponseEntity<Response> updateHangPhong(@PathVariable("idHangPhong") Integer idHangPhong,
+            @RequestBody HangPhong hangPhong) {
         Response response = hangPhongService.updateHangPhong(idHangPhong, hangPhong);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
@@ -101,6 +107,40 @@ public class HangPhongController {
             @RequestParam(value = "idKp", required = false) String idKp,
             @RequestParam(value = "idLp", required = false) String idLp) {
         Response response = hangPhongService.filterHangPhong(idKp, idLp);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    // ===== ROOM PRICE MANAGEMENT APIs =====
+
+    @GetMapping("/{idHangPhong}/prices")
+    public ResponseEntity<Response> getRoomPrices(@PathVariable Integer idHangPhong) {
+        Response response = hangPhongService.getRoomPrices(idHangPhong);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    @PostMapping("/{idHangPhong}/prices")
+    public ResponseEntity<Response> addRoomPrice(
+            @PathVariable Integer idHangPhong,
+            @RequestBody Map<String, Object> request) {
+        Response response = hangPhongService.addRoomPrice(idHangPhong, request);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    @PutMapping("/{idHangPhong}/prices")
+    public ResponseEntity<Response> updateRoomPrice(
+            @PathVariable Integer idHangPhong,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ngayApDung,
+            @RequestBody Map<String, Object> request) {
+        Response response = hangPhongService.updateRoomPrice(idHangPhong, ngayApDung, request);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    @GetMapping("/{idHangPhong}/price-for-dates")
+    public ResponseEntity<Response> calculateRoomPriceForDateRange(
+            @PathVariable Integer idHangPhong,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut) {
+        Response response = hangPhongService.calculateRoomPriceForDateRange(idHangPhong, checkIn, checkOut);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 }

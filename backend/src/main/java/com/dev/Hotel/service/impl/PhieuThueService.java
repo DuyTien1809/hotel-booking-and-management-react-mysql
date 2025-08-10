@@ -44,8 +44,6 @@ public class PhieuThueService implements IPhieuThueService {
     @Autowired
     private GiaHangPhongRepository giaHangPhongRepository;
 
-
-
     @Autowired
     private TrangThaiRepository trangThaiRepository;
 
@@ -57,6 +55,9 @@ public class PhieuThueService implements IPhieuThueService {
 
     @Autowired
     private CtPhuThuRepository ctPhuThuRepository;
+
+    @Autowired
+    private RoomPricingService roomPricingService;
 
     @Override
     public Response getAllPhieuThue() {
@@ -78,12 +79,12 @@ public class PhieuThueService implements IPhieuThueService {
         Response response = new Response();
         try {
             PhieuThue phieuThue = phieuThueRepository.findById(idPt)
-                .orElseThrow(() -> new OurException("Phiếu thuê không tồn tại"));
-            
+                    .orElseThrow(() -> new OurException("Phiếu thuê không tồn tại"));
+
             response.setStatusCode(200);
             response.setMessage("Thành công");
             response.setPhieuThue(EntityDTOMapper.mapPhieuThueToDTO(phieuThue));
-            
+
         } catch (OurException e) {
             response.setStatusCode(404);
             response.setMessage(e.getMessage());
@@ -102,7 +103,7 @@ public class PhieuThueService implements IPhieuThueService {
             response.setStatusCode(200);
             response.setMessage("Tạo phiếu thuê thành công");
             response.setPhieuThue(EntityDTOMapper.mapPhieuThueToDTO(savedPhieuThue));
-            
+
         } catch (Exception e) {
             response.setStatusCode(500);
             response.setMessage("Lỗi khi tạo phiếu thuê: " + e.getMessage());
@@ -115,19 +116,19 @@ public class PhieuThueService implements IPhieuThueService {
         Response response = new Response();
         try {
             PhieuThue existingPhieuThue = phieuThueRepository.findById(idPt)
-                .orElseThrow(() -> new OurException("Phiếu thuê không tồn tại"));
-            
+                    .orElseThrow(() -> new OurException("Phiếu thuê không tồn tại"));
+
             // Update fields (ngayDen và ngayDi giờ được quản lý trong CtPhieuThue)
             existingPhieuThue.setNgayLap(phieuThue.getNgayLap());
             existingPhieuThue.setKhachHang(phieuThue.getKhachHang());
             existingPhieuThue.setNhanVien(phieuThue.getNhanVien());
             existingPhieuThue.setPhieuDat(phieuThue.getPhieuDat());
-            
+
             PhieuThue updatedPhieuThue = phieuThueRepository.save(existingPhieuThue);
             response.setStatusCode(200);
             response.setMessage("Cập nhật phiếu thuê thành công");
             response.setPhieuThue(EntityDTOMapper.mapPhieuThueToDTO(updatedPhieuThue));
-            
+
         } catch (OurException e) {
             response.setStatusCode(404);
             response.setMessage(e.getMessage());
@@ -143,12 +144,12 @@ public class PhieuThueService implements IPhieuThueService {
         Response response = new Response();
         try {
             phieuThueRepository.findById(idPt)
-                .orElseThrow(() -> new OurException("Phiếu thuê không tồn tại"));
-            
+                    .orElseThrow(() -> new OurException("Phiếu thuê không tồn tại"));
+
             phieuThueRepository.deleteById(idPt);
             response.setStatusCode(200);
             response.setMessage("Xóa phiếu thuê thành công");
-            
+
         } catch (OurException e) {
             response.setStatusCode(404);
             response.setMessage(e.getMessage());
@@ -179,13 +180,13 @@ public class PhieuThueService implements IPhieuThueService {
         Response response = new Response();
         try {
             NhanVien nhanVien = nhanVienRepository.findById(idNv)
-                .orElseThrow(() -> new OurException("Nhân viên không tồn tại"));
-            
+                    .orElseThrow(() -> new OurException("Nhân viên không tồn tại"));
+
             List<PhieuThue> phieuThueList = phieuThueRepository.findByNhanVien(nhanVien);
             response.setStatusCode(200);
             response.setMessage("Thành công");
             response.setPhieuThueList(EntityDTOMapper.mapPhieuThueListToDTO(phieuThueList));
-            
+
         } catch (OurException e) {
             response.setStatusCode(404);
             response.setMessage(e.getMessage());
@@ -201,13 +202,13 @@ public class PhieuThueService implements IPhieuThueService {
         Response response = new Response();
         try {
             PhieuDat phieuDat = phieuDatRepository.findById(idPd)
-                .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
-            
+                    .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
+
             List<PhieuThue> phieuThueList = phieuThueRepository.findByPhieuDat(phieuDat);
             response.setStatusCode(200);
             response.setMessage("Thành công");
             response.setPhieuThueList(EntityDTOMapper.mapPhieuThueListToDTO(phieuThueList));
-            
+
         } catch (OurException e) {
             response.setStatusCode(404);
             response.setMessage(e.getMessage());
@@ -238,29 +239,30 @@ public class PhieuThueService implements IPhieuThueService {
         Response response = new Response();
         try {
             PhieuDat phieuDat = phieuDatRepository.findById(idPd)
-                .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
+                    .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
 
             if (!"Đã xác nhận".equals(phieuDat.getTrangThai())) {
                 throw new OurException("Phiếu đặt chưa được xác nhận");
             }
-            
-            // Create new PhieuThue from PhieuDat (ngayDen và ngayDi sẽ được set trong CtPhieuThue)
+
+            // Create new PhieuThue from PhieuDat (ngayDen và ngayDi sẽ được set trong
+            // CtPhieuThue)
             PhieuThue phieuThue = new PhieuThue();
             phieuThue.setNgayLap(LocalDate.now());
             phieuThue.setKhachHang(phieuDat.getKhachHang());
             phieuThue.setNhanVien(phieuDat.getNhanVien());
             phieuThue.setPhieuDat(phieuDat);
-            
+
             PhieuThue savedPhieuThue = phieuThueRepository.save(phieuThue);
-            
+
             // Update booking status
             phieuDat.setTrangThai("Đã nhận phòng");
             phieuDatRepository.save(phieuDat);
-            
+
             response.setStatusCode(200);
             response.setMessage("Check-in thành công");
             response.setPhieuThue(EntityDTOMapper.mapPhieuThueToDTO(savedPhieuThue));
-            
+
         } catch (OurException e) {
             response.setStatusCode(400);
             response.setMessage(e.getMessage());
@@ -277,11 +279,11 @@ public class PhieuThueService implements IPhieuThueService {
         try {
             // Find the booking
             PhieuDat phieuDat = phieuDatRepository.findById(request.getIdPhieuDat())
-                .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
+                    .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
 
             // Find the room
             Phong phong = phongRepository.findById(request.getSoPhong())
-                .orElseThrow(() -> new OurException("Phòng không tồn tại"));
+                    .orElseThrow(() -> new OurException("Phòng không tồn tại"));
 
             // Check if room is available (support both TT01 and TT001 formats)
             String roomStatus = phong.getTrangThai().getIdTt();
@@ -289,7 +291,8 @@ public class PhieuThueService implements IPhieuThueService {
                 throw new OurException("Phòng không có sẵn. Trạng thái hiện tại: " + roomStatus);
             }
 
-            // Create PhieuThue from PhieuDat (ngayDen và ngayDi sẽ được set trong CtPhieuThue)
+            // Create PhieuThue from PhieuDat (ngayDen và ngayDi sẽ được set trong
+            // CtPhieuThue)
             PhieuThue phieuThue = new PhieuThue();
             phieuThue.setNgayLap(LocalDate.now());
             phieuThue.setNhanVien(phieuDat.getNhanVien());
@@ -309,8 +312,9 @@ public class PhieuThueService implements IPhieuThueService {
 
             // Update room status to occupied (try both TT02 and TT002 formats)
             TrangThai occupiedStatus = trangThaiRepository.findById("TT02")
-                .orElse(trangThaiRepository.findById("TT002")
-                    .orElseThrow(() -> new OurException("Trạng thái 'Đã có khách' không tồn tại (TT02 hoặc TT002)")));
+                    .orElse(trangThaiRepository.findById("TT002")
+                            .orElseThrow(() -> new OurException(
+                                    "Trạng thái 'Đã có khách' không tồn tại (TT02 hoặc TT002)")));
             phong.setTrangThai(occupiedStatus);
             phongRepository.save(phong);
 
@@ -346,8 +350,6 @@ public class PhieuThueService implements IPhieuThueService {
                 throw new OurException("ID phiếu đặt không được để trống");
             }
 
-
-
             if (request.getNgayDen() == null || request.getNgayDen().trim().isEmpty()) {
                 throw new OurException("Ngày đến không được để trống");
             }
@@ -359,7 +361,7 @@ public class PhieuThueService implements IPhieuThueService {
 
             // Find the booking
             PhieuDat phieuDat = phieuDatRepository.findById(request.getIdPhieuDat())
-                .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại với ID: " + request.getIdPhieuDat()));
+                    .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại với ID: " + request.getIdPhieuDat()));
 
             System.out.println("Found booking with status: " + phieuDat.getTrangThai());
 
@@ -372,7 +374,7 @@ public class PhieuThueService implements IPhieuThueService {
             for (String soPhong : request.getDanhSachSoPhong()) {
                 System.out.println("Checking room: " + soPhong);
                 Phong phong = phongRepository.findById(soPhong)
-                    .orElseThrow(() -> new OurException("Phòng không tồn tại: " + soPhong));
+                        .orElseThrow(() -> new OurException("Phòng không tồn tại: " + soPhong));
 
                 System.out.println("Room " + soPhong + " status: " + phong.getTrangThai().getIdTt());
                 // Check for both TT01 and TT001 formats for available status
@@ -389,7 +391,8 @@ public class PhieuThueService implements IPhieuThueService {
                 ngayDen = LocalDate.parse(request.getNgayDen());
                 System.out.println("Parsed date: " + ngayDen);
             } catch (Exception e) {
-                throw new OurException("Định dạng ngày đến không hợp lệ: " + request.getNgayDen() + ". Vui lòng sử dụng định dạng YYYY-MM-DD");
+                throw new OurException("Định dạng ngày đến không hợp lệ: " + request.getNgayDen()
+                        + ". Vui lòng sử dụng định dạng YYYY-MM-DD");
             }
 
             // Create PhieuThue (ngayDen và ngayDi sẽ được set trong CtPhieuThue)
@@ -404,8 +407,9 @@ public class PhieuThueService implements IPhieuThueService {
             // Create CtPhieuThue for each room and update room status
             // Try both TT02 and TT002 formats for occupied status
             TrangThai occupiedStatus = trangThaiRepository.findById("TT02")
-                .orElse(trangThaiRepository.findById("TT002")
-                    .orElseThrow(() -> new OurException("Trạng thái 'Đã có khách' không tồn tại (TT02 hoặc TT002)")));
+                    .orElse(trangThaiRepository.findById("TT002")
+                            .orElseThrow(() -> new OurException(
+                                    "Trạng thái 'Đã có khách' không tồn tại (TT02 hoặc TT002)")));
 
             for (Phong phong : roomsToCheckIn) {
                 // Create CtPhieuThue
@@ -416,16 +420,9 @@ public class PhieuThueService implements IPhieuThueService {
                 ctPhieuThue.setGioDen(LocalTime.now());
                 ctPhieuThue.setNgayDi(phieuDat.getNgayDi());
 
-                // Get room price
-                var giaHangPhong = giaHangPhongRepository.findLatestPriceByHangPhong(
-                    phong.getHangPhong().getIdHangPhong(),
-                    LocalDate.now()
-                );
-                if (giaHangPhong.isPresent()) {
-                    ctPhieuThue.setDonGia(giaHangPhong.get().getGia());
-                } else {
-                    ctPhieuThue.setDonGia(new BigDecimal("500000")); // Default price
-                }
+                // Get room price using new pricing service
+                BigDecimal roomPrice = roomPricingService.getCurrentPrice(phong.getHangPhong().getIdHangPhong());
+                ctPhieuThue.setDonGia(roomPrice);
 
                 ctPhieuThue.setTtThanhToan("Chưa thanh toán");
                 ctPhieuThueRepository.save(ctPhieuThue);
@@ -471,11 +468,13 @@ public class PhieuThueService implements IPhieuThueService {
                 throw new OurException("Ngày đi không thể trước ngày đến");
             }
 
-            if (request.getNhanVien() == null || request.getNhanVien().getIdNv() == null || request.getNhanVien().getIdNv().trim().isEmpty()) {
+            if (request.getNhanVien() == null || request.getNhanVien().getIdNv() == null
+                    || request.getNhanVien().getIdNv().trim().isEmpty()) {
                 throw new OurException("ID nhân viên không được để trống");
             }
 
-            if (request.getKhachHang() == null || request.getKhachHang().getCccd() == null || request.getKhachHang().getCccd().trim().isEmpty()) {
+            if (request.getKhachHang() == null || request.getKhachHang().getCccd() == null
+                    || request.getKhachHang().getCccd().trim().isEmpty()) {
                 throw new OurException("CCCD khách hàng không được để trống");
             }
 
@@ -511,8 +510,9 @@ public class PhieuThueService implements IPhieuThueService {
             String employeeId = request.getNhanVien().getIdNv();
             System.out.println("Loading employee with ID: " + employeeId);
             NhanVien nhanVien = nhanVienRepository.findById(employeeId)
-                .orElseThrow(() -> new OurException("Nhân viên không tồn tại với ID: " + employeeId));
-            System.out.println("Employee loaded successfully: " + nhanVien.getIdNv() + " - " + nhanVien.getHo() + " " + nhanVien.getTen());
+                    .orElseThrow(() -> new OurException("Nhân viên không tồn tại với ID: " + employeeId));
+            System.out.println("Employee loaded successfully: " + nhanVien.getIdNv() + " - " + nhanVien.getHo() + " "
+                    + nhanVien.getTen());
 
             // Create PhieuDat
             PhieuDat phieuDat = new PhieuDat();
@@ -548,8 +548,9 @@ public class PhieuThueService implements IPhieuThueService {
             String employeeId = request.getNhanVien().getIdNv();
             System.out.println("Loading employee for rental with ID: " + employeeId);
             NhanVien nhanVien = nhanVienRepository.findById(employeeId)
-                .orElseThrow(() -> new OurException("Nhân viên không tồn tại với ID: " + employeeId));
-            System.out.println("Employee loaded for rental: " + nhanVien.getIdNv() + " - " + nhanVien.getHo() + " " + nhanVien.getTen());
+                    .orElseThrow(() -> new OurException("Nhân viên không tồn tại với ID: " + employeeId));
+            System.out.println("Employee loaded for rental: " + nhanVien.getIdNv() + " - " + nhanVien.getHo() + " "
+                    + nhanVien.getTen());
 
             // Create PhieuThue (ngayDen và ngayDi sẽ được set trong CtPhieuThue)
             PhieuThue phieuThue = new PhieuThue();
@@ -591,7 +592,7 @@ public class PhieuThueService implements IPhieuThueService {
         Response response = new Response();
         try {
             PhieuThue phieuThue = phieuThueRepository.findById(idPt)
-                .orElseThrow(() -> new OurException("Phiếu thuê không tồn tại"));
+                    .orElseThrow(() -> new OurException("Phiếu thuê không tồn tại"));
 
             // Update payment status for all CtPhieuThue to "Đã thanh toán"
             List<CtPhieuThue> ctPhieuThueList = ctPhieuThueRepository.findByPhieuThue(phieuThue);
@@ -617,15 +618,16 @@ public class PhieuThueService implements IPhieuThueService {
 
                 // Update room status to "Đang dọn dẹp" (cleaning)
                 if (ctPhieuThue.getPhong() != null) {
-                    ctPhieuThue.getPhong().setTrangThai(trangThaiRepository.findById("TT003").orElse(null)); // Đang dọn dẹp
+                    ctPhieuThue.getPhong().setTrangThai(trangThaiRepository.findById("TT003").orElse(null)); // Đang dọn
+                                                                                                             // dẹp
                     phongRepository.save(ctPhieuThue.getPhong());
                 }
             }
-            
+
             response.setStatusCode(200);
             response.setMessage("Check-out thành công");
             response.setPhieuThue(EntityDTOMapper.mapPhieuThueToDTO(phieuThue));
-            
+
         } catch (OurException e) {
             response.setStatusCode(404);
             response.setMessage(e.getMessage());
@@ -641,7 +643,7 @@ public class PhieuThueService implements IPhieuThueService {
         Response response = new Response();
         try {
             PhieuThue phieuThue = phieuThueRepository.findById(idPt)
-                .orElseThrow(() -> new OurException("Phiếu thuê không tồn tại"));
+                    .orElseThrow(() -> new OurException("Phiếu thuê không tồn tại"));
 
             // Lấy ngày check-out hiện tại từ CtPhieuThue
             List<CtPhieuThue> ctPhieuThueList = ctPhieuThueRepository.findByPhieuThue(phieuThue);
@@ -650,10 +652,10 @@ public class PhieuThueService implements IPhieuThueService {
             }
 
             LocalDate currentCheckOut = ctPhieuThueList.stream()
-                .map(ct -> ct.getNgayDi())
-                .filter(date -> date != null)
-                .max(LocalDate::compareTo)
-                .orElse(null);
+                    .map(ct -> ct.getNgayDi())
+                    .filter(date -> date != null)
+                    .max(LocalDate::compareTo)
+                    .orElse(null);
 
             if (currentCheckOut != null && newCheckOut.isBefore(currentCheckOut)) {
                 throw new OurException("Ngày check-out mới phải sau ngày check-out hiện tại");
@@ -664,11 +666,11 @@ public class PhieuThueService implements IPhieuThueService {
                 ctPhieuThue.setNgayDi(newCheckOut);
                 ctPhieuThueRepository.save(ctPhieuThue);
             }
-            
+
             response.setStatusCode(200);
             response.setMessage("Gia hạn lưu trú thành công");
             response.setPhieuThue(EntityDTOMapper.mapPhieuThueToDTO(phieuThue));
-            
+
         } catch (OurException e) {
             response.setStatusCode(400);
             response.setMessage(e.getMessage());
@@ -780,26 +782,27 @@ public class PhieuThueService implements IPhieuThueService {
 
         // Try to find existing customer, create if not exists
         return khachHangRepository.findById(khachHangInfo.getCccd())
-            .orElseGet(() -> {
-                // Create new customer if not exists
-                KhachHang newKhachHang = new KhachHang();
-                newKhachHang.setCccd(khachHangInfo.getCccd());
-                newKhachHang.setHo(khachHangInfo.getHo());
-                newKhachHang.setTen(khachHangInfo.getTen());
-                newKhachHang.setSdt(khachHangInfo.getSdt());
-                newKhachHang.setEmail(khachHangInfo.getEmail());
-                newKhachHang.setDiaChi(khachHangInfo.getDiaChi());
-                return khachHangRepository.save(newKhachHang);
-            });
+                .orElseGet(() -> {
+                    // Create new customer if not exists
+                    KhachHang newKhachHang = new KhachHang();
+                    newKhachHang.setCccd(khachHangInfo.getCccd());
+                    newKhachHang.setHo(khachHangInfo.getHo());
+                    newKhachHang.setTen(khachHangInfo.getTen());
+                    newKhachHang.setSdt(khachHangInfo.getSdt());
+                    newKhachHang.setEmail(khachHangInfo.getEmail());
+                    newKhachHang.setDiaChi(khachHangInfo.getDiaChi());
+                    return khachHangRepository.save(newKhachHang);
+                });
     }
 
     private void createCtPhieuThueFromRooms(PhieuThue phieuThue, CheckInWalkInRequest request) {
-        if (request.getDanhSachPhong() == null) return;
+        if (request.getDanhSachPhong() == null)
+            return;
 
         for (CheckInWalkInRequest.PhongInfo phongInfo : request.getDanhSachPhong()) {
             // Load room
             Phong phong = phongRepository.findById(phongInfo.getSoPhong())
-                .orElseThrow(() -> new OurException("Phòng không tồn tại: " + phongInfo.getSoPhong()));
+                    .orElseThrow(() -> new OurException("Phòng không tồn tại: " + phongInfo.getSoPhong()));
 
             // Get room price
             BigDecimal donGia = getRoomPrice(phong);
@@ -818,7 +821,7 @@ public class PhieuThueService implements IPhieuThueService {
 
             // Update room status to occupied (TT002)
             TrangThai occupiedStatus = trangThaiRepository.findById("TT002")
-                .orElseThrow(() -> new OurException("Trạng thái 'Đã có khách' không tồn tại (TT002)"));
+                    .orElseThrow(() -> new OurException("Trạng thái 'Đã có khách' không tồn tại (TT002)"));
             phong.setTrangThai(occupiedStatus);
             phongRepository.save(phong);
 
@@ -832,11 +835,7 @@ public class PhieuThueService implements IPhieuThueService {
     private BigDecimal getRoomPrice(Phong phong) {
         try {
             if (phong.getHangPhong() != null) {
-                return giaHangPhongRepository.findLatestPriceByHangPhong(
-                    phong.getHangPhong().getIdHangPhong(),
-                    LocalDate.now()
-                ).map(giaHangPhong -> giaHangPhong.getGia())
-                .orElse(BigDecimal.valueOf(500000)); // Default price
+                return roomPricingService.getCurrentPrice(phong.getHangPhong().getIdHangPhong());
             }
         } catch (Exception e) {
             System.err.println("Error getting room price: " + e.getMessage());
@@ -853,7 +852,7 @@ public class PhieuThueService implements IPhieuThueService {
         Response response = new Response();
         try {
             PhieuThue phieuThue = phieuThueRepository.findById(idPt)
-                .orElseThrow(() -> new OurException("Phiếu thuê không tồn tại"));
+                    .orElseThrow(() -> new OurException("Phiếu thuê không tồn tại"));
 
             PhieuThueDetailsDTO dto = EntityDTOMapper.mapPhieuThueToDetailsDTO(phieuThue);
 
@@ -963,7 +962,7 @@ public class PhieuThueService implements IPhieuThueService {
         Response response = new Response();
         try {
             PhieuThue phieuThue = phieuThueRepository.findById(idPt)
-                .orElseThrow(() -> new OurException("Phiếu thuê không tồn tại"));
+                    .orElseThrow(() -> new OurException("Phiếu thuê không tồn tại"));
 
             // Update payment status for all CtPhieuThue
             List<CtPhieuThue> ctPhieuThueList = ctPhieuThueRepository.findByPhieuThue(phieuThue);
@@ -999,6 +998,5 @@ public class PhieuThueService implements IPhieuThueService {
         }
         return response;
     }
-
 
 }

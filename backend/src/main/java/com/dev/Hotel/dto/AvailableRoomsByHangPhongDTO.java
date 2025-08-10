@@ -17,6 +17,8 @@ public class AvailableRoomsByHangPhongDTO {
 
     // Thông tin bổ sung
     private BigDecimal giaHienTai;
+    private BigDecimal totalPrice;
+    private BigDecimal averagePrice;
     private String moTaKieuPhong;
     private String moTaLoaiPhong;
     private Integer soLuongKhachO;

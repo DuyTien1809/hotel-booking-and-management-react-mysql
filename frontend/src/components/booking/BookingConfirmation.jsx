@@ -33,6 +33,11 @@ const BookingConfirmation = ({ room, bookingData, setBookingData, searchDates, o
   };
 
   const getTotalAmount = () => {
+    // Use totalPrice from backend if available (calculated with new pricing logic)
+    if (room.totalPrice && roomQuantity) {
+      return room.totalPrice * roomQuantity;
+    }
+    // Fallback to old calculation if totalPrice not available
     if (room.giaHienTai && nights > 0) {
       return room.giaHienTai * nights * roomQuantity;
     }
@@ -117,10 +122,26 @@ const BookingConfirmation = ({ room, bookingData, setBookingData, searchDates, o
             </div>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold text-blue-600">
-              {formatPrice(room.giaHienTai)}
-            </div>
-            <div className="text-sm text-gray-500">/ đêm</div>
+            {room.averagePrice ? (
+              <div>
+                <div className="text-2xl font-bold text-blue-600">
+                  {formatPrice(room.averagePrice)}
+                </div>
+                <div className="text-sm text-gray-500">/ đêm (trung bình)</div>
+                {room.totalPrice && (
+                  <div className="text-sm text-gray-600 mt-1">
+                    Tổng: {formatPrice(room.totalPrice)}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div>
+                <div className="text-2xl font-bold text-blue-600">
+                  {formatPrice(room.giaHienTai)}
+                </div>
+                <div className="text-sm text-gray-500">/ đêm</div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -211,9 +232,19 @@ const BookingConfirmation = ({ room, bookingData, setBookingData, searchDates, o
           <h4 className="font-semibold text-lg mb-4">Tóm tắt chi phí</h4>
           <div className="space-y-2">
             <div className="flex justify-between">
-              <span>{formatPrice(room.giaHienTai)} x {nights} đêm x {roomQuantity} phòng</span>
+              {room.totalPrice ? (
+                <span>Giá phòng cho {nights} đêm x {roomQuantity} phòng</span>
+              ) : (
+                <span>{formatPrice(room.giaHienTai)} x {nights} đêm x {roomQuantity} phòng</span>
+              )}
               <span>{formatPrice(getTotalAmount())}</span>
             </div>
+            {room.totalPrice && room.averagePrice && (
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Giá trung bình: {formatPrice(room.averagePrice)} / đêm</span>
+                <span></span>
+              </div>
+            )}
             <div className="border-t pt-2 flex justify-between font-semibold">
               <span>Tổng cộng</span>
               <span className="text-xl text-blue-600">{formatPrice(getTotalAmount())}</span>

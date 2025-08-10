@@ -124,12 +124,27 @@ const RoomSearchResult = ({ searchResults, searchDates }) => {
                 </div>
                 
                 <div className="text-right">
-                  {room.giaHienTai && (
-                    <div className="text-2xl font-bold text-primary-600">
-                      {formatPrice(room.giaHienTai)}
+                  {room.totalPrice && (
+                    <div>
+                      <div className="text-2xl font-bold text-primary-600">
+                        {formatPrice(room.totalPrice)}
+                      </div>
+                      <div className="text-sm text-gray-500">tổng cộng</div>
+                      {room.averagePrice && (
+                        <div className="text-sm text-gray-600 mt-1">
+                          {formatPrice(room.averagePrice)} / đêm
+                        </div>
+                      )}
                     </div>
                   )}
-                  <div className="text-sm text-gray-500">/ đêm</div>
+                  {!room.totalPrice && room.giaHienTai && (
+                    <div>
+                      <div className="text-2xl font-bold text-primary-600">
+                        {formatPrice(room.giaHienTai)}
+                      </div>
+                      <div className="text-sm text-gray-500">/ đêm</div>
+                    </div>
+                  )}
                 </div>
               </div>
               

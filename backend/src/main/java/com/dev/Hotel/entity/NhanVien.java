@@ -62,6 +62,7 @@ public class NhanVien {
     @Column(name = "PASSWORD")
     private String password;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "ID_BP")
     private BoPhan boPhan;

@@ -1,8 +1,20 @@
--- MySQL dump 10.13  Distrib 8.0.29, for Win64 (x86_64)
+-- MySQL dump 10.13  Distrib 8.0.31, for Win64 (x86_64)
 --
 -- Host: localhost    Database: khachsan
 -- ------------------------------------------------------
--- Server version	8.0.29
+-- Server version	8.0.31
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!50503 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
 --
 -- Table structure for table `anh_hang_phong`
 --
@@ -26,7 +38,7 @@ CREATE TABLE `anh_hang_phong` (
 
 LOCK TABLES `anh_hang_phong` WRITE;
 /*!40000 ALTER TABLE `anh_hang_phong` DISABLE KEYS */;
-INSERT INTO `anh_hang_phong` VALUES ('ANH001','/images/rooms/standard-single-1.jpg',1),('ANH002','/images/rooms/standard-single-2.jpg',1),('ANH003','/images/rooms/standard-double-1.jpg',2),('ANH004','/images/rooms/standard-double-2.jpg',2),('ANH005','/images/rooms/superior-double-1.jpg',3),('ANH006','/images/rooms/superior-double-2.jpg',3),('ANH007','/images/rooms/superior-twin-1.jpg',4),('ANH008','/images/rooms/superior-twin-2.jpg',4),('ANH009','/images/rooms/deluxe-king-1.jpg',5),('ANH010','/images/rooms/deluxe-king-2.jpg',5),('ANH011','/images/rooms/deluxe-queen-1.jpg',6),('ANH012','/images/rooms/deluxe-queen-2.jpg',6),('ANH013','/images/rooms/suite-king-1.jpg',7),('ANH014','/images/rooms/suite-king-2.jpg',7),('ANH015','/images/rooms/presidential-1.jpg',8),('ANH016','/images/rooms/presidential-2.jpg',8);
+INSERT INTO `anh_hang_phong` VALUES ('AHP01','https://surl.li/dpgwis',1),('AHP02','https://surli.cc/kbjjjt',2),('AHP03','https://surl.li/mzigza',3),('AHP04','https://surl.li/pfslrj',4),('AHP05','https://surl.lu/plrgvv',5);
 /*!40000 ALTER TABLE `anh_hang_phong` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -50,7 +62,7 @@ CREATE TABLE `bo_phan` (
 
 LOCK TABLES `bo_phan` WRITE;
 /*!40000 ALTER TABLE `bo_phan` DISABLE KEYS */;
-INSERT INTO `bo_phan` VALUES ('BP001','Quản lý'),('BP002','Lễ tân'),('BP003','Housekeeping'),('BP004','Bảo vệ');
+INSERT INTO `bo_phan` VALUES ('BP001','Quản lý'),('BP002','Lễ tân'),('BP003','Nhà hàng'),('BP004','Kế toán');
 /*!40000 ALTER TABLE `bo_phan` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -81,7 +93,7 @@ CREATE TABLE `ct_dich_vu` (
 
 LOCK TABLES `ct_dich_vu` WRITE;
 /*!40000 ALTER TABLE `ct_dich_vu` DISABLE KEYS */;
-INSERT INTO `ct_dich_vu` VALUES (3,'DV001','2025-08-08',50000.00,2,'Chưa thanh toán'),(3,'DV010','2025-08-04',100000.00,2,'Đã thanh toán'),(5,'DV001','2025-08-08',50000.00,1,'Chưa thanh toán'),(6,'DV003','2024-08-02',150000.00,2,'Đã thanh toán'),(7,'DV003','2025-08-04',100000.00,4,'Đã thanh toán'),(7,'DV007','2024-08-02',500000.00,1,'Đã thanh toán'),(8,'DV005','2024-07-31',350000.00,2,'Đã thanh toán'),(9,'DV002','2024-08-01',300000.00,1,'Đã thanh toán');
+INSERT INTO `ct_dich_vu` VALUES (1,'DV01','2025-07-30',200000.00,1,'Chưa thanh toán'),(2,'DV02','2025-07-31',150000.00,2,'Chưa thanh toán'),(4,'DV04','2025-07-30',10000.00,5,'Chưa thanh toán');
 /*!40000 ALTER TABLE `ct_dich_vu` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -109,7 +121,7 @@ CREATE TABLE `ct_phieu_thue` (
   CONSTRAINT `ct_phieu_thue_ibfk_1` FOREIGN KEY (`ID_PT`) REFERENCES `phieuthue` (`ID_PT`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `ct_phieu_thue_ibfk_2` FOREIGN KEY (`SO_PHONG`) REFERENCES `phong` (`SOPHONG`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_ctpt_hoa_don` FOREIGN KEY (`ID_HD`) REFERENCES `hoa_don` (`ID_HD`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -118,7 +130,7 @@ CREATE TABLE `ct_phieu_thue` (
 
 LOCK TABLES `ct_phieu_thue` WRITE;
 /*!40000 ALTER TABLE `ct_phieu_thue` DISABLE KEYS */;
-INSERT INTO `ct_phieu_thue` VALUES (1,'2024-07-30','14:00:00','2024-08-02',1000000.00,'Chưa thanh toán',1,'104',NULL),(2,'2024-08-01','15:30:00','2024-08-03',1200000.00,'Đã thanh toán',2,'202','HD25080701'),(3,'2025-08-02','19:43:57','2025-08-09',1000000.00,'Chưa thanh toán',3,'305',NULL),(4,'2025-08-02','19:43:57','2025-08-09',800000.00,'Chưa thanh toán',3,'102',NULL),(5,'2025-08-01','14:43:57','2025-08-02',800000.00,'Chưa thanh toán',4,'101',NULL),(6,'2025-08-02','21:26:27','2025-08-13',1300000.00,'Đã thanh toán',5,'403','HD25080702'),(7,'2025-08-02','21:26:27','2025-08-13',1300000.00,'Đã thanh toán',5,'406','HD25080702'),(8,'2025-08-02','21:26:27','2025-08-13',1300000.00,'Đã thanh toán',5,'407','HD25080702'),(9,'2025-08-02','21:26:27','2025-08-13',1300000.00,'Đã thanh toán',5,'203','HD25080702'),(16,'2025-08-05','23:58:05','2025-08-11',5000000.00,'Chưa thanh toán',8,'501',NULL),(17,'2025-08-05','23:58:05','2025-08-11',1800000.00,'Chưa thanh toán',8,'404',NULL),(18,'2025-08-05','23:58:05','2025-08-05',1000000.00,'Chưa thanh toán',8,'107',NULL),(19,'2025-08-08','14:48:03','2025-08-16',1700000.00,'Chưa thanh toán',9,'304',NULL),(20,'2025-08-08','14:48:03','2025-08-16',1800000.00,'Chưa thanh toán',9,'207',NULL);
+INSERT INTO `ct_phieu_thue` VALUES (1,'2025-07-30','14:00:00','2025-08-01',1000000.00,'Đã thanh toán',1,'101','HD01'),(2,'2025-08-06','15:00:00','2025-08-10',2000000.00,'Chưa thanh toán',2,'307','HD02'),(4,'2025-08-07','16:00:00','2025-08-11',2000000.00,'Chưa thanh toán',4,'308','HD04'),(6,'2025-08-06','15:00:00','2025-08-10',2000000.00,'Chưa thanh toán',6,'309',NULL),(7,'2025-08-06','15:00:00','2025-08-10',2000000.00,'Chưa thanh toán',7,'306',NULL),(8,'2025-08-08','15:30:00','2025-08-14',2000000.00,'Chưa thanh toán',8,'305',NULL);
 /*!40000 ALTER TABLE `ct_phieu_thue` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -148,7 +160,7 @@ CREATE TABLE `ct_phu_thu` (
 
 LOCK TABLES `ct_phu_thu` WRITE;
 /*!40000 ALTER TABLE `ct_phu_thu` DISABLE KEYS */;
-INSERT INTO `ct_phu_thu` VALUES ('PT001',3,'Đã thanh toán',200000.00,1),('PT001',6,'Đã thanh toán',200000.00,1),('PT003',9,'Đã thanh toán',50000.00,1);
+INSERT INTO `ct_phu_thu` VALUES ('PT01',1,'Chưa thanh toán',200000.00,1),('PT02',2,'Chưa thanh toán',300000.00,1),('PT04',4,'Chưa thanh toán',150000.00,1);
 /*!40000 ALTER TABLE `ct_phu_thu` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -175,7 +187,7 @@ CREATE TABLE `ctkhacho` (
 
 LOCK TABLES `ctkhacho` WRITE;
 /*!40000 ALTER TABLE `ctkhacho` DISABLE KEYS */;
-INSERT INTO `ctkhacho` VALUES (1,'001234567890'),(2,'001234567891');
+INSERT INTO `ctkhacho` VALUES (1,'123456789001'),(2,'123456789002'),(4,'123456789004');
 /*!40000 ALTER TABLE `ctkhacho` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -203,7 +215,7 @@ CREATE TABLE `ctkhuyenmai` (
 
 LOCK TABLES `ctkhuyenmai` WRITE;
 /*!40000 ALTER TABLE `ctkhuyenmai` DISABLE KEYS */;
-INSERT INTO `ctkhuyenmai` VALUES ('KM001',1,10.00),('KM001',2,10.00),('KM001',3,10.00),('KM002',1,15.00),('KM002',2,15.00),('KM002',3,15.00),('KM002',4,15.00),('KM003',5,20.00),('KM003',6,20.00),('KM003',7,20.00),('KM004',1,30.00),('KM004',2,30.00),('KM004',3,30.00),('KM004',4,30.00),('KM004',5,30.00),('KM005',6,25.00),('KM005',7,25.00),('KM005',8,25.00);
+INSERT INTO `ctkhuyenmai` VALUES ('KM01',1,10.00),('KM02',2,15.00),('KM03',3,20.00),('KM04',4,25.00),('KM05',5,30.00);
 /*!40000 ALTER TABLE `ctkhuyenmai` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -219,7 +231,6 @@ CREATE TABLE `ctphieudat` (
   `ID_HANG_PHONG` int NOT NULL,
   `SO_LUONG_PHONG_O` int DEFAULT NULL,
   `DON_GIA` decimal(10,2) DEFAULT NULL,
-  `TRANG_THAI` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`ID_PD`,`ID_HANG_PHONG`),
   KEY `ID_HANG_PHONG` (`ID_HANG_PHONG`),
   CONSTRAINT `ctphieudat_ibfk_1` FOREIGN KEY (`ID_PD`) REFERENCES `phieudat` (`ID_PD`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -233,7 +244,7 @@ CREATE TABLE `ctphieudat` (
 
 LOCK TABLES `ctphieudat` WRITE;
 /*!40000 ALTER TABLE `ctphieudat` DISABLE KEYS */;
-INSERT INTO `ctphieudat` VALUES (1,2,3,1000000.00,'Đã xác nhận'),(1,4,3,1000000.00,'Đã xác nhận'),(2,3,1,1200000.00,'Đã xác nhận'),(3,1,2,800000.00,'Chờ xác nhận'),(4,5,1,1800000.00,'Đã xác nhận'),(5,1,3,1700000.00,'Đã xác nhận'),(5,6,3,1700000.00,'Đã xác nhận'),(6,4,6,1700000.00,'Đã xác nhận');
+INSERT INTO `ctphieudat` VALUES (1,1,1,1000000.00),(3,3,2,2000000.00),(3,4,1,3000000.00),(5,3,1,3000000.00),(9,1,2,2000000.00),(10,3,2,4400000.00),(11,3,2,4400000.00);
 /*!40000 ALTER TABLE `ctphieudat` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -261,7 +272,7 @@ CREATE TABLE `cttiennghi` (
 
 LOCK TABLES `cttiennghi` WRITE;
 /*!40000 ALTER TABLE `cttiennghi` DISABLE KEYS */;
-INSERT INTO `cttiennghi` VALUES ('TN001',1,1),('TN001',2,1),('TN001',3,1),('TN001',4,1),('TN001',5,1),('TN001',6,1),('TN001',7,1),('TN001',8,1),('TN002',1,1),('TN002',2,1),('TN002',3,1),('TN002',4,1),('TN002',5,1),('TN002',6,1),('TN002',7,2),('TN002',8,3),('TN003',1,1),('TN003',2,1),('TN003',3,1),('TN003',4,1),('TN003',5,1),('TN003',6,1),('TN003',7,2),('TN003',8,3),('TN004',1,1),('TN004',2,1),('TN004',3,1),('TN004',4,1),('TN004',5,1),('TN004',6,1),('TN004',7,1),('TN004',8,2),('TN005',1,1),('TN005',2,1),('TN005',3,1),('TN005',4,1),('TN005',5,1),('TN005',6,1),('TN005',7,1),('TN005',8,1),('TN006',2,1),('TN006',3,1),('TN006',4,1),('TN006',5,1),('TN006',6,1),('TN006',7,1),('TN006',8,2),('TN007',1,1),('TN007',2,1),('TN007',3,1),('TN007',4,1),('TN007',5,1),('TN007',6,1),('TN007',7,2),('TN007',8,3),('TN008',1,1),('TN008',2,1),('TN008',3,1),('TN008',4,1),('TN008',5,1),('TN008',6,1),('TN008',7,2),('TN008',8,3),('TN009',2,2),('TN009',3,2),('TN009',4,2),('TN009',5,2),('TN009',6,2),('TN009',7,4),('TN009',8,6),('TN010',3,2),('TN010',4,2),('TN010',5,2),('TN010',6,2),('TN010',7,4),('TN010',8,6);
+INSERT INTO `cttiennghi` VALUES ('TN01',1,1),('TN02',2,1),('TN03',3,1),('TN04',4,1),('TN05',5,1);
 /*!40000 ALTER TABLE `cttiennghi` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -287,7 +298,7 @@ CREATE TABLE `dich_vu` (
 
 LOCK TABLES `dich_vu` WRITE;
 /*!40000 ALTER TABLE `dich_vu` DISABLE KEYS */;
-INSERT INTO `dich_vu` VALUES ('DV001','Giặt ủi','Dịch vụ giặt ủi quần áo','Kg'),('DV002','Massage','Dịch vụ massage thư giãn','Giờ'),('DV003','Ăn sáng','Buffet ăn sáng','Suất'),('DV004','Ăn trưa','Set menu ăn trưa','Suất'),('DV005','Ăn tối','Set menu ăn tối','Suất'),('DV006','Minibar','Đồ uống trong minibar','Chai/Lon'),('DV007','Spa','Dịch vụ spa cao cấp','Giờ'),('DV008','Karaoke','Phòng karaoke','Giờ'),('DV009','Gym','Phòng tập gym','Ngày'),('DV010','Bể bơi','Bể bới ngoài trời','Ngày');
+INSERT INTO `dich_vu` VALUES ('DV01','Minibar','Drinks and snacks','Lần'),('DV02','Giặt ủi','Laundry service','Kg'),('DV03','Ẩm thực','Restaurant meal','Bữa'),('DV04','Điện thoại','Phone call service','Phút'),('DV05','Gửi fax','Fax service','Trang');
 /*!40000 ALTER TABLE `dich_vu` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -316,6 +327,7 @@ CREATE TABLE `doiphong` (
 
 LOCK TABLES `doiphong` WRITE;
 /*!40000 ALTER TABLE `doiphong` DISABLE KEYS */;
+INSERT INTO `doiphong` VALUES (1,'102','2025-07-31','2025-08-01'),(2,'203','2025-08-01','2025-08-02'),(4,'405','2025-07-31','2025-08-01');
 /*!40000 ALTER TABLE `doiphong` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -345,7 +357,7 @@ CREATE TABLE `gia_dich_vu` (
 
 LOCK TABLES `gia_dich_vu` WRITE;
 /*!40000 ALTER TABLE `gia_dich_vu` DISABLE KEYS */;
-INSERT INTO `gia_dich_vu` VALUES ('DV001','2024-01-01',50000.00,'NV001'),('DV002','2024-01-01',300000.00,'NV001'),('DV003','2024-01-01',150000.00,'NV001'),('DV004','2024-01-01',200000.00,'NV001'),('DV005','2024-01-01',350000.00,'NV001'),('DV006','2024-01-01',80000.00,'NV001'),('DV007','2024-01-01',500000.00,'NV001'),('DV008','2024-01-01',200000.00,'NV001'),('DV009','2024-01-01',100000.00,'NV001'),('DV010','2025-08-03',100000.00,NULL);
+INSERT INTO `gia_dich_vu` VALUES ('DV01','2025-07-30',200000.00,'NV01'),('DV02','2025-07-30',150000.00,'NV01'),('DV03','2025-07-30',500000.00,'NV01'),('DV04','2025-07-30',10000.00,'NV01'),('DV05','2025-07-30',50000.00,'NV01');
 /*!40000 ALTER TABLE `gia_dich_vu` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -375,7 +387,7 @@ CREATE TABLE `gia_hang_phong` (
 
 LOCK TABLES `gia_hang_phong` WRITE;
 /*!40000 ALTER TABLE `gia_hang_phong` DISABLE KEYS */;
-INSERT INTO `gia_hang_phong` VALUES (1,'2025-01-01',800000.00,'2024-12-15','NV001'),(2,'2025-01-01',1000000.00,'2024-12-15','NV001'),(3,'2025-01-01',1200000.00,'2024-12-15','NV001'),(4,'2025-01-01',1300000.00,'2024-12-15','NV001'),(5,'2025-01-01',1800000.00,'2024-12-15','NV001'),(6,'2025-01-01',1700000.00,'2024-12-15','NV001'),(7,'2025-01-01',2500000.00,'2024-12-15','NV001'),(8,'2025-01-01',5000000.00,'2024-12-15','NV001');
+INSERT INTO `gia_hang_phong` VALUES (1,'2025-07-30',1000000.00,'2025-07-29','NV01'),(2,'2025-07-30',1500000.00,'2025-07-29','NV01'),(3,'2025-07-30',2000000.00,'2025-07-29','NV01'),(3,'2025-08-01',2200000.00,'2025-07-31','NV01'),(4,'2025-07-30',2500000.00,'2025-07-29','NV01'),(4,'2025-08-02',2700000.00,'2025-08-02','NV01'),(5,'2025-07-30',3000000.00,'2025-07-29','NV01');
 /*!40000 ALTER TABLE `gia_hang_phong` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -405,7 +417,7 @@ CREATE TABLE `giaphuthu` (
 
 LOCK TABLES `giaphuthu` WRITE;
 /*!40000 ALTER TABLE `giaphuthu` DISABLE KEYS */;
-INSERT INTO `giaphuthu` VALUES ('PT001','2025-08-03',200000.00,NULL),('PT002','2024-01-01',500000.00,'NV001'),('PT003','2025-08-03',50000.00,NULL);
+INSERT INTO `giaphuthu` VALUES ('PT01','2025-07-30',200000.00,'NV01'),('PT02','2025-07-30',300000.00,'NV01'),('PT03','2025-07-30',500000.00,'NV01'),('PT04','2025-07-30',150000.00,'NV01'),('PT05','2025-07-30',100000.00,'NV01');
 /*!40000 ALTER TABLE `giaphuthu` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -425,7 +437,7 @@ CREATE TABLE `hang_phong` (
   KEY `ID_LP` (`ID_LP`),
   CONSTRAINT `hang_phong_ibfk_1` FOREIGN KEY (`ID_KP`) REFERENCES `kieu_phong` (`ID_KP`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `hang_phong_ibfk_2` FOREIGN KEY (`ID_LP`) REFERENCES `loai_phong` (`ID_LP`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -434,7 +446,7 @@ CREATE TABLE `hang_phong` (
 
 LOCK TABLES `hang_phong` WRITE;
 /*!40000 ALTER TABLE `hang_phong` DISABLE KEYS */;
-INSERT INTO `hang_phong` VALUES (1,'KP001','LP001'),(2,'KP001','LP002'),(3,'KP002','LP002'),(4,'KP002','LP003'),(5,'KP003','LP004'),(6,'KP003','LP005'),(7,'KP004','LP004'),(8,'KP005','LP004');
+INSERT INTO `hang_phong` VALUES (1,'KP01','LP01'),(2,'KP02','LP02'),(3,'KP03','LP03'),(4,'KP04','LP04'),(5,'KP05','LP05');
 /*!40000 ALTER TABLE `hang_phong` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -466,7 +478,7 @@ CREATE TABLE `hoa_don` (
 
 LOCK TABLES `hoa_don` WRITE;
 /*!40000 ALTER TABLE `hoa_don` DISABLE KEYS */;
-INSERT INTO `hoa_don` VALUES ('HD25080701','2025-08-07',2400000.00,'Đã thanh toán','NV002',2),('HD25080702','2025-08-07',59950000.00,'Đã thanh toán','NV002',5);
+INSERT INTO `hoa_don` VALUES ('HD01','2025-07-30',1200000.00,'Chưa thanh toán','NV01',1),('HD02','2025-07-31',1800000.00,'Chưa thanh toán','NV01',2),('HD03','2025-07-30',2500000.00,'Đã thanh toán','NV01',NULL),('HD04','2025-07-30',2650000.00,'Chưa thanh toán','NV01',4),('HD05','2025-08-02',3100000.00,'Chưa thanh toán','NV01',NULL);
 /*!40000 ALTER TABLE `hoa_don` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -496,7 +508,7 @@ CREATE TABLE `khach_hang` (
 
 LOCK TABLES `khach_hang` WRITE;
 /*!40000 ALTER TABLE `khach_hang` DISABLE KEYS */;
-INSERT INTO `khach_hang` VALUES ('001234567890','Nguyễn Minh','Anh','0987654320','minhanh@gmail.com','123 Trần Hưng Đạo, Q5, TP.HCM',NULL,'password123'),('001234567891','Trần Thị','Bảo','0976543210','baotran@gmail.com','456 Lý Thường Kiệt, Q10, TP.HCM',NULL,'password123'),('001234567892','Lê Văn','Cường','0965432109','cuongle@gmail.com','789 Nguyễn Thị Minh Khai, Q3, TP.HCM',NULL,'password123'),('001234567893','Phạm','Thị Dung','0954321098','dungpham@gmail.com','321 Điện Biên Phủ, Q1, TP.HCM',NULL,'password123'),('001234567894','Hoàng Văn','Em','0943210987','emhoang@gmail.com','654 Hai Bà Trưng, Q1, TP.HCM',NULL,'password123'),('001234567895','Vũ','Thị Phương','0932109876','phuongvu@gmail.com','987 Cộng Hòa, Tân Bình, TP.HCM',NULL,'password123'),('001234567896','Đặng','Văn Giang','0921098765','giangdang@gmail.com','147 Lạc Long Quân, Q11, TP.HCM',NULL,'password123'),('001234567897','Bùi','Thị Hoa','0910987654','hoabui@gmail.com','258 Phan Văn Trị, Gò Vấp, TP.HCM',NULL,'password123'),('0123456789','Đào Nguyễn Duy','Tiên','0818181948','daonguyenduytien@gmail.com','HCM',NULL,'$2a$10$apuuQ21NAXL5KJUWAymdEOvj7SinmC5legajNhP/NeRdOTG7KSN4.'),('045863214568','Lê','Hảo','0819451654','haole@gmail.com','',NULL,NULL),('047203008657','Phan','Lộc','0815141948','','',NULL,NULL),('083203008659','Nguyễn Lê','Minh','0942365589','minh@gmail.com','Số 123, đường Ngô Quyền, quận 1, TP. Hồ Chí Minh',NULL,NULL),('123456789012','Lê','Customer','0111222333','customer@test.com','789 Đường DEF, TP.HCM',NULL,'$2a$10$apuuQ21NAXL5KJUWAymdEOvj7SinmC5legajNhP/NeRdOTG7KSN4.');
+INSERT INTO `khach_hang` VALUES ('123456789001','Le','Hao','0912345671','haole@gmail.com','50 Ba Trieu, Hanoi','MST001','$2a$12$Kid7edjGVhqeHcxmFTDv2.GPLx4LJVsAA99rC4Vq.tmFxTmgHsmFK'),('123456789002','Tran','Lan','0912345672','lan.tran@gmail.com','60 Ly Thuong Kiet, HCM','MST002','kh456'),('123456789003','Le','Minh','0912345673','minh.le@gmail.com','70 Nguyen Du, Hanoi','MST003','kh789'),('123456789004','Pham','Ngoc','0912345674','ngoc.pham@gmail.com','80 Vo Thi Sau, HCM','MST004','kh101'),('123456789005','Ho','Quynh','0912345675','quynh.ho@gmail.com','90 Tran Phu, Hanoi','MST005','kh202');
 /*!40000 ALTER TABLE `khach_hang` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -522,7 +534,7 @@ CREATE TABLE `khuyenmai` (
 
 LOCK TABLES `khuyenmai` WRITE;
 /*!40000 ALTER TABLE `khuyenmai` DISABLE KEYS */;
-INSERT INTO `khuyenmai` VALUES ('KM001','Giảm giá 10% cho khách hàng thân thiết','2024-01-01','2024-12-31'),('KM002','Khuyến mãi mùa hè - Giảm 15%','2024-06-01','2024-08-31'),('KM003','Ưu đãi cuối tuần - Giảm 20%','2024-01-01','2024-12-31'),('KM004','Khuyến mãi Tết Nguyên Đán','2024-02-08','2024-02-18'),('KM005','Ưu đãi đặt phòng sớm - Giảm 25%','2024-01-01','2024-12-31');
+INSERT INTO `khuyenmai` VALUES ('KM01','Summer Discount 10%','2025-07-01','2025-08-31'),('KM02','Family Package 15%','2025-07-15','2025-08-15'),('KM03','VIP Offer 20%','2025-07-30','2025-08-30'),('KM04','Early Bird 25%','2025-07-01','2025-07-31'),('KM05','Long Stay 30%','2025-08-01','2025-08-31');
 /*!40000 ALTER TABLE `khuyenmai` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -548,7 +560,7 @@ CREATE TABLE `kieu_phong` (
 
 LOCK TABLES `kieu_phong` WRITE;
 /*!40000 ALTER TABLE `kieu_phong` DISABLE KEYS */;
-INSERT INTO `kieu_phong` VALUES ('KP001','Standard','Phòng tiêu chuẩn với đầy đủ tiện nghi cơ bản',2),('KP002','Superior','Phòng cao cấp với view đẹp và không gian rộng rãi',2),('KP003','Deluxe','Phòng sang trọng với nội thất cao cấp',3),('KP004','Suite','Phòng suite với phòng khách riêng biệt',4),('KP005','Presidential','Phòng tổng thống với dịch vụ VIP',6);
+INSERT INTO `kieu_phong` VALUES ('KP01','Single','One single bed',1),('KP02','Double','One double bed',2),('KP03','Twin','Two single beds',2),('KP04','Family','One double and one single bed',3),('KP05','Suite','Luxury suite with king bed',4);
 /*!40000 ALTER TABLE `kieu_phong` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -573,7 +585,7 @@ CREATE TABLE `loai_phong` (
 
 LOCK TABLES `loai_phong` WRITE;
 /*!40000 ALTER TABLE `loai_phong` DISABLE KEYS */;
-INSERT INTO `loai_phong` VALUES ('LP001','Single Bed','Phòng giường đơn'),('LP002','Double Bed','Phòng giường đôi'),('LP003','Twin Bed','Phòng hai giường đơn'),('LP004','King Bed','Phòng giường King size'),('LP005','Queen Bed','Phòng giường Queen size');
+INSERT INTO `loai_phong` VALUES ('LP01','Standard','Basic amenities'),('LP02','Superior','Enhanced amenities with view'),('LP03','VIP','Premium amenities and services'),('LP04','Deluxe','Spacious with luxury features'),('LP05','Executive','Business-oriented with workspace');
 /*!40000 ALTER TABLE `loai_phong` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -609,7 +621,7 @@ CREATE TABLE `nhan_vien` (
 
 LOCK TABLES `nhan_vien` WRITE;
 /*!40000 ALTER TABLE `nhan_vien` DISABLE KEYS */;
-INSERT INTO `nhan_vien` VALUES ('NV001','Nguyễn Văn','An','Nam','1985-03-15','123 Lê Lợi, Q1, TP.HCM','0901234567','admin@hotel.com','','admin','$2a$12$e9JrrQZQEeXtL6CHH2d1Vu7n8P5KvO7PXX/FmoGKf4v.fF9OeTT1C','BP001'),('NV002','Trần Thị','Bình','Nữ','1990-07-22','456 Nguyễn Hu, Q1, TP.HCM','0912345678','letan1@hotel.com',NULL,'letan1','$2a$10$DxWz7iimONrJur1yEkqR0e2DpJoPlqYbV5VGfEUCd6K0OIsENzwzy',NULL),('NV003','Lê Văn','Cường','Nam','1988-11-10','789 Đồng Khởi, Q1, TP.HCM','0923456789','letan2@hotel.com','','letan2','$2a$12$e9JrrQZQEeXtL6CHH2d1Vu7n8P5KvO7PXX/FmoGKf4v.fF9OeTT1C','BP002');
+INSERT INTO `nhan_vien` VALUES ('NV01','Nguyen','An','Nam','1990-05-15','123 Le Loi, HCM','0901234561','an.nguyen@hotel.com','/images/an.jpg','admin','$2a$12$fl0BAqKGZYvshyjlKsRGYeQ9SJqKIwpfjjgrmwD0hk1PUzKhfAjt2','BP001'),('NV02','Tran','Binh','Nu','1992-08-20','456 Tran Hung Dao, HCM','0901234562','binh.tran@hotel.com','/images/binh.jpg','binhtran','pass456','BP002'),('NV03','Le','Cuc','Nu','1988-03-10','789 Nguyen Trai, HCM','0901234563','cuc.le@hotel.com','/images/cuc.jpg','cule','pass789','BP003'),('NV04','Pham','Dung','Nam','1995-11-25','101 Vo Van Tan, HCM','0901234564','dung.pham@hotel.com','/images/dung.jpg','dungpham','pass101','BP004');
 /*!40000 ALTER TABLE `nhan_vien` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -633,7 +645,7 @@ CREATE TABLE `nhom_quyen` (
 
 LOCK TABLES `nhom_quyen` WRITE;
 /*!40000 ALTER TABLE `nhom_quyen` DISABLE KEYS */;
-INSERT INTO `nhom_quyen` VALUES ('NQ001','Quản trị viên'),('NQ002','Quản lý'),('NQ003','Nhân viên lễ tân'),('NQ004','Nhân viên housekeeping'),('NQ005','Nhân viên bảo vệ'),('NQ006','Nhân viên kế toán');
+INSERT INTO `nhom_quyen` VALUES ('NQ01','Admin'),('NQ02','Receptionist'),('NQ03','Housekeeping'),('NQ04','Restaurant'),('NQ05','Accounting');
 /*!40000 ALTER TABLE `nhom_quyen` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -660,7 +672,7 @@ CREATE TABLE `phan_quyen` (
 
 LOCK TABLES `phan_quyen` WRITE;
 /*!40000 ALTER TABLE `phan_quyen` DISABLE KEYS */;
-INSERT INTO `phan_quyen` VALUES ('NQ001','BP001'),('NQ002','BP001'),('NQ003','BP002'),('NQ004','BP003'),('NQ005','BP004'),('NQ006','BP005');
+INSERT INTO `phan_quyen` VALUES ('NQ02','BP001'),('NQ03','BP002'),('NQ04','BP003'),('NQ05','BP004');
 /*!40000 ALTER TABLE `phan_quyen` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -685,7 +697,7 @@ CREATE TABLE `phieudat` (
   KEY `ID_NV` (`ID_NV`),
   CONSTRAINT `phieudat_ibfk_1` FOREIGN KEY (`CCCD`) REFERENCES `khach_hang` (`CCCD`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `phieudat_ibfk_2` FOREIGN KEY (`ID_NV`) REFERENCES `nhan_vien` (`ID_NV`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -694,7 +706,7 @@ CREATE TABLE `phieudat` (
 
 LOCK TABLES `phieudat` WRITE;
 /*!40000 ALTER TABLE `phieudat` DISABLE KEYS */;
-INSERT INTO `phieudat` VALUES (1,'2025-07-25','2025-08-06','2025-08-09','Đã xác nhận',600000.00,'001234567890','NV002'),(2,'2025-07-26','2025-08-02','2025-08-03','Đã check-out',600000.00,'001234567891','NV002'),(3,'2025-07-27','2025-08-04','2025-08-08','Đã xác nhận',400000.00,'001234567892','NV003'),(4,'2025-08-02','2025-08-10','2025-08-12','Đã xác nhận',1000000.00,'001234567893','NV002'),(5,'2025-07-29','2025-08-15','2025-08-18','Đã xác nhận',750000.00,'001234567894','NV003'),(6,'2025-08-02','2025-08-02','2025-08-13','Đã hoàn thành',500000.00,'0123456789','NV002');
+INSERT INTO `phieudat` VALUES (1,'2025-07-28','2025-07-30','2025-08-01','Xác nhận',500000.00,'123456789001','NV01'),(3,'2025-07-30','2025-08-13','2025-08-15','Xác nhận',700000.00,'123456789003','NV01'),(5,'2025-07-31','2025-08-14','2025-08-17','Xác nhận',900000.00,'123456789005','NV01'),(9,'2025-08-02','2025-08-07','2025-08-08','Chờ xác nhận',400000.00,'123456789001',NULL),(10,'2025-08-02','2025-08-07','2025-08-08','Chờ xác nhận',880000.00,'123456789001',NULL),(11,'2025-08-02','2025-08-07','2025-08-08','Chờ xác nhận',880000.00,'123456789001',NULL);
 /*!40000 ALTER TABLE `phieudat` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -718,7 +730,7 @@ CREATE TABLE `phieuthue` (
   CONSTRAINT `phieuthue_ibfk_1` FOREIGN KEY (`ID_NV`) REFERENCES `nhan_vien` (`ID_NV`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `phieuthue_ibfk_2` FOREIGN KEY (`CCCD`) REFERENCES `khach_hang` (`CCCD`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `phieuthue_ibfk_3` FOREIGN KEY (`ID_PD`) REFERENCES `phieudat` (`ID_PD`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -727,7 +739,7 @@ CREATE TABLE `phieuthue` (
 
 LOCK TABLES `phieuthue` WRITE;
 /*!40000 ALTER TABLE `phieuthue` DISABLE KEYS */;
-INSERT INTO `phieuthue` VALUES (1,'2025-07-30','NV002','001234567890',1),(2,'2025-08-01','NV002','001234567891',2),(3,'2025-08-02','NV002','001234567890',1),(4,'2025-07-01','NV002','001234567897',NULL),(5,'2025-08-02','NV002','0123456789',6),(8,'2025-08-05','NV002','047203008657',NULL),(9,'2025-08-08','NV002','045863214568',NULL);
+INSERT INTO `phieuthue` VALUES (1,'2025-07-30','NV01','123456789001',1),(2,'2025-07-30','NV01','123456789002',NULL),(4,'2025-07-31','NV01','123456789004',NULL),(6,'2025-07-30','NV01','123456789002',NULL),(7,'2025-07-30','NV01','123456789002',NULL),(8,'2025-08-01','NV01','123456789003',NULL);
 /*!40000 ALTER TABLE `phieuthue` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -757,7 +769,7 @@ CREATE TABLE `phong` (
 
 LOCK TABLES `phong` WRITE;
 /*!40000 ALTER TABLE `phong` DISABLE KEYS */;
-INSERT INTO `phong` VALUES ('101',1,1,'TT002'),('102',1,1,'TT002'),('103',1,2,'TT001'),('104',1,1,'TT001'),('105',1,4,'TT001'),('106',1,2,'TT001'),('107',1,2,'TT002'),('108',1,8,'TT001'),('201',2,3,'TT001'),('202',2,3,'TT003'),('203',2,4,'TT003'),('204',2,4,'TT001'),('205',2,3,'TT001'),('206',2,4,'TT003'),('207',2,5,'TT002'),('208',2,8,'TT001'),('301',3,5,'TT001'),('302',3,5,'TT001'),('303',3,6,'TT002'),('304',3,6,'TT002'),('305',3,2,'TT002'),('306',3,4,'TT001'),('307',3,5,'TT001'),('308',3,8,'TT004'),('401',4,7,'TT001'),('402',4,7,'TT001'),('403',4,4,'TT003'),('404',4,5,'TT002'),('405',4,6,'TT001'),('406',4,4,'TT003'),('407',4,4,'TT003'),('408',4,8,'TT001'),('501',5,8,'TT002'),('502',5,8,'TT001'),('503',5,8,'TT004'),('504',5,2,'TT001');
+INSERT INTO `phong` VALUES ('101',1,1,'TT01'),('102',1,1,'TT01'),('202',2,2,'TT04'),('203',2,2,'TT01'),('301',3,3,'TT01'),('302',3,3,'TT01'),('303',3,3,'TT01'),('304',3,3,'TT01'),('305',3,3,'TT01'),('306',3,3,'TT01'),('307',3,3,'TT01'),('308',3,3,'TT01'),('309',3,3,'TT01'),('310',3,3,'TT01'),('404',4,4,'TT01'),('405',4,4,'TT01'),('505',5,5,'TT05'),('506',5,5,'TT01');
 /*!40000 ALTER TABLE `phong` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -782,7 +794,7 @@ CREATE TABLE `phu_thu` (
 
 LOCK TABLES `phu_thu` WRITE;
 /*!40000 ALTER TABLE `phu_thu` DISABLE KEYS */;
-INSERT INTO `phu_thu` VALUES ('PT001','Thêm giường phụ',NULL),('PT002','Ở lại thêm giờ','Khách muốn ở lại thêm giờ'),('PT003','Dọn phòng thêm',NULL);
+INSERT INTO `phu_thu` VALUES ('PT01','Late Check-out','Check-out after 12:00'),('PT02','Extra Guest','Additional guest in room'),('PT03','Room Damage','Damage to room property'),('PT04','Early Check-in','Check-in before 14:00'),('PT05','Special Request','Custom service request');
 /*!40000 ALTER TABLE `phu_thu` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -810,7 +822,7 @@ CREATE TABLE `quan_ly` (
 
 LOCK TABLES `quan_ly` WRITE;
 /*!40000 ALTER TABLE `quan_ly` DISABLE KEYS */;
-INSERT INTO `quan_ly` VALUES ('BP001','2024-01-01','NV001'),('BP002','2024-01-01','NV002'),('BP003','2024-01-01','NV004'),('BP005','2024-01-01','NV006');
+INSERT INTO `quan_ly` VALUES ('BP001','2025-02-01','NV01'),('BP002','2025-03-01','NV02'),('BP003','2025-04-01','NV03'),('BP004','2025-05-01','NV04');
 /*!40000 ALTER TABLE `quan_ly` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -836,7 +848,7 @@ CREATE TABLE `tiennghi` (
 
 LOCK TABLES `tiennghi` WRITE;
 /*!40000 ALTER TABLE `tiennghi` DISABLE KEYS */;
-INSERT INTO `tiennghi` VALUES ('TN001','WiFi miễn phí','wifi','Internet tốc độ cao'),('TN002','Điều hòa','ac','Máy lạnh 2 chiều'),('TN003','TV màn hình phẳng','tv','Smart TV 55 inch'),('TN004','Tủ lạnh mini','fridge','Minibar đầy đủ'),('TN005','Két an toàn','safe','Két sắt điện tử'),('TN006','Bàn làm việc','desk','Bàn làm việc ergonomic'),('TN007','Phòng tắm riêng','bathroom','Phòng tắm đầy đủ tiện nghi'),('TN008','Máy sấy tóc','hairdryer','Máy sấy tóc công suất cao'),('TN009','Dép đi trong phòng','slippers','Dép cotton cao cấp'),('TN010','Áo choàng tắm','bathrobe','Áo choàng cotton 100%');
+INSERT INTO `tiennghi` VALUES ('TN01','Wi-Fi','/icons/wifi.png','High-speed internet'),('TN02','TV','/icons/tv.png','Smart TV with streaming'),('TN03','Air Conditioner','/icons/ac.png','Climate control'),('TN04','Mini Fridge','/icons/fridge.png','Mini fridge with drinks'),('TN05','Safe','/icons/safe.png','In-room safe');
 /*!40000 ALTER TABLE `tiennghi` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -860,7 +872,7 @@ CREATE TABLE `trangthai` (
 
 LOCK TABLES `trangthai` WRITE;
 /*!40000 ALTER TABLE `trangthai` DISABLE KEYS */;
-INSERT INTO `trangthai` VALUES ('TT001','Trống'),('TT002','Đã có khách'),('TT003','Đang dọn dẹp'),('TT004','Đang bảo trì'),('TT005','Đã đặt');
+INSERT INTO `trangthai` VALUES ('TT01','Sẵn sàng'),('TT02','Có khách'),('TT03','Dơ'),('TT04','Đặt trước'),('TT05','Bảo trì');
 /*!40000 ALTER TABLE `trangthai` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -873,4 +885,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-08-08 18:06:59
+-- Dump completed on 2025-08-10  8:52:46

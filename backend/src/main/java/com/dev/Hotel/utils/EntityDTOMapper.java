@@ -28,11 +28,12 @@ public class EntityDTOMapper {
     public void setPriceService(PriceService priceService) {
         EntityDTOMapper.priceService = priceService;
     }
-    
+
     // NhanVien mapping
     public static NhanVienDTO mapNhanVienToDTO(NhanVien nhanVien) {
-        if (nhanVien == null) return null;
-        
+        if (nhanVien == null)
+            return null;
+
         NhanVienDTO dto = new NhanVienDTO();
         dto.setIdNv(nhanVien.getIdNv());
         dto.setHo(nhanVien.getHo());
@@ -44,19 +45,20 @@ public class EntityDTOMapper {
         dto.setEmail(nhanVien.getEmail());
         dto.setHinh(nhanVien.getHinh());
         dto.setUsername(nhanVien.getUsername());
-        
+
         if (nhanVien.getBoPhan() != null) {
             dto.setIdBp(nhanVien.getBoPhan().getIdBp());
             dto.setTenBp(nhanVien.getBoPhan().getTenBp());
         }
-        
+
         return dto;
     }
-    
+
     // KhachHang mapping
     public static KhachHangDTO mapKhachHangToDTO(KhachHang khachHang) {
-        if (khachHang == null) return null;
-        
+        if (khachHang == null)
+            return null;
+
         KhachHangDTO dto = new KhachHangDTO();
         dto.setCccd(khachHang.getCccd());
         dto.setHo(khachHang.getHo());
@@ -65,14 +67,15 @@ public class EntityDTOMapper {
         dto.setEmail(khachHang.getEmail());
         dto.setDiaChi(khachHang.getDiaChi());
         dto.setMaSoThue(khachHang.getMaSoThue());
-        
+
         return dto;
     }
-    
+
     // Phong mapping
     public static PhongDTO mapPhongToDTO(Phong phong) {
-        if (phong == null) return null;
-        
+        if (phong == null)
+            return null;
+
         PhongDTO dto = new PhongDTO();
 
         // Basic room info
@@ -87,9 +90,8 @@ public class EntityDTOMapper {
             if (giaHangPhongRepository != null) {
                 try {
                     var giaHangPhong = giaHangPhongRepository.findLatestPriceByHangPhong(
-                        phong.getHangPhong().getIdHangPhong(),
-                        LocalDate.now()
-                    );
+                            phong.getHangPhong().getIdHangPhong(),
+                            LocalDate.now());
                     if (giaHangPhong.isPresent()) {
                         Double price = giaHangPhong.get().getGia().doubleValue();
                         dto.setGiaPhong(price);
@@ -129,13 +131,14 @@ public class EntityDTOMapper {
             dto.setTenTrangThai(phong.getTrangThai().getTenTrangThai());
             dto.setIsAvailable("Trống".equals(phong.getTrangThai().getTenTrangThai()));
         }
-        
+
         return dto;
     }
-    
+
     // PhieuDat mapping
     public static PhieuDatDTO mapPhieuDatToDTO(PhieuDat phieuDat) {
-        if (phieuDat == null) return null;
+        if (phieuDat == null)
+            return null;
 
         PhieuDatDTO dto = new PhieuDatDTO();
         dto.setIdPd(phieuDat.getIdPd());
@@ -180,7 +183,8 @@ public class EntityDTOMapper {
 
     // PhieuThue mapping
     public static PhieuThueDTO mapPhieuThueToDTO(PhieuThue phieuThue) {
-        if (phieuThue == null) return null;
+        if (phieuThue == null)
+            return null;
 
         PhieuThueDTO dto = new PhieuThueDTO();
         dto.setIdPt(phieuThue.getIdPt());
@@ -190,16 +194,16 @@ public class EntityDTOMapper {
         if (phieuThue.getChiTietPhieuThue() != null && !phieuThue.getChiTietPhieuThue().isEmpty()) {
             // Lấy ngày đến sớm nhất và ngày đi muộn nhất từ tất cả chi tiết
             LocalDate ngayDenSomNhat = phieuThue.getChiTietPhieuThue().stream()
-                .map(ct -> ct.getNgayDen())
-                .filter(date -> date != null)
-                .min(LocalDate::compareTo)
-                .orElse(null);
+                    .map(ct -> ct.getNgayDen())
+                    .filter(date -> date != null)
+                    .min(LocalDate::compareTo)
+                    .orElse(null);
 
             LocalDate ngayDiMuonNhat = phieuThue.getChiTietPhieuThue().stream()
-                .map(ct -> ct.getNgayDi())
-                .filter(date -> date != null)
-                .max(LocalDate::compareTo)
-                .orElse(null);
+                    .map(ct -> ct.getNgayDi())
+                    .filter(date -> date != null)
+                    .max(LocalDate::compareTo)
+                    .orElse(null);
 
             dto.setNgayDen(ngayDenSomNhat);
             dto.setNgayDi(ngayDiMuonNhat);
@@ -231,7 +235,8 @@ public class EntityDTOMapper {
 
     // PhieuThue simple mapping (for check-in response)
     public static PhieuThueSimpleDTO mapPhieuThueToSimpleDTO(PhieuThue phieuThue) {
-        if (phieuThue == null) return null;
+        if (phieuThue == null)
+            return null;
 
         PhieuThueSimpleDTO dto = new PhieuThueSimpleDTO();
         dto.setIdPt(phieuThue.getIdPt());
@@ -240,16 +245,16 @@ public class EntityDTOMapper {
         // Lấy ngayDen và ngayDi từ chiTietPhieuThue
         if (phieuThue.getChiTietPhieuThue() != null && !phieuThue.getChiTietPhieuThue().isEmpty()) {
             LocalDate ngayDenSomNhat = phieuThue.getChiTietPhieuThue().stream()
-                .map(ct -> ct.getNgayDen())
-                .filter(date -> date != null)
-                .min(LocalDate::compareTo)
-                .orElse(null);
+                    .map(ct -> ct.getNgayDen())
+                    .filter(date -> date != null)
+                    .min(LocalDate::compareTo)
+                    .orElse(null);
 
             LocalDate ngayDiMuonNhat = phieuThue.getChiTietPhieuThue().stream()
-                .map(ct -> ct.getNgayDi())
-                .filter(date -> date != null)
-                .max(LocalDate::compareTo)
-                .orElse(null);
+                    .map(ct -> ct.getNgayDi())
+                    .filter(date -> date != null)
+                    .max(LocalDate::compareTo)
+                    .orElse(null);
 
             dto.setNgayDen(ngayDenSomNhat);
             dto.setNgayDi(ngayDiMuonNhat);
@@ -272,7 +277,8 @@ public class EntityDTOMapper {
 
     // PhieuDat simple mapping (for booking response)
     public static PhieuDatSimpleDTO mapPhieuDatToSimpleDTO(PhieuDat phieuDat) {
-        if (phieuDat == null) return null;
+        if (phieuDat == null)
+            return null;
 
         PhieuDatSimpleDTO dto = new PhieuDatSimpleDTO();
         dto.setIdPd(phieuDat.getIdPd());
@@ -295,7 +301,8 @@ public class EntityDTOMapper {
 
     // CtPhieuThue mapping
     public static CtPhieuThueDTO mapCtPhieuThueToDTO(CtPhieuThue ctPhieuThue) {
-        if (ctPhieuThue == null) return null;
+        if (ctPhieuThue == null)
+            return null;
 
         CtPhieuThueDTO dto = new CtPhieuThueDTO();
         dto.setIdCtPt(ctPhieuThue.getIdCtPt());
@@ -311,7 +318,7 @@ public class EntityDTOMapper {
             // Add customer information from PhieuThue
             if (ctPhieuThue.getPhieuThue().getKhachHang() != null) {
                 dto.setTenKhachHang(ctPhieuThue.getPhieuThue().getKhachHang().getHo() + " " +
-                                   ctPhieuThue.getPhieuThue().getKhachHang().getTen());
+                        ctPhieuThue.getPhieuThue().getKhachHang().getTen());
                 dto.setCccd(ctPhieuThue.getPhieuThue().getKhachHang().getCccd());
                 dto.setSdtKhachHang(ctPhieuThue.getPhieuThue().getKhachHang().getSdt());
             }
@@ -338,15 +345,15 @@ public class EntityDTOMapper {
         // Map services (dich vu) for this CtPhieuThue
         if (ctPhieuThue.getDanhSachDichVu() != null && !ctPhieuThue.getDanhSachDichVu().isEmpty()) {
             dto.setDanhSachDichVu(ctPhieuThue.getDanhSachDichVu().stream()
-                .map(EntityDTOMapper::mapCtDichVuToDTO)
-                .collect(Collectors.toList()));
+                    .map(EntityDTOMapper::mapCtDichVuToDTO)
+                    .collect(Collectors.toList()));
         }
 
         // Map surcharges (phu thu) for this CtPhieuThue
         if (ctPhieuThue.getDanhSachPhuThu() != null && !ctPhieuThue.getDanhSachPhuThu().isEmpty()) {
             dto.setDanhSachPhuThu(ctPhieuThue.getDanhSachPhuThu().stream()
-                .map(EntityDTOMapper::mapCtPhuThuToDTO)
-                .collect(Collectors.toList()));
+                    .map(EntityDTOMapper::mapCtPhuThuToDTO)
+                    .collect(Collectors.toList()));
         }
 
         return dto;
@@ -356,15 +363,15 @@ public class EntityDTOMapper {
     public static List<NhanVienDTO> mapNhanVienListToDTO(List<NhanVien> nhanVienList) {
         return nhanVienList.stream().map(EntityDTOMapper::mapNhanVienToDTO).collect(Collectors.toList());
     }
-    
+
     public static List<KhachHangDTO> mapKhachHangListToDTO(List<KhachHang> khachHangList) {
         return khachHangList.stream().map(EntityDTOMapper::mapKhachHangToDTO).collect(Collectors.toList());
     }
-    
+
     public static List<PhongDTO> mapPhongListToDTO(List<Phong> phongList) {
         return phongList.stream().map(EntityDTOMapper::mapPhongToDTO).collect(Collectors.toList());
     }
-    
+
     public static List<PhieuDatDTO> mapPhieuDatListToDTO(List<PhieuDat> phieuDatList) {
         return phieuDatList.stream().map(EntityDTOMapper::mapPhieuDatToDTO).collect(Collectors.toList());
     }
@@ -379,7 +386,8 @@ public class EntityDTOMapper {
 
     // KieuPhong mapping
     public static KieuPhongDTO mapKieuPhongToDTO(KieuPhong kieuPhong) {
-        if (kieuPhong == null) return null;
+        if (kieuPhong == null)
+            return null;
 
         KieuPhongDTO dto = new KieuPhongDTO();
         dto.setIdKp(kieuPhong.getIdKp());
@@ -394,7 +402,8 @@ public class EntityDTOMapper {
 
     // LoaiPhong mapping
     public static LoaiPhongDTO mapLoaiPhongToDTO(LoaiPhong loaiPhong) {
-        if (loaiPhong == null) return null;
+        if (loaiPhong == null)
+            return null;
 
         LoaiPhongDTO dto = new LoaiPhongDTO();
         dto.setIdLp(loaiPhong.getIdLp());
@@ -409,7 +418,8 @@ public class EntityDTOMapper {
 
     // CtDichVu mapping
     public static CtDichVuDTO mapCtDichVuToDTO(CtDichVu ctDichVu) {
-        if (ctDichVu == null) return null;
+        if (ctDichVu == null)
+            return null;
 
         CtDichVuDTO dto = new CtDichVuDTO();
 
@@ -431,19 +441,21 @@ public class EntityDTOMapper {
                 dto.setSoPhong(ctDichVu.getCtPhieuThue().getPhong().getSoPhong());
                 if (ctDichVu.getCtPhieuThue().getPhong().getHangPhong() != null) {
                     if (ctDichVu.getCtPhieuThue().getPhong().getHangPhong().getKieuPhong() != null) {
-                        dto.setTenKieuPhong(ctDichVu.getCtPhieuThue().getPhong().getHangPhong().getKieuPhong().getTenKp());
+                        dto.setTenKieuPhong(
+                                ctDichVu.getCtPhieuThue().getPhong().getHangPhong().getKieuPhong().getTenKp());
                     }
                     if (ctDichVu.getCtPhieuThue().getPhong().getHangPhong().getLoaiPhong() != null) {
-                        dto.setTenLoaiPhong(ctDichVu.getCtPhieuThue().getPhong().getHangPhong().getLoaiPhong().getTenLp());
+                        dto.setTenLoaiPhong(
+                                ctDichVu.getCtPhieuThue().getPhong().getHangPhong().getLoaiPhong().getTenLp());
                     }
                 }
             }
 
             // Add customer info
             if (ctDichVu.getCtPhieuThue().getPhieuThue() != null &&
-                ctDichVu.getCtPhieuThue().getPhieuThue().getKhachHang() != null) {
+                    ctDichVu.getCtPhieuThue().getPhieuThue().getKhachHang() != null) {
                 dto.setTenKhachHang(ctDichVu.getCtPhieuThue().getPhieuThue().getKhachHang().getHo() + " " +
-                                   ctDichVu.getCtPhieuThue().getPhieuThue().getKhachHang().getTen());
+                        ctDichVu.getCtPhieuThue().getPhieuThue().getKhachHang().getTen());
                 dto.setCccd(ctDichVu.getCtPhieuThue().getPhieuThue().getKhachHang().getCccd());
             }
         }
@@ -462,7 +474,8 @@ public class EntityDTOMapper {
 
     // CtPhuThu mapping
     public static CtPhuThuDTO mapCtPhuThuToDTO(CtPhuThu ctPhuThu) {
-        if (ctPhuThu == null) return null;
+        if (ctPhuThu == null)
+            return null;
 
         CtPhuThuDTO dto = new CtPhuThuDTO();
 
@@ -483,19 +496,21 @@ public class EntityDTOMapper {
                 dto.setSoPhong(ctPhuThu.getCtPhieuThue().getPhong().getSoPhong());
                 if (ctPhuThu.getCtPhieuThue().getPhong().getHangPhong() != null) {
                     if (ctPhuThu.getCtPhieuThue().getPhong().getHangPhong().getKieuPhong() != null) {
-                        dto.setTenKieuPhong(ctPhuThu.getCtPhieuThue().getPhong().getHangPhong().getKieuPhong().getTenKp());
+                        dto.setTenKieuPhong(
+                                ctPhuThu.getCtPhieuThue().getPhong().getHangPhong().getKieuPhong().getTenKp());
                     }
                     if (ctPhuThu.getCtPhieuThue().getPhong().getHangPhong().getLoaiPhong() != null) {
-                        dto.setTenLoaiPhong(ctPhuThu.getCtPhieuThue().getPhong().getHangPhong().getLoaiPhong().getTenLp());
+                        dto.setTenLoaiPhong(
+                                ctPhuThu.getCtPhieuThue().getPhong().getHangPhong().getLoaiPhong().getTenLp());
                     }
                 }
             }
 
             // Add customer info
             if (ctPhuThu.getCtPhieuThue().getPhieuThue() != null &&
-                ctPhuThu.getCtPhieuThue().getPhieuThue().getKhachHang() != null) {
+                    ctPhuThu.getCtPhieuThue().getPhieuThue().getKhachHang() != null) {
                 dto.setTenKhachHang(ctPhuThu.getCtPhieuThue().getPhieuThue().getKhachHang().getHo() + " " +
-                                   ctPhuThu.getCtPhieuThue().getPhieuThue().getKhachHang().getTen());
+                        ctPhuThu.getCtPhieuThue().getPhieuThue().getKhachHang().getTen());
                 dto.setCccd(ctPhuThu.getCtPhieuThue().getPhieuThue().getKhachHang().getCccd());
             }
         }
@@ -513,7 +528,8 @@ public class EntityDTOMapper {
 
     // DichVu mapping
     public static DichVuDTO mapDichVuToDTO(DichVu dichVu) {
-        if (dichVu == null) return null;
+        if (dichVu == null)
+            return null;
 
         DichVuDTO dto = new DichVuDTO();
         dto.setIdDv(dichVu.getIdDv());
@@ -524,9 +540,9 @@ public class EntityDTOMapper {
         if (priceService != null) {
             try {
                 priceService.getLatestServicePrice(dichVu.getIdDv())
-                    .ifPresent(dto::setGiaHienTai);
+                        .ifPresent(dto::setGiaHienTai);
                 priceService.getLatestServicePriceDate(dichVu.getIdDv())
-                    .ifPresent(dto::setNgayApDungGia);
+                        .ifPresent(dto::setNgayApDungGia);
             } catch (Exception e) {
                 // If error getting price, set null
                 dto.setGiaHienTai(null);
@@ -546,7 +562,8 @@ public class EntityDTOMapper {
 
     // PhuThu mapping
     public static PhuThuDTO mapPhuThuToDTO(PhuThu phuThu) {
-        if (phuThu == null) return null;
+        if (phuThu == null)
+            return null;
 
         PhuThuDTO dto = new PhuThuDTO();
         dto.setIdPhuThu(phuThu.getIdPhuThu());
@@ -557,9 +574,9 @@ public class EntityDTOMapper {
         if (priceService != null) {
             try {
                 priceService.getLatestSurchargePrice(phuThu.getIdPhuThu())
-                    .ifPresent(dto::setGiaHienTai);
+                        .ifPresent(dto::setGiaHienTai);
                 priceService.getLatestSurchargePriceDate(phuThu.getIdPhuThu())
-                    .ifPresent(dto::setNgayApDungGia);
+                        .ifPresent(dto::setNgayApDungGia);
             } catch (Exception e) {
                 // If error getting price, set null
                 dto.setGiaHienTai(null);
@@ -579,7 +596,8 @@ public class EntityDTOMapper {
 
     // HangPhong mapping
     public static HangPhongDTO mapHangPhongToDTO(HangPhong hangPhong) {
-        if (hangPhong == null) return null;
+        if (hangPhong == null)
+            return null;
 
         HangPhongDTO dto = new HangPhongDTO();
         dto.setIdHangPhong(hangPhong.getIdHangPhong());
@@ -606,9 +624,10 @@ public class EntityDTOMapper {
 
             // Count available rooms
             long soPhongTrong = hangPhong.getDanhSachPhong().stream()
-                .filter(phong -> phong.getTrangThai() != null &&
-                    ("TT01".equals(phong.getTrangThai().getIdTt()) || "TT001".equals(phong.getTrangThai().getIdTt())))
-                .count();
+                    .filter(phong -> phong.getTrangThai() != null &&
+                            ("TT01".equals(phong.getTrangThai().getIdTt())
+                                    || "TT001".equals(phong.getTrangThai().getIdTt())))
+                    .count();
             dto.setSoPhongTrong((int) soPhongTrong);
         }
 
@@ -621,7 +640,8 @@ public class EntityDTOMapper {
 
     // HoaDon mapping
     public static HoaDonDTO mapHoaDonToDTO(HoaDon hoaDon) {
-        if (hoaDon == null) return null;
+        if (hoaDon == null)
+            return null;
 
         HoaDonDTO dto = new HoaDonDTO();
         dto.setIdHd(hoaDon.getIdHd());
@@ -635,18 +655,19 @@ public class EntityDTOMapper {
             dto.setMaPhieuThue("PT" + hoaDon.getPhieuThue().getIdPt());
 
             // Lấy ngayDen và ngayDi từ chiTietPhieuThue
-            if (hoaDon.getPhieuThue().getChiTietPhieuThue() != null && !hoaDon.getPhieuThue().getChiTietPhieuThue().isEmpty()) {
+            if (hoaDon.getPhieuThue().getChiTietPhieuThue() != null
+                    && !hoaDon.getPhieuThue().getChiTietPhieuThue().isEmpty()) {
                 LocalDate ngayDenSomNhat = hoaDon.getPhieuThue().getChiTietPhieuThue().stream()
-                    .map(ct -> ct.getNgayDen())
-                    .filter(date -> date != null)
-                    .min(LocalDate::compareTo)
-                    .orElse(null);
+                        .map(ct -> ct.getNgayDen())
+                        .filter(date -> date != null)
+                        .min(LocalDate::compareTo)
+                        .orElse(null);
 
                 LocalDate ngayDiMuonNhat = hoaDon.getPhieuThue().getChiTietPhieuThue().stream()
-                    .map(ct -> ct.getNgayDi())
-                    .filter(date -> date != null)
-                    .max(LocalDate::compareTo)
-                    .orElse(null);
+                        .map(ct -> ct.getNgayDi())
+                        .filter(date -> date != null)
+                        .max(LocalDate::compareTo)
+                        .orElse(null);
 
                 dto.setNgayDen(ngayDenSomNhat);
                 dto.setNgayDi(ngayDiMuonNhat);
@@ -656,7 +677,7 @@ public class EntityDTOMapper {
             if (hoaDon.getPhieuThue().getKhachHang() != null) {
                 dto.setCccdKhachHang(hoaDon.getPhieuThue().getKhachHang().getCccd());
                 dto.setHoTenKhachHang(hoaDon.getPhieuThue().getKhachHang().getHo() + " " +
-                                     hoaDon.getPhieuThue().getKhachHang().getTen());
+                        hoaDon.getPhieuThue().getKhachHang().getTen());
                 dto.setSdtKhachHang(hoaDon.getPhieuThue().getKhachHang().getSdt());
                 dto.setEmailKhachHang(hoaDon.getPhieuThue().getKhachHang().getEmail());
             }
@@ -684,16 +705,16 @@ public class EntityDTOMapper {
         // Lấy ngayDen và ngayDi từ chiTietPhieuThue
         if (phieuThue.getChiTietPhieuThue() != null && !phieuThue.getChiTietPhieuThue().isEmpty()) {
             LocalDate ngayDenSomNhat = phieuThue.getChiTietPhieuThue().stream()
-                .map(ct -> ct.getNgayDen())
-                .filter(date -> date != null)
-                .min(LocalDate::compareTo)
-                .orElse(null);
+                    .map(ct -> ct.getNgayDen())
+                    .filter(date -> date != null)
+                    .min(LocalDate::compareTo)
+                    .orElse(null);
 
             LocalDate ngayDiMuonNhat = phieuThue.getChiTietPhieuThue().stream()
-                .map(ct -> ct.getNgayDi())
-                .filter(date -> date != null)
-                .max(LocalDate::compareTo)
-                .orElse(null);
+                    .map(ct -> ct.getNgayDi())
+                    .filter(date -> date != null)
+                    .max(LocalDate::compareTo)
+                    .orElse(null);
 
             dto.setNgayDen(ngayDenSomNhat);
             dto.setNgayDi(ngayDiMuonNhat);
@@ -730,7 +751,7 @@ public class EntityDTOMapper {
                     roomDto.setIdPhong(ctPhieuThue.getPhong().getSoPhong());
                     roomDto.setTenPhong(ctPhieuThue.getPhong().getSoPhong());
                     if (ctPhieuThue.getPhong().getHangPhong() != null &&
-                        ctPhieuThue.getPhong().getHangPhong().getLoaiPhong() != null) {
+                            ctPhieuThue.getPhong().getHangPhong().getLoaiPhong() != null) {
                         roomDto.setLoaiPhong(ctPhieuThue.getPhong().getHangPhong().getLoaiPhong().getTenLp());
                     }
                 }
@@ -741,8 +762,10 @@ public class EntityDTOMapper {
                 roomDto.setTrangThaiThanhToan(ctPhieuThue.getTtThanhToan());
 
                 // Calculate room charges
-                if (ctPhieuThue.getDonGia() != null && ctPhieuThue.getNgayDen() != null && ctPhieuThue.getNgayDi() != null) {
-                    long soNgay = java.time.temporal.ChronoUnit.DAYS.between(ctPhieuThue.getNgayDen(), ctPhieuThue.getNgayDi());
+                if (ctPhieuThue.getDonGia() != null && ctPhieuThue.getNgayDen() != null
+                        && ctPhieuThue.getNgayDi() != null) {
+                    long soNgay = java.time.temporal.ChronoUnit.DAYS.between(ctPhieuThue.getNgayDen(),
+                            ctPhieuThue.getNgayDi());
                     soNgay = Math.max(1, soNgay);
                     roomDto.setSoNgay((int) soNgay);
 
@@ -776,5 +799,32 @@ public class EntityDTOMapper {
         return dto;
     }
 
+    // GiaHangPhong mapping methods
+    public static GiaHangPhongDTO mapGiaHangPhongToDTO(GiaHangPhong giaHangPhong) {
+        if (giaHangPhong == null) {
+            return null;
+        }
+
+        GiaHangPhongDTO dto = new GiaHangPhongDTO();
+        dto.setIdHangPhong(giaHangPhong.getIdHangPhong());
+        dto.setNgayApDung(giaHangPhong.getNgayApDung());
+        dto.setGia(giaHangPhong.getGia());
+        dto.setNgayThietLap(giaHangPhong.getNgayThietLap());
+        dto.setIdNv(giaHangPhong.getIdNv());
+
+        // Don't access lazy-loaded relationships to avoid transaction issues
+        // Additional info can be loaded separately if needed
+
+        return dto;
+    }
+
+    public static List<GiaHangPhongDTO> mapGiaHangPhongListToDTO(List<GiaHangPhong> giaHangPhongList) {
+        if (giaHangPhongList == null) {
+            return null;
+        }
+        return giaHangPhongList.stream()
+                .map(EntityDTOMapper::mapGiaHangPhongToDTO)
+                .collect(Collectors.toList());
+    }
 
 }

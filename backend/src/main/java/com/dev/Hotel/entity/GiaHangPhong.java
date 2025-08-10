@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
@@ -32,10 +33,12 @@ public class GiaHangPhong {
     @Column(name = "ID_NV")
     private String idNv;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_HANG_PHONG", insertable = false, updatable = false)
     private HangPhong hangPhong;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_NV", insertable = false, updatable = false)
     private NhanVien nhanVien;
