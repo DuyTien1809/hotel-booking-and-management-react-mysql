@@ -28,7 +28,11 @@ public class PhieuThueDetailsDTO {
     // Thông tin nhân viên
     private String idNv;
     private String hoTenNhanVien;
-    
+
+    // Thông tin phiếu đặt
+    private Integer idPd;
+    private BigDecimal soTienCoc;
+
     // Danh sách phòng
     private List<RoomDetailDTO> rooms;
     

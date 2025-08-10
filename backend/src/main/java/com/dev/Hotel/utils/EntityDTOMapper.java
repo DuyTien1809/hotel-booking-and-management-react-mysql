@@ -551,9 +551,9 @@ public class EntityDTOMapper {
         PhuThuDTO dto = new PhuThuDTO();
         dto.setIdPhuThu(phuThu.getIdPhuThu());
         dto.setTenPhuThu(phuThu.getTenPhuThu());
-        // Note: lyDo field will be handled separately if needed
+        dto.setLyDo(phuThu.getLyDo());
 
-        // Get latest price from database using PriceService
+        // Lấy giá từ bảng giaphuthu thông qua priceService
         if (priceService != null) {
             try {
                 priceService.getLatestSurchargePrice(phuThu.getIdPhuThu())
@@ -561,7 +561,6 @@ public class EntityDTOMapper {
                 priceService.getLatestSurchargePriceDate(phuThu.getIdPhuThu())
                     .ifPresent(dto::setNgayApDungGia);
             } catch (Exception e) {
-                // If error getting price, set null
                 dto.setGiaHienTai(null);
                 dto.setNgayApDungGia(null);
             }
@@ -713,6 +712,12 @@ public class EntityDTOMapper {
             dto.setHoTenNhanVien(phieuThue.getNhanVien().getHo() + " " + phieuThue.getNhanVien().getTen());
         }
 
+        // Booking info (PhieuDat)
+        if (phieuThue.getPhieuDat() != null) {
+            dto.setIdPd(phieuThue.getPhieuDat().getIdPd());
+            dto.setSoTienCoc(phieuThue.getPhieuDat().getSoTienCoc());
+        }
+
         // Initialize totals
         BigDecimal tongTienPhong = BigDecimal.ZERO;
         BigDecimal tongTienDichVu = BigDecimal.ZERO;
@@ -740,9 +745,14 @@ public class EntityDTOMapper {
                 roomDto.setNgayDi(ctPhieuThue.getNgayDi());
                 roomDto.setTrangThaiThanhToan(ctPhieuThue.getTtThanhToan());
 
-                // Calculate room charges
-                if (ctPhieuThue.getDonGia() != null && ctPhieuThue.getNgayDen() != null && ctPhieuThue.getNgayDi() != null) {
-                    long soNgay = java.time.temporal.ChronoUnit.DAYS.between(ctPhieuThue.getNgayDen(), ctPhieuThue.getNgayDi());
+                // Calculate room charges - sử dụng logic giống frontend
+                if (ctPhieuThue.getDonGia() != null && ctPhieuThue.getNgayDen() != null) {
+                    LocalDate checkInDate = ctPhieuThue.getNgayDen();
+                    // Sử dụng ngày hiện tại thay vì ngayDi dự kiến để tính chính xác
+                    LocalDate checkOutDate = LocalDate.now();
+
+                    // Tính số ngày giống như frontend: Math.ceil((checkOutDateOnly - checkInDate) / (1000 * 60 * 60 * 24))
+                    long soNgay = java.time.temporal.ChronoUnit.DAYS.between(checkInDate, checkOutDate);
                     soNgay = Math.max(1, soNgay);
                     roomDto.setSoNgay((int) soNgay);
 
@@ -754,6 +764,22 @@ public class EntityDTOMapper {
                 rooms.add(roomDto);
             }
         }
+
+        // Sắp xếp rooms theo số phòng từ nhỏ đến lớn
+        rooms.sort((r1, r2) -> {
+            if (r1.getIdPhong() == null && r2.getIdPhong() == null) return 0;
+            if (r1.getIdPhong() == null) return 1;
+            if (r2.getIdPhong() == null) return -1;
+            try {
+                Integer room1 = Integer.parseInt(r1.getIdPhong());
+                Integer room2 = Integer.parseInt(r2.getIdPhong());
+                return room1.compareTo(room2);
+            } catch (NumberFormatException e) {
+                // Nếu không parse được số, sắp xếp theo string
+                return r1.getIdPhong().compareTo(r2.getIdPhong());
+            }
+        });
+
         dto.setRooms(rooms);
         dto.setTongTienPhong(tongTienPhong);
 

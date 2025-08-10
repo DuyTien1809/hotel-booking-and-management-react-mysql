@@ -50,6 +50,9 @@ public class PhieuThueService implements IPhieuThueService {
     private TrangThaiRepository trangThaiRepository;
 
     @Autowired
+    private CTKhachORepository ctKhachORepository;
+
+    @Autowired
     private IPhieuDatService phieuDatService;
 
     @Autowired
@@ -462,6 +465,9 @@ public class PhieuThueService implements IPhieuThueService {
         try {
             LocalDate today = LocalDate.now();
 
+            // Khóa cứng ngày check-in là hôm nay cho thuê phòng ngay
+            request.setNgayDen(today);
+
             // Validate request
             if (request.getNgayDen() == null || request.getNgayDi() == null) {
                 throw new OurException("Ngày đến và ngày đi không được để trống");
@@ -507,6 +513,9 @@ public class PhieuThueService implements IPhieuThueService {
             // Load or create customer
             KhachHang khachHang = getOrCreateKhachHang(request.getKhachHang());
 
+            // Validate customer is not currently staying in another room
+            validateCustomerNotCurrentlyStaying(khachHang.getCccd());
+
             // Load employee
             String employeeId = request.getNhanVien().getIdNv();
             System.out.println("Loading employee with ID: " + employeeId);
@@ -543,6 +552,9 @@ public class PhieuThueService implements IPhieuThueService {
         try {
             // Load or create customer
             KhachHang khachHang = getOrCreateKhachHang(request.getKhachHang());
+
+            // Validate customer is not currently staying in another room
+            validateCustomerNotCurrentlyStaying(khachHang.getCccd());
 
             // Load employee
             String employeeId = request.getNhanVien().getIdNv();
@@ -774,23 +786,37 @@ public class PhieuThueService implements IPhieuThueService {
     }
 
     private KhachHang getOrCreateKhachHang(CheckInWalkInRequest.KhachHangInfo khachHangInfo) {
-        if (khachHangInfo == null || khachHangInfo.getCccd() == null) {
-            throw new OurException("Thông tin khách hàng không hợp lệ");
+        if (khachHangInfo == null || khachHangInfo.getCccd() == null || khachHangInfo.getCccd().trim().isEmpty()) {
+            throw new OurException("CCCD không được để trống");
         }
 
-        // Try to find existing customer, create if not exists
-        return khachHangRepository.findById(khachHangInfo.getCccd())
-            .orElseGet(() -> {
-                // Create new customer if not exists
-                KhachHang newKhachHang = new KhachHang();
-                newKhachHang.setCccd(khachHangInfo.getCccd());
-                newKhachHang.setHo(khachHangInfo.getHo());
-                newKhachHang.setTen(khachHangInfo.getTen());
-                newKhachHang.setSdt(khachHangInfo.getSdt());
-                newKhachHang.setEmail(khachHangInfo.getEmail());
-                newKhachHang.setDiaChi(khachHangInfo.getDiaChi());
-                return khachHangRepository.save(newKhachHang);
-            });
+        // Tìm khách hàng theo CCCD
+        KhachHang khachHang = khachHangRepository.findById(khachHangInfo.getCccd().trim())
+                .orElseThrow(() -> new OurException("Không tìm thấy khách hàng với CCCD: " + khachHangInfo.getCccd() +
+                                                  ". Vui lòng tạo khách hàng trước khi check-in."));
+
+        // Cập nhật số điện thoại nếu có thay đổi
+        if (khachHangInfo.getSdt() != null && !khachHangInfo.getSdt().trim().isEmpty()) {
+            if (!khachHangInfo.getSdt().equals(khachHang.getSdt())) {
+                khachHang.setSdt(khachHangInfo.getSdt().trim());
+                khachHang = khachHangRepository.save(khachHang);
+            }
+        }
+
+        return khachHang;
+    }
+
+    // Helper method to validate customer is not currently staying in another room
+    private void validateCustomerNotCurrentlyStaying(String cccd) throws OurException {
+        List<CtKhachO> activeStays = ctKhachORepository.findActiveStaysByCccd(cccd);
+        if (!activeStays.isEmpty()) {
+            List<CtKhachO> activeStaysWithDetails = ctKhachORepository.findActiveStaysWithDetailsByCccd(cccd);
+            if (!activeStaysWithDetails.isEmpty()) {
+                CtKhachO activeStay = activeStaysWithDetails.get(0);
+                String currentRoom = activeStay.getCtPhieuThue().getPhong().getSoPhong();
+                throw new OurException("Khách hàng đang ở phòng " + currentRoom + " và chưa check-out. " );
+            }
+        }
     }
 
     private void createCtPhieuThueFromRooms(PhieuThue phieuThue, CheckInWalkInRequest request) {
@@ -864,34 +890,37 @@ public class PhieuThueService implements IPhieuThueService {
             for (CtPhieuThue ctPhieuThue : phieuThue.getChiTietPhieuThue()) {
                 List<CtDichVu> ctDichVuList = ctDichVuRepository.findByCtPhieuThue(ctPhieuThue);
                 for (CtDichVu ctDichVu : ctDichVuList) {
-                    PhieuThueDetailsDTO.ServiceDetailDTO serviceDto = new PhieuThueDetailsDTO.ServiceDetailDTO();
-                    // Set composite key info
-                    if (ctDichVu.getId() != null) {
-                        serviceDto.setIdCtPt(ctDichVu.getId().getIdCtPt());
-                        serviceDto.setIdDv(ctDichVu.getId().getIdDv());
+                    // Chỉ thêm các dịch vụ chưa thanh toán
+                    if (!"Đã thanh toán".equals(ctDichVu.getTtThanhToan())) {
+                        PhieuThueDetailsDTO.ServiceDetailDTO serviceDto = new PhieuThueDetailsDTO.ServiceDetailDTO();
+                        // Set composite key info
+                        if (ctDichVu.getId() != null) {
+                            serviceDto.setIdCtPt(ctDichVu.getId().getIdCtPt());
+                            serviceDto.setIdDv(ctDichVu.getId().getIdDv());
+                        }
+
+                        if (ctDichVu.getDichVu() != null) {
+                            serviceDto.setIdDv(ctDichVu.getDichVu().getIdDv());
+                            serviceDto.setTenDichVu(ctDichVu.getDichVu().getTenDv());
+                        }
+
+                        serviceDto.setGia(ctDichVu.getDonGia());
+                        serviceDto.setSoLuong(ctDichVu.getSoLuong());
+                        serviceDto.setNgaySD(ctDichVu.getNgaySuDung());
+
+                        if (ctPhieuThue.getPhong() != null) {
+                            serviceDto.setIdPhong(ctPhieuThue.getPhong().getSoPhong());
+                            serviceDto.setTenPhong(ctPhieuThue.getPhong().getSoPhong());
+                        }
+
+                        if (ctDichVu.getDonGia() != null && ctDichVu.getSoLuong() != null) {
+                            BigDecimal thanhTien = ctDichVu.getDonGia().multiply(BigDecimal.valueOf(ctDichVu.getSoLuong()));
+                            serviceDto.setThanhTien(thanhTien);
+                            tongTienDichVu = tongTienDichVu.add(thanhTien);
+                        }
+
+                        services.add(serviceDto);
                     }
-
-                    if (ctDichVu.getDichVu() != null) {
-                        serviceDto.setIdDv(ctDichVu.getDichVu().getIdDv());
-                        serviceDto.setTenDichVu(ctDichVu.getDichVu().getTenDv());
-                    }
-
-                    serviceDto.setGia(ctDichVu.getDonGia());
-                    serviceDto.setSoLuong(ctDichVu.getSoLuong());
-                    serviceDto.setNgaySD(ctDichVu.getNgaySuDung());
-
-                    if (ctPhieuThue.getPhong() != null) {
-                        serviceDto.setIdPhong(ctPhieuThue.getPhong().getSoPhong());
-                        serviceDto.setTenPhong(ctPhieuThue.getPhong().getSoPhong());
-                    }
-
-                    if (ctDichVu.getDonGia() != null && ctDichVu.getSoLuong() != null) {
-                        BigDecimal thanhTien = ctDichVu.getDonGia().multiply(BigDecimal.valueOf(ctDichVu.getSoLuong()));
-                        serviceDto.setThanhTien(thanhTien);
-                        tongTienDichVu = tongTienDichVu.add(thanhTien);
-                    }
-
-                    services.add(serviceDto);
                 }
             }
 
@@ -902,37 +931,66 @@ public class PhieuThueService implements IPhieuThueService {
             for (CtPhieuThue ctPhieuThue : phieuThue.getChiTietPhieuThue()) {
                 List<CtPhuThu> ctPhuThuList = ctPhuThuRepository.findByCtPhieuThue(ctPhieuThue);
                 for (CtPhuThu ctPhuThu : ctPhuThuList) {
-                    PhieuThueDetailsDTO.SurchargeDetailDTO surchargeDto = new PhieuThueDetailsDTO.SurchargeDetailDTO();
-                    // Set composite key info
-                    if (ctPhuThu.getId() != null) {
-                        surchargeDto.setIdPhuThu(ctPhuThu.getId().getIdPhuThu());
-                        surchargeDto.setIdCtPt(ctPhuThu.getId().getIdCtPt());
+                    // Chỉ thêm các phụ thu chưa thanh toán
+                    if (!"Đã thanh toán".equals(ctPhuThu.getTtThanhToan())) {
+                        PhieuThueDetailsDTO.SurchargeDetailDTO surchargeDto = new PhieuThueDetailsDTO.SurchargeDetailDTO();
+                        // Set composite key info
+                        if (ctPhuThu.getId() != null) {
+                            surchargeDto.setIdPhuThu(ctPhuThu.getId().getIdPhuThu());
+                            surchargeDto.setIdCtPt(ctPhuThu.getId().getIdCtPt());
+                        }
+
+                        if (ctPhuThu.getPhuThu() != null) {
+                            surchargeDto.setLoaiPhuThu(ctPhuThu.getPhuThu().getTenPhuThu());
+                            surchargeDto.setMoTa(ctPhuThu.getPhuThu().getTenPhuThu()); // Use tenPhuThu as description
+                        }
+
+                        surchargeDto.setDonGia(ctPhuThu.getDonGia());
+                        surchargeDto.setSoLuong(ctPhuThu.getSoLuong());
+                        // Note: CtPhuThu doesn't have ngayPhatSinh field, using current date
+                        surchargeDto.setNgayPhatSinh(LocalDate.now());
+
+                        if (ctPhieuThue.getPhong() != null) {
+                            surchargeDto.setIdPhong(ctPhieuThue.getPhong().getSoPhong());
+                            surchargeDto.setTenPhong(ctPhieuThue.getPhong().getSoPhong());
+                        }
+
+                        if (ctPhuThu.getDonGia() != null && ctPhuThu.getSoLuong() != null) {
+                            BigDecimal thanhTien = ctPhuThu.getDonGia().multiply(BigDecimal.valueOf(ctPhuThu.getSoLuong()));
+                            surchargeDto.setThanhTien(thanhTien);
+                            tongTienPhuThu = tongTienPhuThu.add(thanhTien);
+                        }
+
+                        surcharges.add(surchargeDto);
                     }
-
-                    if (ctPhuThu.getPhuThu() != null) {
-                        surchargeDto.setLoaiPhuThu(ctPhuThu.getPhuThu().getTenPhuThu());
-                        surchargeDto.setMoTa(ctPhuThu.getPhuThu().getTenPhuThu()); // Use tenPhuThu as description
-                    }
-
-                    surchargeDto.setDonGia(ctPhuThu.getDonGia());
-                    surchargeDto.setSoLuong(ctPhuThu.getSoLuong());
-                    // Note: CtPhuThu doesn't have ngayPhatSinh field, using current date
-                    surchargeDto.setNgayPhatSinh(LocalDate.now());
-
-                    if (ctPhieuThue.getPhong() != null) {
-                        surchargeDto.setIdPhong(ctPhieuThue.getPhong().getSoPhong());
-                        surchargeDto.setTenPhong(ctPhieuThue.getPhong().getSoPhong());
-                    }
-
-                    if (ctPhuThu.getDonGia() != null && ctPhuThu.getSoLuong() != null) {
-                        BigDecimal thanhTien = ctPhuThu.getDonGia().multiply(BigDecimal.valueOf(ctPhuThu.getSoLuong()));
-                        surchargeDto.setThanhTien(thanhTien);
-                        tongTienPhuThu = tongTienPhuThu.add(thanhTien);
-                    }
-
-                    surcharges.add(surchargeDto);
                 }
             }
+
+            // Sắp xếp services theo phòng (ưu tiên) rồi đến ngày sử dụng
+            services.sort((s1, s2) -> {
+                // So sánh theo phòng trước
+                int roomCompare = compareRoomNumbers(s1.getTenPhong(), s2.getTenPhong());
+                if (roomCompare != 0) return roomCompare;
+
+                // Nếu cùng phòng, so sánh theo ngày sử dụng
+                if (s1.getNgaySD() == null && s2.getNgaySD() == null) return 0;
+                if (s1.getNgaySD() == null) return 1;
+                if (s2.getNgaySD() == null) return -1;
+                return s1.getNgaySD().compareTo(s2.getNgaySD());
+            });
+
+            // Sắp xếp surcharges theo phòng (ưu tiên) rồi đến ngày phát sinh
+            surcharges.sort((s1, s2) -> {
+                // So sánh theo phòng trước
+                int roomCompare = compareRoomNumbers(s1.getTenPhong(), s2.getTenPhong());
+                if (roomCompare != 0) return roomCompare;
+
+                // Nếu cùng phòng, so sánh theo ngày phát sinh
+                if (s1.getNgayPhatSinh() == null && s2.getNgayPhatSinh() == null) return 0;
+                if (s1.getNgayPhatSinh() == null) return 1;
+                if (s2.getNgayPhatSinh() == null) return -1;
+                return s1.getNgayPhatSinh().compareTo(s2.getNgayPhatSinh());
+            });
 
             // Update DTO with services and surcharges
             dto.setServices(services);
@@ -1000,5 +1058,20 @@ public class PhieuThueService implements IPhieuThueService {
         return response;
     }
 
+    // Helper method để so sánh số phòng
+    private int compareRoomNumbers(String room1, String room2) {
+        if (room1 == null && room2 == null) return 0;
+        if (room1 == null) return 1;
+        if (room2 == null) return -1;
+
+        try {
+            Integer roomNum1 = Integer.parseInt(room1);
+            Integer roomNum2 = Integer.parseInt(room2);
+            return roomNum1.compareTo(roomNum2);
+        } catch (NumberFormatException e) {
+            // Nếu không parse được số, sắp xếp theo string
+            return room1.compareTo(room2);
+        }
+    }
 
 }

@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { rentalService } from '../../services/rentalService'
 import { invoiceService } from '../../services/invoiceService'
-import { bookingService } from '../../services/bookingService'
 import { dashboardService } from '../../services/dashboardService'
 import InvoiceComponent from '../../components/staff/InvoiceComponent'
 import DetailedInvoiceModal from '../../components/staff/DetailedInvoiceModal'
@@ -172,6 +171,54 @@ const CheckOutPage = () => {
   return localDate.toISOString().slice(0, 16); // giữ lại yyyy-MM-ddTHH:mm
 }
 
+  // Helper function để so sánh số phòng
+  const compareRoomNumbers = (room1, room2) => {
+    if (!room1 && !room2) return 0
+    if (!room1) return 1
+    if (!room2) return -1
+
+    try {
+      const roomNum1 = parseInt(room1)
+      const roomNum2 = parseInt(room2)
+      return roomNum1 - roomNum2
+    } catch (e) {
+      return room1.localeCompare(room2)
+    }
+  }
+
+  // Helper function để sắp xếp danh sách
+  const sortRoomDetails = (roomDetails) => {
+    if (!roomDetails) return []
+    return [...roomDetails].sort((a, b) => compareRoomNumbers(a.soPhong, b.soPhong))
+  }
+
+  const sortServices = (services) => {
+    if (!services) return []
+    return [...services].sort((a, b) => {
+      // So sánh theo phòng trước (dựa vào context phòng)
+      const roomCompare = compareRoomNumbers(a.soPhong, b.soPhong)
+      if (roomCompare !== 0) return roomCompare
+
+      // Nếu cùng phòng, so sánh theo ngày sử dụng
+      if (!a.ngaySuDung && !b.ngaySuDung) return 0
+      if (!a.ngaySuDung) return 1
+      if (!b.ngaySuDung) return -1
+      return new Date(a.ngaySuDung) - new Date(b.ngaySuDung)
+    })
+  }
+
+  const sortSurcharges = (surcharges) => {
+    if (!surcharges) return []
+    return [...surcharges].sort((a, b) => {
+      // So sánh theo phòng trước (dựa vào context phòng)
+      const roomCompare = compareRoomNumbers(a.soPhong, b.soPhong)
+      if (roomCompare !== 0) return roomCompare
+
+      // Nếu cùng phòng, so sánh theo ngày phát sinh (tạm dùng ngày hiện tại)
+      return 0 // Vì CtPhuThu không có ngày phát sinh
+    })
+  }
+
   const handleSelectGuest = async (guest) => {
     setSelectedGuest(guest)
     setCheckOutData({
@@ -211,22 +258,22 @@ const CheckOutPage = () => {
           }
         }
 
-        // Service charges
+        // Service charges - chỉ tính các dịch vụ chưa thanh toán
         if (ct.danhSachDichVu && ct.danhSachDichVu.length > 0) {
           ct.danhSachDichVu.forEach(dv => {
-            totalServiceCharges += dv.thanhTien || 0
-            if (dv.ttThanhToan === 'Đã thanh toán') {
-              totalPaidAmount += dv.thanhTien || 0
+            // Chỉ cộng vào tổng tiền nếu chưa thanh toán
+            if (dv.ttThanhToan !== 'Đã thanh toán') {
+              totalServiceCharges += dv.thanhTien || 0
             }
           })
         }
 
-        // Surcharges
+        // Surcharges - chỉ tính các phụ thu chưa thanh toán
         if (ct.danhSachPhuThu && ct.danhSachPhuThu.length > 0) {
           ct.danhSachPhuThu.forEach(pt => {
-            totalSurcharges += pt.thanhTien || 0
-            if (pt.ttThanhToan === 'Đã thanh toán') {
-              totalPaidAmount += pt.thanhTien || 0
+            // Chỉ cộng vào tổng tiền nếu chưa thanh toán
+            if (pt.ttThanhToan !== 'Đã thanh toán') {
+              totalSurcharges += pt.thanhTien || 0
             }
           })
         }
@@ -237,17 +284,14 @@ const CheckOutPage = () => {
       roomCharges: totalRoomCharges,
       serviceCharges: totalServiceCharges,
       surcharges: totalSurcharges,
-      paidAmount: totalPaidAmount,
+      paidAmount: 0, // Không tính các khoản đã thanh toán
       total: totalRoomCharges + totalServiceCharges + totalSurcharges
     })
 
     // Tự động tải chi tiết phiếu thuê để hiển thị đầy đủ thông tin
     await fetchRentalDetailsForDisplay(guest.id)
 
-    // Lấy thông tin tiền đặt cọc từ phiếu đặt nếu có
-    if (guest.bookingId) {
-      await fetchDepositAmount(guest.bookingId)
-    }
+    // Tiền đặt cọc sẽ được lấy từ rentalDetails khi fetch chi tiết
 
     // Note: Detailed rental information will be fetched when user clicks "View Chi Tiết" button
   }
@@ -263,12 +307,12 @@ const CheckOutPage = () => {
 
       // Chỉ cập nhật thông tin bổ sung, không ghi đè bill đã tính toán
       if (details && selectedGuest) {
-        // Update selected guest with additional info (giữ nguyên depositAmount)
+        // Update selected guest with additional info, bao gồm tiền đặt cọc từ API
         setSelectedGuest(prev => ({
           ...prev,
           customerEmail: details.emailKhachHang || prev.customerEmail,
           roomCount: details.rooms ? details.rooms.length : (prev.chiTietPhieuThue?.length || 1),
-          depositAmount: prev.depositAmount || 0 // Giữ nguyên giá trị đã có
+          depositAmount: details.soTienCoc || 0 // Lấy từ API details
         }))
       }
     } catch (error) {
@@ -279,23 +323,7 @@ const CheckOutPage = () => {
     }
   }
 
-  // Hàm lấy thông tin tiền đặt cọc từ phiếu đặt
-  const fetchDepositAmount = async (bookingId) => {
-    try {
-      const response = await bookingService.getBookingById(bookingId)
-      const bookingDetails = response.phieuDat
 
-      if (bookingDetails && bookingDetails.soTienCoc) {
-        setSelectedGuest(prev => ({
-          ...prev,
-          depositAmount: bookingDetails.soTienCoc
-        }))
-      }
-    } catch (error) {
-      console.error('Error fetching deposit amount:', error)
-      // Không hiển thị toast error vì đây không phải lỗi nghiêm trọng
-    }
-  }
 
   // Hàm chỉ để mở modal xem chi tiết (không cập nhật dữ liệu)
   const fetchRentalDetails = async (rentalId) => {
@@ -893,7 +921,7 @@ const CheckOutPage = () => {
                 <h3 className="font-semibold text-gray-900 mb-3">Phòng đã sử dụng</h3>
                 {selectedGuest.chiTietPhieuThue && selectedGuest.chiTietPhieuThue.length > 0 ? (
                   <div className="space-y-2">
-                    {selectedGuest.chiTietPhieuThue.map((ct, index) => (
+                    {sortRoomDetails(selectedGuest.chiTietPhieuThue).map((ct, index) => (
                       <div key={index} className="flex justify-between items-center bg-white p-3 rounded border">
                         <div className="text-sm">
                           <span className="font-medium">Phòng {ct.soPhong}</span>
@@ -960,21 +988,29 @@ const CheckOutPage = () => {
                 )}
               </div>
 
-              {/* Services and Surcharges Details - Show when data is available */}
+              {/* Services and Surcharges Details - Show when unpaid data is available */}
               {selectedGuest.chiTietPhieuThue && selectedGuest.chiTietPhieuThue.some(ct =>
-                (ct.danhSachDichVu && ct.danhSachDichVu.length > 0) ||
-                (ct.danhSachPhuThu && ct.danhSachPhuThu.length > 0)
+                (ct.danhSachDichVu && ct.danhSachDichVu.some(dv => dv.ttThanhToan !== 'Đã thanh toán')) ||
+                (ct.danhSachPhuThu && ct.danhSachPhuThu.some(pt => pt.ttThanhToan !== 'Đã thanh toán'))
               ) && (
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="font-semibold text-gray-900 mb-3">Chi tiết dịch vụ & phụ thu</h3>
-                  {selectedGuest.chiTietPhieuThue.map((ct, ctIndex) => (
+                  {sortRoomDetails(selectedGuest.chiTietPhieuThue).map((ct, ctIndex) => (
                     <div key={ctIndex} className="mb-4">
-                      {/* Services */}
-                      {ct.danhSachDichVu && ct.danhSachDichVu.length > 0 && (
+                      {/* Services - chỉ hiển thị dịch vụ chưa thanh toán */}
+                      {ct.danhSachDichVu && ct.danhSachDichVu.filter(dv => dv.ttThanhToan !== 'Đã thanh toán').length > 0 && (
                         <div className="mb-3">
                           <h4 className="text-sm font-medium text-gray-700 mb-2">Phòng {ct.soPhong}:</h4>
                           <p className="text-xs text-blue-600 font-medium mb-1">Dịch vụ:</p>
-                          {ct.danhSachDichVu.map((dv, dvIndex) => (
+                          {ct.danhSachDichVu.filter(dv => dv.ttThanhToan !== 'Đã thanh toán')
+                            .sort((a, b) => {
+                              // Sắp xếp theo ngày sử dụng
+                              if (!a.ngaySuDung && !b.ngaySuDung) return 0
+                              if (!a.ngaySuDung) return 1
+                              if (!b.ngaySuDung) return -1
+                              return new Date(a.ngaySuDung) - new Date(b.ngaySuDung)
+                            })
+                            .map((dv, dvIndex) => (
                             <div key={dvIndex} className="flex justify-between text-xs bg-white p-2 rounded mb-1">
                               <div>
                                 <span className="font-medium">{dv.tenDv}</span>
@@ -985,11 +1021,7 @@ const CheckOutPage = () => {
                               </div>
                               <div className="text-right">
                                 <div className="font-medium">{dv.thanhTien?.toLocaleString('vi-VN')} VNĐ</div>
-                                <div className={`text-xs px-1 rounded ${
-                                  dv.ttThanhToan === 'Đã thanh toán'
-                                    ? 'bg-green-100 text-green-800'
-                                    : 'bg-yellow-100 text-yellow-800'
-                                }`}>
+                                <div className="text-xs px-1 rounded bg-yellow-100 text-yellow-800">
                                   {dv.ttThanhToan}
                                 </div>
                               </div>
@@ -998,11 +1030,16 @@ const CheckOutPage = () => {
                         </div>
                       )}
 
-                      {/* Surcharges */}
-                      {ct.danhSachPhuThu && ct.danhSachPhuThu.length > 0 && (
+                      {/* Surcharges - chỉ hiển thị phụ thu chưa thanh toán */}
+                      {ct.danhSachPhuThu && ct.danhSachPhuThu.filter(pt => pt.ttThanhToan !== 'Đã thanh toán').length > 0 && (
                         <div className="mb-3">
                           <p className="text-xs text-red-600 font-medium mb-1">Phụ thu:</p>
-                          {ct.danhSachPhuThu.map((pt, ptIndex) => (
+                          {ct.danhSachPhuThu.filter(pt => pt.ttThanhToan !== 'Đã thanh toán')
+                            .sort((a, b) => {
+                              // Sắp xếp theo tên phụ thu vì không có ngày phát sinh
+                              return (a.tenPhuThu || '').localeCompare(b.tenPhuThu || '')
+                            })
+                            .map((pt, ptIndex) => (
                             <div key={ptIndex} className="flex justify-between text-xs bg-white p-2 rounded mb-1">
                               <div>
                                 <span className="font-medium">{pt.tenPhuThu}</span>
@@ -1012,11 +1049,7 @@ const CheckOutPage = () => {
                               </div>
                               <div className="text-right">
                                 <div className="font-medium">{pt.thanhTien?.toLocaleString('vi-VN')} VNĐ</div>
-                                <div className={`text-xs px-1 rounded ${
-                                  pt.ttThanhToan === 'Đã thanh toán'
-                                    ? 'bg-green-100 text-green-800'
-                                    : 'bg-yellow-100 text-yellow-800'
-                                }`}>
+                                <div className="text-xs px-1 rounded bg-yellow-100 text-yellow-800">
                                   {pt.ttThanhToan}
                                 </div>
                               </div>

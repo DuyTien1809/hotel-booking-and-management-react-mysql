@@ -14,7 +14,10 @@ public class DichVu {
     
     @Column(name = "TEN_DV")
     private String tenDv;
-    
+
+    @Column(name = "MO_TA")
+    private String moTa;
+
     @Column(name = "DON_VI_TINH")
     private String donViTinh;
     

@@ -22,9 +22,6 @@ public class CtPhieuDat {
     @Column(name = "DON_GIA")
     private BigDecimal donGia;
 
-    @Column(name = "TRANG_THAI")
-    private String trangThai;
-
     // Relationships
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("idPd")
@@ -61,13 +58,7 @@ public class CtPhieuDat {
         this.donGia = donGia;
     }
 
-    public String getTrangThai() {
-        return trangThai;
-    }
 
-    public void setTrangThai(String trangThai) {
-        this.trangThai = trangThai;
-    }
 
     public PhieuDat getPhieuDat() {
         return phieuDat;

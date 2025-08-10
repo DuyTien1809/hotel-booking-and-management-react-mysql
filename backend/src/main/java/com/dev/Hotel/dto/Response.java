@@ -1,11 +1,11 @@
 package com.dev.Hotel.dto;
 
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 import com.dev.Hotel.entity.TrangThai;
 
 @Data
@@ -384,26 +384,6 @@ public class Response {
 
     public void setPhieuThueDetails(PhieuThueDetailsDTO phieuThueDetails) {
         this.phieuThueDetails = phieuThueDetails;
-    }
-
-    public Object getGuestList() {
-        return guestList;
-    }
-
-    public void setGuestList(Object guestList) {
-        this.guestList = guestList;
-    }
-
-    public void setGuestList(List<Map<String, Object>> guestList) {
-        this.guestList = guestList;
-    }
-
-    public Object getRoomGuests() {
-        return roomGuests;
-    }
-
-    public void setRoomGuests(Object roomGuests) {
-        this.roomGuests = roomGuests;
     }
 
     public List<AvailableRoomsByHangPhongDTO> getAvailableRoomsByHangPhongList() {

@@ -200,21 +200,23 @@ public class HoaDonService implements IHoaDonService {
             }
         }
 
-        // Add service charges - find by CtPhieuThue
+        // Add service charges - find by CtPhieuThue, chỉ tính các dịch vụ chưa thanh toán
         for (CtPhieuThue ctPhieuThue : ctPhieuThueList) {
             List<CtDichVu> ctDichVuList = ctDichVuRepository.findByCtPhieuThue(ctPhieuThue);
             for (CtDichVu ctDichVu : ctDichVuList) {
-                if (ctDichVu.getDonGia() != null && ctDichVu.getSoLuong() != null) {
+                if (ctDichVu.getDonGia() != null && ctDichVu.getSoLuong() != null
+                    && !"Đã thanh toán".equals(ctDichVu.getTtThanhToan())) {
                     total = total.add(ctDichVu.getDonGia().multiply(BigDecimal.valueOf(ctDichVu.getSoLuong())));
                 }
             }
         }
 
-        // Add surcharges - find by CtPhieuThue
+        // Add surcharges - find by CtPhieuThue, chỉ tính các phụ thu chưa thanh toán
         for (CtPhieuThue ctPhieuThue : ctPhieuThueList) {
             List<CtPhuThu> ctPhuThuList = ctPhuThuRepository.findByCtPhieuThue(ctPhieuThue);
             for (CtPhuThu ctPhuThu : ctPhuThuList) {
-                if (ctPhuThu.getDonGia() != null && ctPhuThu.getSoLuong() != null) {
+                if (ctPhuThu.getDonGia() != null && ctPhuThu.getSoLuong() != null
+                    && !"Đã thanh toán".equals(ctPhuThu.getTtThanhToan())) {
                     total = total.add(ctPhuThu.getDonGia().multiply(BigDecimal.valueOf(ctPhuThu.getSoLuong())));
                 }
             }

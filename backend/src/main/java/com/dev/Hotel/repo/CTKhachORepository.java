@@ -17,6 +17,35 @@ public interface CTKhachORepository extends JpaRepository<CtKhachO, CtKhachO.CtK
     @Query("SELECT c FROM CtKhachO c WHERE c.idCtPt = :idCtPt")
     List<CtKhachO> findByIdCtPt(@Param("idCtPt") Integer idCtPt);
 
+    // Kiểm tra khách hàng có đang ở phòng khác (chưa check-out) hay không
+    @Query("SELECT c FROM CtKhachO c " +
+           "JOIN c.ctPhieuThue ct " +
+           "JOIN ct.phieuThue pt " +
+           "WHERE c.cccd = :cccd " +
+           "AND pt.ngayLap IS NOT NULL " +
+           "AND NOT EXISTS (SELECT hd FROM HoaDon hd WHERE hd.phieuThue = pt)")
+    List<CtKhachO> findActiveStaysByCccd(@Param("cccd") String cccd);
+
+    // Kiểm tra khách hàng có đang ở phòng khác (ngoại trừ phòng hiện tại) hay không
+    @Query("SELECT c FROM CtKhachO c " +
+           "JOIN c.ctPhieuThue ct " +
+           "JOIN ct.phieuThue pt " +
+           "WHERE c.cccd = :cccd " +
+           "AND c.idCtPt != :excludeIdCtPt " +
+           "AND pt.ngayLap IS NOT NULL " +
+           "AND NOT EXISTS (SELECT hd FROM HoaDon hd WHERE hd.phieuThue = pt)")
+    List<CtKhachO> findActiveStaysByCccdExcludingRoom(@Param("cccd") String cccd, @Param("excludeIdCtPt") Integer excludeIdCtPt);
+
+    // Lấy thông tin chi tiết về phòng khách đang ở
+    @Query("SELECT c FROM CtKhachO c " +
+           "JOIN FETCH c.ctPhieuThue ct " +
+           "JOIN FETCH ct.phieuThue pt " +
+           "JOIN FETCH ct.phong p " +
+           "WHERE c.cccd = :cccd " +
+           "AND pt.ngayLap IS NOT NULL " +
+           "AND NOT EXISTS (SELECT hd FROM HoaDon hd WHERE hd.phieuThue = pt)")
+    List<CtKhachO> findActiveStaysWithDetailsByCccd(@Param("cccd") String cccd);
+
     // Tìm khách theo CCCD
     @Query("SELECT c FROM CtKhachO c WHERE c.cccd = :cccd")
     List<CtKhachO> findByCccd(@Param("cccd") String cccd);

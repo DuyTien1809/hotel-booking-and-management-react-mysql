@@ -101,6 +101,20 @@ public class GuestManagementController {
                 response.setMessage("Khách hàng đã có trong phòng này");
                 return ResponseEntity.status(400).body(response);
             }
+
+            // Kiểm tra khách hàng có đang ở phòng khác (chưa check-out) hay không
+            List<CtKhachO> activeStays = ctKhachORepository.findActiveStaysByCccdExcludingRoom(cccd, idCtPt);
+            if (!activeStays.isEmpty()) {
+                // Lấy thông tin chi tiết về phòng khách đang ở
+                List<CtKhachO> activeStaysWithDetails = ctKhachORepository.findActiveStaysWithDetailsByCccd(cccd);
+                if (!activeStaysWithDetails.isEmpty()) {
+                    CtKhachO activeStay = activeStaysWithDetails.get(0);
+                    String currentRoom = activeStay.getCtPhieuThue().getPhong().getSoPhong();
+                    response.setStatusCode(400);
+                    response.setMessage("Khách hàng đang ở phòng " + currentRoom + " và chưa check-out."); 
+                    return ResponseEntity.status(400).body(response);
+                }
+            }
             
             // Thêm khách vào chi tiết phiếu thuê
             CtKhachO ctKhachO = new CtKhachO();
@@ -157,8 +171,8 @@ public class GuestManagementController {
         Response response = new Response();
 
         try {
-            // Tạm thời disable validation logic
-            List<CtKhachO> activeStays = new ArrayList<>();
+            // Kiểm tra khách hàng có đang ở phòng nào không
+            List<CtKhachO> activeStays = ctKhachORepository.findActiveStaysWithDetailsByCccd(cccd);
 
             Map<String, Object> statusData = new HashMap<>();
 
@@ -220,7 +234,25 @@ public class GuestManagementController {
                 return ResponseEntity.status(400).body(response);
             }
 
-            // Tạm thời disable validation logic cho đổi phòng
+            // Kiểm tra khách hàng có đang ở phòng khác hay không
+            List<CtKhachO> activeStays = ctKhachORepository.findActiveStaysByCccdExcludingRoom(cccd, idCtPt);
+            if (!activeStays.isEmpty()) {
+                List<CtKhachO> activeStaysWithDetails = ctKhachORepository.findActiveStaysWithDetailsByCccd(cccd);
+                if (!activeStaysWithDetails.isEmpty()) {
+                    CtKhachO activeStay = activeStaysWithDetails.get(0);
+                    String currentRoom = activeStay.getCtPhieuThue().getPhong().getSoPhong();
+
+                    response.setStatusCode(400);
+                    response.setMessage("Khách hàng đang ở phòng " + currentRoom + " và chưa check-out");
+                    validationData.put("canAdd", false);
+                    validationData.put("reason", "CURRENTLY_STAYING_OTHER_ROOM");
+                    validationData.put("currentRoom", currentRoom);
+                    List<Map<String, Object>> dataList = new ArrayList<>();
+                    dataList.add(validationData);
+                    response.setGuestList(dataList);
+                    return ResponseEntity.status(400).body(response);
+                }
+            }
 
             // Có thể thêm khách vào phòng
             response.setStatusCode(200);
