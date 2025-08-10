@@ -1052,13 +1052,14 @@ public class PhieuThueService implements IPhieuThueService {
         return response;
     }
 
-    <<<<<<<HEAD=======
-
     // Helper method để so sánh số phòng
     private int compareRoomNumbers(String room1, String room2) {
-        if (room1 == null && room2 == null) return 0;
-        if (room1 == null) return 1;
-        if (room2 == null) return -1;
+        if (room1 == null && room2 == null)
+            return 0;
+        if (room1 == null)
+            return 1;
+        if (room2 == null)
+            return -1;
 
         try {
             Integer roomNum1 = Integer.parseInt(room1);
@@ -1070,5 +1071,16 @@ public class PhieuThueService implements IPhieuThueService {
         }
     }
 
-    >>>>>>>origin/main
+    // Helper method to validate customer is not currently staying in another room
+    private void validateCustomerNotCurrentlyStaying(String cccd) throws OurException {
+        List<CtKhachO> activeStays = ctKhachORepository.findActiveStaysByCccd(cccd);
+        if (!activeStays.isEmpty()) {
+            List<CtKhachO> activeStaysWithDetails = ctKhachORepository.findActiveStaysWithDetailsByCccd(cccd);
+            if (!activeStaysWithDetails.isEmpty()) {
+                CtKhachO activeStay = activeStaysWithDetails.get(0);
+                String currentRoom = activeStay.getCtPhieuThue().getPhong().getSoPhong();
+                throw new OurException("Khách hàng đang ở phòng " + currentRoom + " và chưa check-out. ");
+            }
+        }
+    }
 }

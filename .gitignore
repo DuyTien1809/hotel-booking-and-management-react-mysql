@@ -8,5 +8,6 @@
 *.jar
 *.war
 *.ear
+*.map
 # 
 /node_modules/

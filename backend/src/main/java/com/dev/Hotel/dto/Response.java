@@ -1,6 +1,5 @@
 package com.dev.Hotel.dto;
 
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
@@ -393,5 +392,16 @@ public class Response {
 
     public void setAvailableRoomsByHangPhongList(List<AvailableRoomsByHangPhongDTO> availableRoomsByHangPhongList) {
         this.availableRoomsByHangPhongList = availableRoomsByHangPhongList;
+    }
+
+    // Generic data field for reports and other complex data
+    private Object data;
+
+    public Object getData() {
+        return data;
+    }
+
+    public void setData(Object data) {
+        this.data = data;
     }
 }
