@@ -124,10 +124,14 @@ const InvoicePage = () => {
         return
       }
 
+      // Get rental details
+      const rentalDetails = rentalResponse.phieuThueDetails
+
       // Combine invoice and rental details
       const combinedInvoice = {
         ...invoiceResponse.hoaDon,
-        rentalDetails: rentalResponse.phieuThueDetails
+        rentalDetails: rentalDetails,
+        depositAmount: rentalDetails?.soTienCoc || 0
       }
 
       setSelectedInvoice(combinedInvoice)
@@ -393,13 +397,14 @@ const InvoicePage = () => {
             maPhieuThue: selectedInvoice.maPhieuThue,
             checkIn: selectedInvoice.ngayCheckIn || selectedInvoice.ngayDen,
             employeeName: selectedInvoice.rentalDetails?.hoTenNhanVien,
-            chiTietPhieuThue: selectedInvoice.chiTietPhieuThue || []
+            chiTietPhieuThue: selectedInvoice.chiTietPhieuThue || [],
+            depositAmount: selectedInvoice.depositAmount || 0
           }}
           bill={{
             roomCharges: selectedInvoice.rentalDetails?.tongTienPhong || selectedInvoice.tienPhong || 0,
             serviceCharges: selectedInvoice.rentalDetails?.tongTienDichVu || selectedInvoice.tienDichVu || 0,
             surcharges: selectedInvoice.rentalDetails?.tongTienPhuThu || selectedInvoice.tienPhuThu || 0,
-            paidAmount: selectedInvoice.daTra || 0,
+            paidAmount: 0, // Không hiển thị khoản đã thanh toán
             total: selectedInvoice.rentalDetails?.tongTien || selectedInvoice.tongTien || 0
           }}
           checkOutData={{

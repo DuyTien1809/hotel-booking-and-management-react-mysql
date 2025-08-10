@@ -21,6 +21,57 @@ const DetailedInvoiceModal = ({
     }).format(amount || 0)
   }
 
+  // Helper function để so sánh số phòng
+  const compareRoomNumbers = (room1, room2) => {
+    if (!room1 && !room2) return 0
+    if (!room1) return 1
+    if (!room2) return -1
+
+    try {
+      const roomNum1 = parseInt(room1)
+      const roomNum2 = parseInt(room2)
+      return roomNum1 - roomNum2
+    } catch (e) {
+      return room1.localeCompare(room2)
+    }
+  }
+
+  // Helper function để sắp xếp danh sách
+  const sortRooms = (rooms) => {
+    if (!rooms) return []
+    return [...rooms].sort((a, b) => compareRoomNumbers(a.tenPhong, b.tenPhong))
+  }
+
+  const sortServices = (services) => {
+    if (!services) return []
+    return [...services].sort((a, b) => {
+      // So sánh theo phòng trước
+      const roomCompare = compareRoomNumbers(a.tenPhong, b.tenPhong)
+      if (roomCompare !== 0) return roomCompare
+
+      // Nếu cùng phòng, so sánh theo ngày sử dụng
+      if (!a.ngaySD && !b.ngaySD) return 0
+      if (!a.ngaySD) return 1
+      if (!b.ngaySD) return -1
+      return new Date(a.ngaySD) - new Date(b.ngaySD)
+    })
+  }
+
+  const sortSurcharges = (surcharges) => {
+    if (!surcharges) return []
+    return [...surcharges].sort((a, b) => {
+      // So sánh theo phòng trước
+      const roomCompare = compareRoomNumbers(a.tenPhong, b.tenPhong)
+      if (roomCompare !== 0) return roomCompare
+
+      // Nếu cùng phòng, so sánh theo ngày phát sinh
+      if (!a.ngayPhatSinh && !b.ngayPhatSinh) return 0
+      if (!a.ngayPhatSinh) return 1
+      if (!b.ngayPhatSinh) return -1
+      return new Date(a.ngayPhatSinh) - new Date(b.ngayPhatSinh)
+    })
+  }
+
   const formatDate = (date) => {
     if (!date) return 'N/A'
     return new Date(date).toLocaleDateString('vi-VN')
@@ -229,7 +280,7 @@ const DetailedInvoiceModal = ({
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 50px;
-            margin-top: 40px;
+            margin-top: 10px;
             text-align: center;
           }
 
@@ -239,7 +290,7 @@ const DetailedInvoiceModal = ({
 
           .signature-title {
             font-weight: bold;
-            margin-bottom: 50px;
+            margin-bottom: 60px;
             color: #333;
           }
 
@@ -260,8 +311,8 @@ const DetailedInvoiceModal = ({
             .header { margin-bottom: 20px; }
             .section-title { margin: 15px 0 10px 0; }
             .total-section { margin-top: 20px; }
-            .footer { margin-top: 30px; }
-            .signature-section { margin-top: 30px; }
+            .footer { margin-top: 20px; }
+            .signature-section { margin-top: 10px; }
           }
         </style>
       </head>
@@ -332,7 +383,7 @@ const DetailedInvoiceModal = ({
             </tr>
           </thead>
           <tbody>
-            ${rentalDetails.rooms.map(room => `
+            ${sortRooms(rentalDetails.rooms).map(room => `
             <tr>
               <td class="text-left">${room.tenPhong}</td>
               <td class="text-left">${room.loaiPhong}</td>
@@ -347,7 +398,7 @@ const DetailedInvoiceModal = ({
         </table>
         ` : ''}
 
-        ${rentalDetails && rentalDetails.services && rentalDetails.services.length > 0 ? `
+        ${rentalDetails && rentalDetails.services && rentalDetails.services.filter(service => service.ttThanhToan !== 'Đã thanh toán').length > 0 ? `
         <div class="section-title">Dịch vụ sử dụng</div>
         <table class="table">
           <thead>
@@ -361,7 +412,7 @@ const DetailedInvoiceModal = ({
             </tr>
           </thead>
           <tbody>
-            ${rentalDetails.services.map(service => `
+            ${sortServices(rentalDetails.services.filter(service => service.ttThanhToan !== 'Đã thanh toán')).map(service => `
             <tr>
               <td class="text-left">${service.tenDichVu}</td>
               <td class="text-left">${service.tenPhong}</td>
@@ -375,7 +426,7 @@ const DetailedInvoiceModal = ({
         </table>
         ` : ''}
 
-        ${rentalDetails && rentalDetails.surcharges && rentalDetails.surcharges.length > 0 ? `
+        ${rentalDetails && rentalDetails.surcharges && rentalDetails.surcharges.filter(surcharge => surcharge.ttThanhToan !== 'Đã thanh toán').length > 0 ? `
         <div class="section-title">Phụ thu</div>
         <table class="table">
           <thead>
@@ -389,7 +440,7 @@ const DetailedInvoiceModal = ({
             </tr>
           </thead>
           <tbody>
-            ${rentalDetails.surcharges.map(surcharge => `
+            ${sortSurcharges(rentalDetails.surcharges.filter(surcharge => surcharge.ttThanhToan !== 'Đã thanh toán')).map(surcharge => `
             <tr>
               <td class="text-left">${surcharge.loaiPhuThu}</td>
               <td class="text-left">${surcharge.tenPhong}</td>
@@ -422,16 +473,12 @@ const DetailedInvoiceModal = ({
             <span class="total-value">${formatCurrency(rentalDetails?.tongTien || bill.total)}</span>
           </div>
           <div class="total-row">
-            <span class="total-label">Đã thanh toán:</span>
-            <span class="total-value">${formatCurrency(bill.paidAmount + (selectedGuest?.depositAmount || 0))}</span>
+            <span class="total-label">Tiền đặt cọc:</span>
+            <span class="total-value">${formatCurrency(selectedGuest?.depositAmount || 0)}</span>
           </div>
           <div class="total-row">
             <span class="total-label">Phương thức thanh toán:</span>
             <span class="total-value">${PAYMENT_METHOD_LABELS[checkOutData?.paymentMethod] || checkOutData?.paymentMethod || 'N/A'}</span>
-          </div>
-          <div class="total-row">
-            <span class="total-label">Trạng thái:</span>
-            <span class="total-value">${invoice.trangThai}</span>
           </div>
         </div>
 
@@ -590,7 +637,7 @@ const DetailedInvoiceModal = ({
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {rentalDetails.rooms.map((room, index) => (
+                    {sortRooms(rentalDetails.rooms).map((room, index) => (
                       <tr key={index} className="hover:bg-gray-50">
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{room.tenPhong}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{room.loaiPhong}</td>
@@ -607,8 +654,8 @@ const DetailedInvoiceModal = ({
             </div>
           )}
 
-          {/* Services */}
-          {rentalDetails && rentalDetails.services && rentalDetails.services.length > 0 && (
+          {/* Services - chỉ hiển thị dịch vụ chưa thanh toán */}
+          {rentalDetails && rentalDetails.services && rentalDetails.services.filter(service => service.ttThanhToan !== 'Đã thanh toán').length > 0 && (
             <div className="bg-white border border-gray-200 rounded-lg mb-6">
               <h3 className="text-lg font-semibold p-4 border-b text-blue-600">Dịch vụ sử dụng</h3>
               <div className="overflow-x-auto">
@@ -624,7 +671,7 @@ const DetailedInvoiceModal = ({
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {rentalDetails.services.map((service, index) => (
+                    {sortServices(rentalDetails.services.filter(service => service.ttThanhToan !== 'Đã thanh toán')).map((service, index) => (
                       <tr key={index} className="hover:bg-gray-50">
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{service.tenDichVu}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{service.tenPhong}</td>
@@ -640,8 +687,8 @@ const DetailedInvoiceModal = ({
             </div>
           )}
 
-          {/* Surcharges */}
-          {rentalDetails && rentalDetails.surcharges && rentalDetails.surcharges.length > 0 && (
+          {/* Surcharges - chỉ hiển thị phụ thu chưa thanh toán */}
+          {rentalDetails && rentalDetails.surcharges && rentalDetails.surcharges.filter(surcharge => surcharge.ttThanhToan !== 'Đã thanh toán').length > 0 && (
             <div className="bg-white border border-gray-200 rounded-lg mb-6">
               <h3 className="text-lg font-semibold p-4 border-b text-blue-600">Phụ thu</h3>
               <div className="overflow-x-auto">
@@ -657,7 +704,7 @@ const DetailedInvoiceModal = ({
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {rentalDetails.surcharges.map((surcharge, index) => (
+                    {sortSurcharges(rentalDetails.surcharges.filter(surcharge => surcharge.ttThanhToan !== 'Đã thanh toán')).map((surcharge, index) => (
                       <tr key={index} className="hover:bg-gray-50">
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{surcharge.loaiPhuThu}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{surcharge.tenPhong}</td>
@@ -693,17 +740,13 @@ const DetailedInvoiceModal = ({
                 <span>TỔNG CỘNG:</span>
                 <span>{formatCurrency(rentalDetails?.tongTien || bill.total)}</span>
               </div>
-              <div className="flex justify-between text-sm ">
-                <span>Đã thanh toán trước:</span>
-                <span className="font-medium">{formatCurrency(bill.paidAmount)}</span>
-              </div>
-              <div className="flex justify-between text-sm ">
+              <div className="flex justify-between text-sm">
                 <span>Tiền đặt cọc:</span>
-                <span className="font-medium">{formatCurrency(selectedGuest.depositAmount || 0)}</span>
+                <span className="font-medium">{formatCurrency(selectedGuest?.depositAmount || 0)}</span>
               </div>
               <div className="border-t pt-3 flex justify-between text-lg font-bold text-red-600">
-                <span>SỐ TIỀN ĐÃ THANH TOÁN:</span>
-                <span>{formatCurrency(Math.max(0, (rentalDetails?.tongTien || bill.total) - (bill.paidAmount || 0) - (selectedGuest.depositAmount || 0)))}</span>
+                <span>SỐ TIỀN PHẢI THANH TOÁN:</span>
+                <span>{formatCurrency(Math.max(0, (rentalDetails?.tongTien || bill.total) - (selectedGuest?.depositAmount || 0)))}</span>
               </div>
             </div>
 

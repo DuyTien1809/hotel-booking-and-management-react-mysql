@@ -188,8 +188,8 @@ public class PhongController {
         Response response = roomAvailabilityService.getAvailableRoomsByHangPhongAndPriceRange(checkIn, checkOut,
                 minPrice, maxPrice);
         System.out.println("Controller returning response with " +
-                (response.getAvailableRoomsByHangPhongList() != null
-                        ? response.getAvailableRoomsByHangPhongList().size()
+                (response.getPhongList() != null
+                        ? response.getPhongList().size()
                         : 0)
                 + " rooms");
         return ResponseEntity.status(response.getStatusCode()).body(response);

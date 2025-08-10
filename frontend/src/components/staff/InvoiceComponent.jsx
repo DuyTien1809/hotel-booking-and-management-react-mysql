@@ -13,8 +13,8 @@ const InvoiceComponent = ({
   const [showQRCode, setShowQRCode] = useState(false)
   const [paymentConfirmed, setPaymentConfirmed] = useState(false)
 
-  // Tính toán số tiền cần thanh toán
-  const remainingAmount = Math.max(0, bill.total - (bill.paidAmount || 0) - (selectedGuest?.depositAmount || 0))
+  // Tính toán số tiền cần thanh toán - trừ đi tiền đặt cọc (không trừ paidAmount vì đã loại bỏ khoản đã thanh toán)
+  const remainingAmount = Math.max(0, bill.total - (selectedGuest?.depositAmount || 0))
 
   // Tạo QR code cho chuyển khoản
   const generateQRCode = () => {
@@ -66,10 +66,6 @@ const InvoiceComponent = ({
 
           {/* Payment Details */}
           <div className="border-t pt-2 space-y-1">
-            <div className="flex justify-between text-green-600">
-              <span>Đã thanh toán:</span>
-              <span>{(bill.paidAmount || 0)?.toLocaleString('vi-VN')} VNĐ</span>
-            </div>
             <div className="flex justify-between text-green-600">
               <span>Tiền đặt cọc:</span>
               <span>{(selectedGuest?.depositAmount || 0)?.toLocaleString('vi-VN')} VNĐ</span>

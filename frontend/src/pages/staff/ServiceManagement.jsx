@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Edit, Trash2, Eye, Plus, Users, Building, Calendar, DollarSign } from 'lucide-react'
 import toast from 'react-hot-toast'
 import serviceManagementService from '../../services/serviceManagementService'
+import authService from '../../services/authService'
 
 const ServiceManagement = () => {
   const [activeTab, setActiveTab] = useState('services')
@@ -555,10 +556,13 @@ const ServiceManagement = () => {
         }
       } else if (modalType === 'edit') {
         try {
+          const currentUser = authService.getCurrentUser()
           const updatedService = {
             idDv: formData.idDv,
             tenDv: formData.tenDv,
-            donViTinh: formData.donViTinh
+            donViTinh: formData.donViTinh,
+            gia: formData.gia,
+            idNv: currentUser?.idNv || currentUser?.id || null
           }
 
           const response = await serviceManagementService.updateDichVu(selectedService.idDv, updatedService)
@@ -617,9 +621,12 @@ const ServiceManagement = () => {
         }
       } else if (modalType === 'edit') {
         try {
+          const currentUser = authService.getCurrentUser()
           const updatedSurcharge = {
             idPhuThu: formData.idPhuThu,
-            tenPhuThu: formData.tenPhuThu
+            tenPhuThu: formData.tenPhuThu,
+            gia: formData.gia,
+            idNv: currentUser?.idNv || currentUser?.id || null
           }
 
           const response = await serviceManagementService.updatePhuThu(selectedService.idPhuThu, updatedSurcharge)

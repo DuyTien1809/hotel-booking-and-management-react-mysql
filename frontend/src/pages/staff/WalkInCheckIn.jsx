@@ -255,11 +255,44 @@ const WalkInCheckIn = () => {
   }
 
   const validateCustomerForm = () => {
-    if (!customerData.cccd || !customerData.ho || !customerData.ten || !customerData.sdt) {
-      toast.error('Vui lòng điền đầy đủ thông tin khách hàng')
+    // Chỉ yêu cầu CCCD và SĐT cho walk-in check-in
+    if (!customerData.cccd || !customerData.cccd.trim()) {
+      toast.error('Vui lòng nhập CCCD')
+      return false
+    }
+    if (!customerData.sdt || !customerData.sdt.trim()) {
+      toast.error('Vui lòng nhập số điện thoại')
       return false
     }
     return true
+  }
+
+  // Tự động tìm khách hàng khi nhập CCCD
+  const handleCccdChange = async (cccd) => {
+    setCustomerData(prev => ({ ...prev, cccd }))
+
+    if (cccd && cccd.trim().length >= 9) { // CCCD có ít nhất 9 số
+      try {
+        const response = await customerService.getCustomerById(cccd.trim())
+        if (response.statusCode === 200 && response.khachHang) {
+          const customer = response.khachHang
+          // Tự động điền thông tin khách hàng đã có
+          setCustomerData(prev => ({
+            ...prev,
+            cccd: customer.cccd,
+            ho: customer.ho || '',
+            ten: customer.ten || '',
+            email: customer.email || '',
+            sdt: customer.sdt || prev.sdt, // Giữ SĐT hiện tại nếu đang nhập mới
+            diaChi: customer.diaChi || ''
+          }))
+          toast.success(`Đã tìm thấy khách hàng: ${customer.ho} ${customer.ten}`)
+        }
+      } catch (error) {
+        // Không hiển thị lỗi nếu không tìm thấy khách hàng
+        console.log('Customer not found:', error)
+      }
+    }
   }
 
   const validateRentalForm = async () => {
@@ -600,6 +633,11 @@ const WalkInCheckIn = () => {
               onClick={() => {
                 setSelectedOption('rental')
                 setShowRoomMap(true)
+                // Khóa cứng ngày check-in là hôm nay cho thuê phòng ngay
+                setRentalData(prev => ({
+                  ...prev,
+                  ngayDen: new Date().toISOString().split('T')[0]
+                }))
               }}
               className="p-6 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 cursor-pointer transition-all"
             >
@@ -676,7 +714,7 @@ const WalkInCheckIn = () => {
                 <input
                   type="text"
                   value={customerData.cccd}
-                  onChange={(e) => handleCustomerDataChange('cccd', e.target.value)}
+                  onChange={(e) => handleCccdChange(e.target.value)}
                   className="input"
                   placeholder="Nhập số căn cước công dân"
                   required
@@ -696,6 +734,18 @@ const WalkInCheckIn = () => {
                   required
                 />
               </div>
+
+              {/* Hiển thị thông tin khách hàng đã tìm thấy (chỉ đọc) cho booking và rental */}
+              {(selectedOption === 'booking' || selectedOption === 'rental') && customerData.ho && (
+                <div className="col-span-2 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <h3 className="text-sm font-medium text-green-800 mb-2">Thông tin khách hàng đã tìm thấy:</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div><span className="font-medium">Họ tên:</span> {customerData.ho} {customerData.ten}</div>
+                    <div><span className="font-medium">Email:</span> {customerData.email || 'Chưa có'}</div>
+                    <div className="col-span-2"><span className="font-medium">Địa chỉ:</span> {customerData.diaChi || 'Chưa có'}</div>
+                  </div>
+                </div>
+              )}
 
               {/* Chỉ hiển thị các trường khác khi tạo khách hàng mới */}
               {selectedOption === 'customer' && (
@@ -909,14 +959,19 @@ const WalkInCheckIn = () => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Ngày check-in <span className="text-red-500">*</span>
+                      <span className="text-xs text-blue-600 ml-2">(Tự động: Hôm nay)</span>
                     </label>
                     <input
                       type="date"
                       value={rentalData.ngayDen}
-                      onChange={(e) => handleRentalDataChange('ngayDen', e.target.value)}
-                      className="input"
-                      required
+                      readOnly
+                      disabled
+                      className="input bg-gray-100 cursor-not-allowed text-gray-600"
+                      title="Ngày check-in được khóa cứng là hôm nay cho thuê phòng ngay"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Thuê phòng ngay luôn check-in vào ngày hôm nay
+                    </p>
                   </div>
 
                   <div>

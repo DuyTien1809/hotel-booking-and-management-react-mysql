@@ -36,7 +36,7 @@ public class PriceService {
 
     public Optional<BigDecimal> getLatestSurchargePrice(String idPhuThu) {
         try {
-            String sql = "SELECT GIA FROM thay_doi_gia_phu_thu WHERE ID_PHU_THU = ? ORDER BY NGAY_AP_DUNG DESC LIMIT 1";
+            String sql = "SELECT GIA FROM giaphuthu WHERE ID_PHU_THU = ? ORDER BY NGAY_AP_DUNG DESC LIMIT 1";
             BigDecimal price = jdbcTemplate.queryForObject(sql, BigDecimal.class, idPhuThu);
             return Optional.ofNullable(price);
         } catch (Exception e) {
@@ -46,7 +46,7 @@ public class PriceService {
 
     public Optional<LocalDate> getLatestSurchargePriceDate(String idPhuThu) {
         try {
-            String sql = "SELECT NGAY_AP_DUNG FROM thay_doi_gia_phu_thu WHERE ID_PHU_THU = ? ORDER BY NGAY_AP_DUNG DESC LIMIT 1";
+            String sql = "SELECT NGAY_AP_DUNG FROM giaphuthu WHERE ID_PHU_THU = ? ORDER BY NGAY_AP_DUNG DESC LIMIT 1";
             LocalDate date = jdbcTemplate.queryForObject(sql, LocalDate.class, idPhuThu);
             return Optional.ofNullable(date);
         } catch (Exception e) {

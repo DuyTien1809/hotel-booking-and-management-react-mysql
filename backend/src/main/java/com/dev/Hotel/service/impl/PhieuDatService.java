@@ -11,6 +11,7 @@ import com.dev.Hotel.entity.NhanVien;
 import com.dev.Hotel.entity.HangPhong;
 import com.dev.Hotel.entity.GiaHangPhong;
 import com.dev.Hotel.entity.CtPhieuDatId;
+import com.dev.Hotel.entity.CtKhachO;
 import com.dev.Hotel.exception.OurException;
 import com.dev.Hotel.repo.PhieuDatRepository;
 import com.dev.Hotel.repo.KhachHangRepository;
@@ -18,6 +19,7 @@ import com.dev.Hotel.repo.NhanVienRepository;
 import com.dev.Hotel.repo.HangPhongRepository;
 import com.dev.Hotel.repo.GiaHangPhongRepository;
 import com.dev.Hotel.repo.CtPhieuDatRepository;
+import com.dev.Hotel.repo.CTKhachORepository;
 import com.dev.Hotel.repo.KieuPhongRepository;
 import com.dev.Hotel.repo.LoaiPhongRepository;
 import com.dev.Hotel.service.interfac.IPhieuDatService;
@@ -52,6 +54,9 @@ public class PhieuDatService implements IPhieuDatService {
 
     @Autowired
     private CtPhieuDatRepository ctPhieuDatRepository;
+
+    @Autowired
+    private CTKhachORepository ctKhachORepository;
 
     @Autowired
     private KieuPhongRepository kieuPhongRepository;
@@ -550,9 +555,12 @@ public class PhieuDatService implements IPhieuDatService {
     public Response createBookingAtReception(CreateBookingAtReceptionRequest request) {
         Response response = new Response();
         try {
-            // Validate input
+            // Validate input - chỉ yêu cầu CCCD và SĐT
             if (request.getCccd() == null || request.getCccd().trim().isEmpty()) {
                 throw new OurException("CCCD không được để trống");
+            }
+            if (request.getSdt() == null || request.getSdt().trim().isEmpty()) {
+                throw new OurException("Số điện thoại không được để trống");
             }
             if (request.getNgayBdThue() == null || request.getNgayDi() == null) {
                 throw new OurException("Ngày bắt đầu và ngày kết thúc không được để trống");
@@ -599,23 +607,21 @@ public class PhieuDatService implements IPhieuDatService {
                 throw new OurException("Tiền đặt cọc phải ít nhất " + minDeposit.longValue() + " VNĐ (20% giá phòng)");
             }
 
-            // Handle customer (new or existing)
-            KhachHang khachHang;
-            if (request.isNewCustomer()) {
-                // Create new customer
-                khachHang = new KhachHang();
-                khachHang.setCccd(request.getCccd());
-                khachHang.setHo(request.getHo());
-                khachHang.setTen(request.getTen());
-                khachHang.setSdt(request.getSdt());
-                khachHang.setEmail(request.getEmail());
-                khachHang.setDiaChi(request.getDiaChi());
-                khachHang = khachHangRepository.save(khachHang);
-            } else {
-                // Find existing customer
-                khachHang = khachHangRepository.findById(request.getCccd())
-                        .orElseThrow(() -> new OurException("Khách hàng không tồn tại"));
+            // Tìm khách hàng theo CCCD, nếu không có thì báo lỗi
+            KhachHang khachHang = khachHangRepository.findById(request.getCccd())
+                    .orElseThrow(() -> new OurException("Không tìm thấy khách hàng với CCCD: " + request.getCccd() +
+                                                      ". Vui lòng tạo khách hàng trước khi đặt phòng."));
+
+            // Cập nhật số điện thoại nếu có thay đổi
+            if (request.getSdt() != null && !request.getSdt().trim().isEmpty()) {
+                if (!request.getSdt().equals(khachHang.getSdt())) {
+                    khachHang.setSdt(request.getSdt());
+                    khachHang = khachHangRepository.save(khachHang);
+                }
             }
+
+            // Validate customer is not currently staying in another room
+            validateCustomerNotCurrentlyStaying(khachHang.getCccd());
 
             // Create PhieuDat
             PhieuDat phieuDat = new PhieuDat();
@@ -764,7 +770,6 @@ public class PhieuDatService implements IPhieuDatService {
 
                 System.out.println("Setting DON_GIA: " + donGia);
                 ctPhieuDat.setDonGia(donGia);
-                ctPhieuDat.setTrangThai("Chờ xác nhận");
 
                 System.out.println("Saving CtPhieuDat with ID: " + ctId.getIdPd() + ", " + ctId.getIdHangPhong());
                 ctPhieuDatRepository.save(ctPhieuDat);
@@ -825,5 +830,18 @@ public class PhieuDatService implements IPhieuDatService {
 
                     return khachHangRepository.save(newCustomer);
                 });
+    }
+
+    // Helper method to validate customer is not currently staying in another room
+    private void validateCustomerNotCurrentlyStaying(String cccd) throws OurException {
+        List<CtKhachO> activeStays = ctKhachORepository.findActiveStaysByCccd(cccd);
+        if (!activeStays.isEmpty()) {
+            List<CtKhachO> activeStaysWithDetails = ctKhachORepository.findActiveStaysWithDetailsByCccd(cccd);
+            if (!activeStaysWithDetails.isEmpty()) {
+                CtKhachO activeStay = activeStaysWithDetails.get(0);
+                String currentRoom = activeStay.getCtPhieuThue().getPhong().getSoPhong();
+                throw new OurException("Khách hàng đang ở phòng " + currentRoom + " và chưa check-out. " );
+           }
+        }
     }
 }

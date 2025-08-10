@@ -2,7 +2,6 @@ package com.dev.Hotel.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import java.util.List;
 
 @Data
 @Entity
@@ -11,10 +10,10 @@ public class PhuThu {
     @Id
     @Column(name = "ID_PHU_THU")
     private String idPhuThu;
-    
+
     @Column(name = "TEN_PHU_THU")
     private String tenPhuThu;
-    
-    @OneToMany(mappedBy = "phuThu", cascade = CascadeType.ALL)
-    private List<GiaPhuThu> danhSachGia;
+
+    @Column(name = "LY_DO")
+    private String lyDo;
 }
