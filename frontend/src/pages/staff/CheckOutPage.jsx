@@ -292,8 +292,6 @@ const CheckOutPage = () => {
     await fetchRentalDetailsForDisplay(guest.id)
 
     // Tiền đặt cọc sẽ được lấy từ rentalDetails khi fetch chi tiết
-
-    // Note: Detailed rental information will be fetched when user clicks "View Chi Tiết" button
   }
 
   // Hàm tải chi tiết để hiển thị thông tin (không mở modal)
@@ -448,127 +446,6 @@ const CheckOutPage = () => {
       currency: 'VND'
     }).format(amount || 0)
   }
-
-  const RoomDetailsModal = () => {
-    if (!showRoomDetails || !selectedRoom) return null
-
-    // Find services and surcharges for this room
-    const roomServices = rentalDetails?.services?.filter(service => service.idPhong === selectedRoom.idPhong) || []
-    const roomSurcharges = rentalDetails?.surcharges?.filter(surcharge => surcharge.idPhong === selectedRoom.idPhong) || []
-
-    return (
-      <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div className="relative top-10 mx-auto p-5 border w-4/5 max-w-4xl shadow-lg rounded-md bg-white">
-          <div className="mt-3">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900">
-                Tình trạng phòng {selectedRoom.tenPhong}
-              </h3>
-              <button
-                onClick={() => setShowRoomDetails(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-              </button>
-            </div>
-
-            {/* Room Basic Info */}
-            <div className="bg-gray-50 p-4 rounded-lg mb-6">
-              <h4 className="text-lg font-semibold text-gray-900 mb-3">Thông tin phòng</h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div><span className="font-medium">Số phòng:</span> {selectedRoom.tenPhong}</div>
-                <div><span className="font-medium">Loại phòng:</span> {selectedRoom.loaiPhong || 'N/A'}</div>
-                <div><span className="font-medium">Ngày đến:</span> {new Date(selectedRoom.ngayDen).toLocaleDateString('vi-VN')}</div>
-                <div><span className="font-medium">Ngày đi:</span> {new Date().toLocaleDateString('vi-VN')} (hôm nay)</div>
-                <div><span className="font-medium">Số ngày:</span> {selectedRoom.soNgay}</div>
-                <div><span className="font-medium">Đơn giá:</span> {formatCurrency(selectedRoom.donGia)}</div>
-                <div><span className="font-medium">Thành tiền:</span> {formatCurrency(selectedRoom.thanhTien)}</div>
-                <div>
-                  <span className="font-medium">Trạng thái thanh toán:</span>
-                  <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
-                    selectedRoom.trangThaiThanhToan === 'Đã thanh toán'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {selectedRoom.trangThaiThanhToan}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Services and Surcharges */}
-            <div className="space-y-4">
-              {/* Services */}
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="text-lg font-semibold text-blue-900 mb-3">Dịch vụ đang sử dụng</h4>
-                {roomServices.length > 0 ? (
-                  <div className="space-y-2">
-                    {roomServices.map((service, index) => (
-                      <div key={index} className="bg-white p-3 rounded border">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <p className="font-medium">{service.tenDichVu}</p>
-                            <p className="text-sm text-gray-500">
-                              {service.soLuong} × {formatCurrency(service.gia)}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              Ngày sử dụng: {new Date(service.ngaySD).toLocaleDateString('vi-VN')}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold text-blue-600">
-                              {formatCurrency(service.thanhTien)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-sm">Không có dịch vụ nào</p>
-                )}
-              </div>
-
-              {/* Surcharges */}
-              <div className="bg-red-50 p-4 rounded-lg">
-                <h4 className="text-lg font-semibold text-red-900 mb-3">Phụ thu</h4>
-                {roomSurcharges.length > 0 ? (
-                  <div className="space-y-2">
-                    {roomSurcharges.map((surcharge, index) => (
-                      <div key={index} className="bg-white p-3 rounded border">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <p className="font-medium">{surcharge.loaiPhuThu}</p>
-                            <p className="text-sm text-gray-500">{surcharge.moTa}</p>
-                            <p className="text-sm text-gray-500">
-                              {surcharge.soLuong} × {formatCurrency(surcharge.donGia)}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              Ngày phát sinh: {new Date(surcharge.ngayPhatSinh).toLocaleDateString('vi-VN')}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold text-red-600">
-                              {formatCurrency(surcharge.thanhTien)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-sm">Không có phụ thu nào</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   const RentalDetailsModal = () => {
     if (!showDetails || !rentalDetails) return null
 
@@ -584,8 +461,6 @@ const CheckOutPage = () => {
               ✕
             </button>
           </div>
-
-          {/* Customer Information */}
           <div className="mb-6">
             <h3 className="text-lg font-semibold mb-3 text-blue-600">Thông tin khách hàng</h3>
             <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
@@ -622,15 +497,49 @@ const CheckOutPage = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {rentalDetails.rooms.map((room, index) => (
+                    {selectedGuest.chiTietPhieuThue && selectedGuest.chiTietPhieuThue.map((ct, index) => (
                       <tr key={index} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{room.tenPhong}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{room.loaiPhong}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{new Date(room.ngayDen).toLocaleDateString('vi-VN')}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{ct.soPhong}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{ct.tenKieuPhong} {ct.tenLoaiPhong}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{new Date(ct.ngayDen).toLocaleDateString('vi-VN')}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{new Date().toLocaleDateString('vi-VN')}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">{room.soNgay}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(room.donGia)}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right font-medium">{formatCurrency(room.thanhTien)}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
+                          {(() => {
+                            if (ct.ngayDen) {
+                              const checkInDate = new Date(ct.ngayDen)
+                              checkInDate.setHours(0, 0, 0, 0)
+
+                              const actualCheckOut = checkOutData.actualCheckOut ?
+                                new Date(checkOutData.actualCheckOut) : new Date()
+                              const checkOutDateOnly = new Date(actualCheckOut)
+                              checkOutDateOnly.setHours(0, 0, 0, 0)
+
+                              // Chỉ tính thêm ngày khi qua ngày mới (sau 00:00)
+                              return Math.max(1, Math.ceil((checkOutDateOnly - checkInDate) / (1000 * 60 * 60 * 24)))
+                            }
+                            return 1
+                          })()}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(ct.donGia)}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
+                          {(() => {
+                            if (ct.donGia && ct.ngayDen) {
+                              const checkInDate = new Date(ct.ngayDen)
+                              checkInDate.setHours(0, 0, 0, 0)
+
+                              const actualCheckOut = checkOutData.actualCheckOut ?
+                                new Date(checkOutData.actualCheckOut) : new Date()
+                              const checkOutDateOnly = new Date(actualCheckOut)
+                              checkOutDateOnly.setHours(0, 0, 0, 0)
+
+                              // Chỉ tính thêm ngày khi qua ngày mới (sau 00:00)
+                              const soNgay = Math.max(1, Math.ceil((checkOutDateOnly - checkInDate) / (1000 * 60 * 60 * 24)))
+                              const thanhTien = ct.donGia * soNgay
+                              return formatCurrency(thanhTien)
+                            }
+                            return formatCurrency(ct.donGia || 0)
+                          })()}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -711,7 +620,28 @@ const CheckOutPage = () => {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span>Tiền phòng:</span>
-                <span className="font-medium">{formatCurrency(rentalDetails.tongTienPhong)}</span>
+                <span className="font-medium">
+                  {formatCurrency((() => {
+                    let totalRoomCharges = 0
+                    if (selectedGuest.chiTietPhieuThue) {
+                      selectedGuest.chiTietPhieuThue.forEach(ct => {
+                        if (ct.donGia && ct.ngayDen) {
+                          const checkInDate = new Date(ct.ngayDen)
+                          checkInDate.setHours(0, 0, 0, 0)
+
+                          const actualCheckOut = checkOutData.actualCheckOut ?
+                            new Date(checkOutData.actualCheckOut) : new Date()
+                          const checkOutDateOnly = new Date(actualCheckOut)
+                          checkOutDateOnly.setHours(0, 0, 0, 0)
+
+                          const soNgay = Math.max(1, Math.ceil((checkOutDateOnly - checkInDate) / (1000 * 60 * 60 * 24)))
+                          totalRoomCharges += ct.donGia * soNgay
+                        }
+                      })
+                    }
+                    return totalRoomCharges
+                  })())}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Tiền dịch vụ:</span>
@@ -723,7 +653,28 @@ const CheckOutPage = () => {
               </div>
               <div className="flex justify-between text-lg font-bold border-t pt-2 text-blue-600">
                 <span>Tổng cộng:</span>
-                <span className="text-blue-600">{formatCurrency(rentalDetails.tongTien)}</span>
+                <span className="text-blue-600">
+                  {formatCurrency((() => {
+                    let totalRoomCharges = 0
+                    if (selectedGuest.chiTietPhieuThue) {
+                      selectedGuest.chiTietPhieuThue.forEach(ct => {
+                        if (ct.donGia && ct.ngayDen) {
+                          const checkInDate = new Date(ct.ngayDen)
+                          checkInDate.setHours(0, 0, 0, 0)
+
+                          const actualCheckOut = checkOutData.actualCheckOut ?
+                            new Date(checkOutData.actualCheckOut) : new Date()
+                          const checkOutDateOnly = new Date(actualCheckOut)
+                          checkOutDateOnly.setHours(0, 0, 0, 0)
+
+                          const soNgay = Math.max(1, Math.ceil((checkOutDateOnly - checkInDate) / (1000 * 60 * 60 * 24)))
+                          totalRoomCharges += ct.donGia * soNgay
+                        }
+                      })
+                    }
+                    return totalRoomCharges + (rentalDetails.tongTienDichVu || 0) + (rentalDetails.tongTienPhuThu || 0)
+                  })())}
+                </span>
               </div>
             </div>
           </div>
@@ -1125,9 +1076,7 @@ const CheckOutPage = () => {
         bill={bill}
         checkOutData={checkOutData}
       />
-
       <RentalDetailsModal />
-      <RoomDetailsModal />
     </div>
   )
 }
