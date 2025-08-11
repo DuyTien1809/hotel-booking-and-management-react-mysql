@@ -33,9 +33,10 @@ public interface PhieuThueRepository extends JpaRepository<PhieuThue, Integer> {
     @Query("SELECT DISTINCT pt FROM PhieuThue pt JOIN pt.chiTietPhieuThue ct WHERE ct.ngayDi BETWEEN :startDate AND :endDate")
     List<PhieuThue> findByNgayDiBetween(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
     
-    // Lấy tất cả phiếu thuê đã check-in (có ngayLap) nhưng chưa check-out
+    // Lấy tất cả phiếu thuê đã check-in (có ngayLap) nhưng chưa check-out (không có hóa đơn)
     // Bao gồm cả những phiếu đã quá ngày dự kiến (ngayDi)
-    @Query("SELECT pt FROM PhieuThue pt WHERE pt.ngayLap IS NOT NULL")
+    @Query("SELECT pt FROM PhieuThue pt WHERE pt.ngayLap IS NOT NULL " +
+           "AND NOT EXISTS (SELECT hd FROM HoaDon hd WHERE hd.phieuThue = pt)")
     List<PhieuThue> findCurrentStays(@Param("currentDate") LocalDate currentDate);
 
     // Dashboard specific queries

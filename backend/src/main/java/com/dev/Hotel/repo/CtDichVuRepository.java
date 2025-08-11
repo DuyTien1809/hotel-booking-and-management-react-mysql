@@ -43,13 +43,14 @@ public interface CtDichVuRepository extends JpaRepository<CtDichVu, CtDichVuId> 
            "JOIN FETCH ct.phong p")
     List<CtDichVu> findAllWithDetails();
     
-    // Query to get current active service usage (excluding checkout today)
+    // Query to get current active service usage (excluding checkout today and those with invoices)
     @Query("SELECT cd FROM CtDichVu cd " +
            "JOIN FETCH cd.dichVu dv " +
            "JOIN FETCH cd.ctPhieuThue ct " +
            "JOIN FETCH ct.phieuThue pt " +
            "JOIN FETCH pt.khachHang kh " +
            "JOIN FETCH ct.phong p " +
-           "WHERE ct.ngayDen <= :currentDate AND ct.ngayDi > :currentDate")
+           "WHERE ct.ngayDen <= :currentDate AND ct.ngayDi > :currentDate " +
+           "AND NOT EXISTS (SELECT hd FROM HoaDon hd WHERE hd.phieuThue = pt)")
     List<CtDichVu> findCurrentActiveServices(@Param("currentDate") LocalDate currentDate);
 }

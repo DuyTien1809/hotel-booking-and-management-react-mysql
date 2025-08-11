@@ -40,13 +40,14 @@ public interface CtPhuThuRepository extends JpaRepository<CtPhuThu, CtPhuThuId> 
            "JOIN FETCH ct.phong p")
     List<CtPhuThu> findAllWithDetails();
     
-    // Query to get current active surcharge usage (excluding checkout today)
+    // Query to get current active surcharge usage (excluding checkout today and those with invoices)
     @Query("SELECT cp FROM CtPhuThu cp " +
            "JOIN FETCH cp.phuThu pt " +
            "JOIN FETCH cp.ctPhieuThue ct " +
            "JOIN FETCH ct.phieuThue pth " +
            "JOIN FETCH pth.khachHang kh " +
            "JOIN FETCH ct.phong p " +
-           "WHERE ct.ngayDen <= :currentDate AND ct.ngayDi > :currentDate")
+           "WHERE ct.ngayDen <= :currentDate AND ct.ngayDi > :currentDate " +
+           "AND NOT EXISTS (SELECT hd FROM HoaDon hd WHERE hd.phieuThue = pth)")
     List<CtPhuThu> findCurrentActiveSurcharges(@Param("currentDate") LocalDate currentDate);
 }
