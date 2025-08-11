@@ -1,21 +1,19 @@
 import React, { useState, useEffect } from 'react'
 import { api } from '../../services/api'
+import * as XLSX from 'xlsx'
 import {
   BarChart3,
   TrendingUp,
   TrendingDown,
   DollarSign,
-  Users,
   Building,
   Calendar,
   Download,
   Filter,
   RefreshCw,
-  Eye,
   FileText,
   PieChart,
-  Activity,
-  FileSpreadsheet
+  Activity
 } from 'lucide-react'
 
 const ReportsPage = () => {
@@ -58,6 +56,8 @@ const ReportsPage = () => {
   const [loading, setLoading] = useState(false)
   const [reportData, setReportData] = useState(null)
   const [bookingStatus, setBookingStatus] = useState('ALL')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
 
   useEffect(() => {
     fetchReportData()
@@ -124,9 +124,7 @@ const ReportsPage = () => {
     }
   }
 
-  const printReport = () => {
-    window.print()
-  }
+
 
   const exportToExcel = (data) => {
     if (!data || !data.details || data.details.length === 0) {
@@ -134,70 +132,185 @@ const ReportsPage = () => {
       return
     }
 
-    // Tạo dữ liệu cho Excel với tất cả các cột từ stored procedure
-    const excelData = []
+    // Tạo workbook mới
+    const workbook = XLSX.utils.book_new()
 
-    // Header - tất cả các cột từ temp_bao_cao trong stored procedure
-    excelData.push([
-      'ID Phiếu đặt',
-      'Ngày đặt',
-      'Ngày bắt đầu thuê',
-      'Ngày đi',
-      'Số ngày ở',
-      'Trạng thái gốc',
-      'Số tiền cọc (VNĐ)',
-      'CCCD khách',
-      'Họ tên khách',
-      'SĐT khách',
-      'Email khách',
-      'ID nhân viên đặt',
-      'Họ tên nhân viên đặt',
-      'ID phiếu thuê',
-      'Ngày check-in thực tế',
-      'Số phòng đặt',
-      'Chi tiết phòng',
-      'Tổng tiền phòng (VNĐ)'
-    ])
+    // Tạo header với thông tin báo cáo
+    const reportInfo = [
+      ['BÁO CÁO CHI TIẾT ĐẶT PHÒNG'],
+      [''],
+      [`Thời gian: ${new Date(dateRange.startDate).toLocaleDateString('vi-VN')} - ${new Date(dateRange.endDate).toLocaleDateString('vi-VN')}`],
+      [`Ngày xuất: ${new Date().toLocaleDateString('vi-VN')} ${new Date().toLocaleTimeString('vi-VN')}`],
+      [`Trạng thái: ${bookingStatus === 'ALL' ? 'Tất cả' : bookingStatus}`],
+      [`Tổng số bản ghi: ${data.details.length}`],
+      [''],
+      ['STT', 'ID Phiếu', 'Ngày đặt', 'Check-in', 'Check-out', 'Số ngày', 'Trạng thái', 'Khách hàng', 'CCCD', 'SĐT', 'Email', 'Phòng', 'Loại phòng', 'Tiền cọc', 'Tổng tiền']
+    ]
 
-    // Data rows - tất cả các cột từ stored procedure
-    data.details.forEach(booking => {
-      excelData.push([
+    // Thêm dữ liệu chi tiết
+    data.details.forEach((booking, index) => {
+      reportInfo.push([
+        index + 1,
         booking.idPd || '',
-        booking.ngayDat || '',
-        booking.ngayBdThue || '',
-        booking.ngayDi || '',
+        booking.ngayDat ? new Date(booking.ngayDat).toLocaleDateString('vi-VN') : '',
+        booking.ngayBdThue ? new Date(booking.ngayBdThue).toLocaleDateString('vi-VN') : '',
+        booking.ngayDi ? new Date(booking.ngayDi).toLocaleDateString('vi-VN') : '',
         booking.soNgayO || 0,
         booking.trangThaiGoc || '',
-        booking.soTienCoc || 0,
-        booking.cccdKhach || '',
         booking.hoTenKhach || '',
+        booking.cccdKhach || '',
         booking.sdtKhach || '',
         booking.emailKhach || '',
-        booking.idNvDat || '',
-        booking.hoTenNvDat || '',
-        booking.idPt || '',
-        booking.ngayCheckInThucTe || '',
-        booking.soPhongDat || 0,
+        `Phòng ${booking.soPhongDat}`,
         booking.chiTietPhong || '',
+        booking.soTienCoc || 0,
         booking.tongTienPhong || 0
       ])
     })
 
-    // Tạo CSV content
-    const csvContent = excelData.map(row =>
-      row.map(cell => `"${cell}"`).join(',')
-    ).join('\n')
+    const worksheet = XLSX.utils.aoa_to_sheet(reportInfo)
 
-    // Tạo và download file
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    const url = URL.createObjectURL(blob)
-    link.setAttribute('href', url)
-    link.setAttribute('download', `bao-cao-dat-phong-${dateRange.startDate}-${dateRange.endDate}.csv`)
-    link.style.visibility = 'hidden'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    // Thiết lập độ rộng cột
+    const colWidths = [
+      { wch: 5 },  // STT
+      { wch: 10 }, // ID Phiếu
+      { wch: 12 }, // Ngày đặt
+      { wch: 12 }, // Check-in
+      { wch: 12 }, // Check-out
+      { wch: 8 },  // Số ngày
+      { wch: 15 }, // Trạng thái
+      { wch: 20 }, // Khách hàng
+      { wch: 15 }, // CCCD
+      { wch: 12 }, // SĐT
+      { wch: 25 }, // Email
+      { wch: 12 }, // Phòng
+      { wch: 18 }, // Loại phòng
+      { wch: 15 }, // Tiền cọc
+      { wch: 18 }  // Tổng tiền
+    ]
+
+    worksheet['!cols'] = colWidths
+
+    // Merge cells cho tiêu đề và thông tin
+    worksheet['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 14 } }, // Tiêu đề báo cáo
+      { s: { r: 2, c: 0 }, e: { r: 2, c: 14 } }, // Thời gian
+      { s: { r: 3, c: 0 }, e: { r: 3, c: 14 } }, // Ngày xuất
+      { s: { r: 4, c: 0 }, e: { r: 4, c: 14 } }, // Trạng thái
+      { s: { r: 5, c: 0 }, e: { r: 5, c: 14 } }  // Tổng số bản ghi
+    ]
+
+    // Định dạng tiêu đề chính
+    if (worksheet['A1']) {
+      worksheet['A1'].s = {
+        font: { bold: true, sz: 16, color: { rgb: 'FFFFFF' } },
+        fill: { fgColor: { rgb: '1E40AF' } },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border: {
+          top: { style: 'thick', color: { rgb: '000000' } },
+          bottom: { style: 'thick', color: { rgb: '000000' } },
+          left: { style: 'thick', color: { rgb: '000000' } },
+          right: { style: 'thick', color: { rgb: '000000' } }
+        }
+      }
+    }
+
+    // Định dạng thông tin báo cáo
+    for (let row = 3; row <= 6; row++) {
+      if (worksheet[`A${row}`]) {
+        worksheet[`A${row}`].s = {
+          font: { bold: true, sz: 11 },
+          alignment: { horizontal: 'center' },
+          fill: { fgColor: { rgb: 'F3F4F6' } }
+        }
+      }
+    }
+
+    // Định dạng header bảng (dòng 8)
+    const headerRow = 8
+    for (let col = 0; col < 15; col++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: headerRow - 1, c: col })
+      if (worksheet[cellAddress]) {
+        worksheet[cellAddress].s = {
+          font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+          fill: { fgColor: { rgb: '059669' } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: {
+            top: { style: 'medium', color: { rgb: '000000' } },
+            bottom: { style: 'medium', color: { rgb: '000000' } },
+            left: { style: 'thin', color: { rgb: '000000' } },
+            right: { style: 'thin', color: { rgb: '000000' } }
+          }
+        }
+      }
+    }
+
+    // Định dạng dữ liệu
+    const range = XLSX.utils.decode_range(worksheet['!ref'])
+    for (let row = headerRow; row <= range.e.r; row++) {
+      for (let col = 0; col <= 14; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col })
+        if (worksheet[cellAddress]) {
+          const isEvenRow = (row - headerRow) % 2 === 0
+          worksheet[cellAddress].s = {
+            alignment: {
+              horizontal: col === 0 ? 'center' : (col >= 13 ? 'right' : 'left'),
+              vertical: 'center'
+            },
+            fill: { fgColor: { rgb: isEvenRow ? 'FFFFFF' : 'F9FAFB' } },
+            border: {
+              top: { style: 'thin', color: { rgb: 'E5E7EB' } },
+              bottom: { style: 'thin', color: { rgb: 'E5E7EB' } },
+              left: { style: 'thin', color: { rgb: 'E5E7EB' } },
+              right: { style: 'thin', color: { rgb: 'E5E7EB' } }
+            }
+          }
+
+          // Định dạng số cho cột tiền (cột 13 và 14)
+          if ((col === 13 || col === 14) && worksheet[cellAddress].v && typeof worksheet[cellAddress].v === 'number') {
+            worksheet[cellAddress].z = '#,##0" VNĐ"'
+            worksheet[cellAddress].s.font = { color: { rgb: '059669' }, bold: true }
+          }
+
+          // Định dạng cho cột trạng thái (cột 6)
+          if (col === 6 && worksheet[cellAddress].v) {
+            const status = worksheet[cellAddress].v
+            if (status === 'Đã xác nhận') {
+              worksheet[cellAddress].s.font = { color: { rgb: '059669' }, bold: true }
+            } else if (status === 'Chờ xác nhận') {
+              worksheet[cellAddress].s.font = { color: { rgb: 'D97706' }, bold: true }
+            } else if (status === 'Đã hủy') {
+              worksheet[cellAddress].s.font = { color: { rgb: 'DC2626' }, bold: true }
+            }
+          }
+        }
+      }
+    }
+
+    // Thêm auto filter cho bảng dữ liệu (từ dòng 8)
+    worksheet['!autofilter'] = { ref: `A8:O${data.details.length + 8}` }
+
+    // Thiết lập chiều cao hàng
+    worksheet['!rows'] = [
+      { hpt: 35 }, // Tiêu đề chính
+      { hpt: 15 }, // Dòng trống
+      { hpt: 20 }, // Thời gian
+      { hpt: 20 }, // Ngày xuất
+      { hpt: 20 }, // Trạng thái
+      { hpt: 20 }, // Tổng số bản ghi
+      { hpt: 15 }, // Dòng trống
+      { hpt: 30 }, // Header bảng
+      ...Array(data.details.length).fill({ hpt: 25 }) // Dữ liệu
+    ]
+
+    // Thêm worksheet vào workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Chi tiết đặt phòng')
+
+    // Tạo tên file
+    const fileName = `ChiTiet_DatPhong_${dateRange.startDate}_${dateRange.endDate}.xlsx`
+
+    // Xuất file
+    XLSX.writeFile(workbook, fileName)
 
     alert('Báo cáo Excel đã được tải xuống thành công!')
   }
@@ -218,7 +331,7 @@ const ReportsPage = () => {
   }
 
   return (
-    <div className="space-y-6 overflow-x-hidden">
+    <div className="space-y-6 max-w-full overflow-hidden">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -395,48 +508,72 @@ const ReportsPage = () => {
 
           {/* Booking Details Table */}
           {reportData.details && reportData.details.length > 0 && (
-            <div className="card overflow-x-hidden">
-              <div className="flex justify-between items-center mb-4">
+            <div className="card">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 space-y-2 sm:space-y-0">
                 <h3 className="text-lg font-semibold text-gray-900">Chi tiết đặt phòng</h3>
-                <span className="text-sm text-gray-500">
-                  Tổng: {reportData.totalRecords} bản ghi
-                </span>
+                <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <label className="text-sm text-gray-600">Hiển thị:</label>
+                    <select
+                      value={itemsPerPage}
+                      onChange={(e) => {
+                        setItemsPerPage(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="text-sm border border-gray-300 rounded px-2 py-1"
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                    <span className="text-sm text-gray-600">mục/trang</span>
+                  </div>
+                  <span className="text-sm text-gray-500">
+                    Tổng: {reportData.totalRecords} bản ghi
+                  </span>
+                </div>
               </div>
 
-              <div className="w-full overflow-x-auto">
-                <div className="inline-block align-top" style={{ minWidth: '1900px' }}>
-                  <table className="min-w-full divide-y divide-gray-200">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">ID phiếu</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Ngày đặt</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Ngày bắt đầu thuê</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Ngày đi</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Số ngày ở</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Trạng thái</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Số tiền cọc</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">CCCD khách</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Họ tên khách</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">SĐT khách</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Email khách</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">ID NV đặt</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Họ tên NV đặt</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">ID phiếu thuê</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Ngày check-in thực tế</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Số phòng đặt</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Chi tiết phòng</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Tổng tiền phòng</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày đặt</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-in</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-out</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Số ngày</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Khách hàng</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">SĐT</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phòng</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Tiền cọc</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng tiền</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {reportData.details.map((booking, index) => (
+                    {reportData.details
+                      .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                      .map((booking, index) => (
                       <tr key={index} className="hover:bg-gray-50">
-                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">{booking.idPd}</td>
-                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">{booking.ngayDat}</td>
-                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">{booking.ngayBdThue}</td>
-                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">{booking.ngayDi}</td>
-                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">{booking.soNgayO}</td>
-                        <td className="px-3 py-3 whitespace-nowrap">
+                        <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {booking.idPd}
+                        </td>
+                        <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(booking.ngayDat).toLocaleDateString('vi-VN')}
+                        </td>
+                        <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(booking.ngayBdThue).toLocaleDateString('vi-VN')}
+                        </td>
+                        <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(booking.ngayDi).toLocaleDateString('vi-VN')}
+                        </td>
+                        <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 hidden sm:table-cell">
+                          {booking.soNgayO} ngày
+                        </td>
+                        <td className="px-3 py-4 whitespace-nowrap">
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                             booking.trangThaiGoc === 'Đã xác nhận' ? 'bg-green-100 text-green-800' :
                             booking.trangThaiGoc === 'Chờ xác nhận' ? 'bg-yellow-100 text-yellow-800' :
@@ -446,24 +583,121 @@ const ReportsPage = () => {
                             {booking.trangThaiGoc}
                           </span>
                         </td>
-                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">{booking.soTienCoc?.toLocaleString()} VNĐ</td>
-                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">{booking.cccdKhach}</td>
-                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">{booking.hoTenKhach}</td>
-                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">{booking.sdtKhach}</td>
-                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">{booking.emailKhach}</td>
-                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">{booking.idNvDat || '-'}</td>
-                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">{booking.hoTenNvDat || '-'}</td>
-                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">{booking.idPt || '-'}</td>
-                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">{booking.ngayCheckInThucTe || '-'}</td>
-                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">{booking.soPhongDat}</td>
-                        <td className="px-3 py-3 text-sm text-gray-900">{booking.chiTietPhong}</td>
-                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">{booking.tongTienPhong?.toLocaleString()} VNĐ</td>
+                        <td className="px-3 py-4 text-sm text-gray-900">
+                          <div>
+                            <div className="font-medium">{booking.hoTenKhach}</div>
+                            <div className="text-gray-500 text-xs">{booking.emailKhach}</div>
+                          </div>
+                        </td>
+                        <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 hidden md:table-cell">
+                          {booking.sdtKhach}
+                        </td>
+                        <td className="px-3 py-4 text-sm text-gray-900">
+                          <div>
+                            <div className="font-medium">Phòng {booking.soPhongDat}</div>
+                            <div className="text-gray-500 text-xs">{booking.chiTietPhong}</div>
+                          </div>
+                        </td>
+                        <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 hidden lg:table-cell">
+                          {booking.soTienCoc?.toLocaleString()} VNĐ
+                        </td>
+                        <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {booking.tongTienPhong?.toLocaleString()} VNĐ
+                        </td>
                       </tr>
                     ))}
                   </tbody>
-                  </table>
-                </div>
+                </table>
               </div>
+
+              {/* Pagination */}
+              {reportData.details && reportData.details.length > itemsPerPage && (
+                <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+                  <div className="flex justify-between flex-1 sm:hidden">
+                    <button
+                      onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Trước
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage(Math.min(currentPage + 1, Math.ceil(reportData.details.length / itemsPerPage)))}
+                      disabled={currentPage === Math.ceil(reportData.details.length / itemsPerPage)}
+                      className="relative ml-3 inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Sau
+                    </button>
+                  </div>
+                  <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm text-gray-700">
+                        Hiển thị{' '}
+                        <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span>
+                        {' '}-{' '}
+                        <span className="font-medium">
+                          {Math.min(currentPage * itemsPerPage, reportData.details.length)}
+                        </span>
+                        {' '}trong{' '}
+                        <span className="font-medium">{reportData.details.length}</span>
+                        {' '}kết quả
+                      </p>
+                    </div>
+                    <div>
+                      <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        <button
+                          onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+                          disabled={currentPage === 1}
+                          className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <span className="sr-only">Trang trước</span>
+                          ‹
+                        </button>
+
+                        {Array.from({ length: Math.ceil(reportData.details.length / itemsPerPage) }, (_, i) => i + 1)
+                          .filter(page => {
+                            const totalPages = Math.ceil(reportData.details.length / itemsPerPage);
+                            if (totalPages <= 7) return true;
+                            if (page === 1 || page === totalPages) return true;
+                            if (page >= currentPage - 2 && page <= currentPage + 2) return true;
+                            return false;
+                          })
+                          .map((page, index, array) => {
+                            const showEllipsis = index > 0 && page - array[index - 1] > 1;
+                            return (
+                              <React.Fragment key={page}>
+                                {showEllipsis && (
+                                  <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                                    ...
+                                  </span>
+                                )}
+                                <button
+                                  onClick={() => setCurrentPage(page)}
+                                  className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                    currentPage === page
+                                      ? 'z-10 bg-primary-50 border-primary-500 text-primary-600'
+                                      : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                                  }`}
+                                >
+                                  {page}
+                                </button>
+                              </React.Fragment>
+                            );
+                          })}
+
+                        <button
+                          onClick={() => setCurrentPage(Math.min(currentPage + 1, Math.ceil(reportData.details.length / itemsPerPage)))}
+                          disabled={currentPage === Math.ceil(reportData.details.length / itemsPerPage)}
+                          className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <span className="sr-only">Trang sau</span>
+                          ›
+                        </button>
+                      </nav>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
