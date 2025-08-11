@@ -8,84 +8,103 @@ import { formatDateToYMD } from '../../utils/dateUtils';
 const sliderStyles = `
   .dual-range-slider {
     position: relative;
-    height: 8px;
-    background: linear-gradient(to right, #e5e7eb 0%, #e5e7eb 100%);
-    border-radius: 4px;
+    height: 40px;
     margin: 20px 0;
-    padding: 10px 0;
+    display: flex;
+    align-items: center;
   }
 
-  .dual-range-slider::before {
-    content: '';
+  .dual-range-slider .slider-track {
     position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: 8px;
+    width: 100%;
+    height: 6px;
     background: #e5e7eb;
-    border-radius: 4px;
+    border-radius: 3px;
+    top: 50%;
     transform: translateY(-50%);
     z-index: 1;
+  }
+
+  .dual-range-slider .slider-range {
+    position: absolute;
+    height: 6px;
+    background: linear-gradient(to right, #3B82F6, #10B981);
+    border-radius: 3px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
   }
 
   .dual-range-slider input[type="range"] {
     position: absolute;
     width: 100%;
-    height: 8px;
+    height: 6px;
     background: transparent;
     -webkit-appearance: none;
     appearance: none;
-    pointer-events: none;
+    pointer-events: all;
     outline: none;
-    z-index: 2;
+    z-index: 3;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .dual-range-slider input[type="range"]::-webkit-slider-track {
+    background: transparent;
+    border: none;
+    height: 6px;
   }
 
   .dual-range-slider input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    height: 24px;
-    width: 24px;
+    height: 20px;
+    width: 20px;
     border-radius: 50%;
     background: #3B82F6;
     cursor: pointer;
-    border: 3px solid #ffffff;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    pointer-events: all;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     transition: all 0.2s ease;
-    z-index: 3;
+    position: relative;
   }
 
   .dual-range-slider input[type="range"]::-webkit-slider-thumb:hover {
     background: #2563EB;
-    transform: scale(1.15);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    transform: scale(1.1);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.3);
   }
 
   .dual-range-slider input[type="range"]::-webkit-slider-thumb:active {
-    transform: scale(1.2);
+    transform: scale(1.15);
   }
 
   .dual-range-slider input[type="range"]::-moz-range-thumb {
-    height: 24px;
-    width: 24px;
+    height: 20px;
+    width: 20px;
     border-radius: 50%;
     background: #3B82F6;
     cursor: pointer;
-    border: 3px solid #ffffff;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    pointer-events: all;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     transition: all 0.2s ease;
     -moz-appearance: none;
   }
 
   .dual-range-slider input[type="range"]::-moz-range-thumb:hover {
     background: #2563EB;
-    transform: scale(1.15);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    transform: scale(1.1);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+  }
+
+  .dual-range-slider input[type="range"]::-moz-range-track {
+    background: transparent;
+    border: none;
+    height: 6px;
   }
 
   .dual-range-slider input[type="range"]:focus::-webkit-slider-thumb {
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
   }
 
   .dual-range-slider .range-min::-webkit-slider-thumb {
@@ -119,24 +138,6 @@ const sliderStyles = `
   .dual-range-slider .range-max::-moz-range-thumb:hover {
     background: #DC2626;
   }
-
-  /* Track styling for Firefox */
-  .dual-range-slider input[type="range"]::-moz-range-track {
-    background: transparent;
-    border: none;
-    height: 8px;
-  }
-
-  /* Active range styling */
-  .dual-range-slider .range-track {
-    position: absolute;
-    top: 50%;
-    height: 8px;
-    background: linear-gradient(to right, #3B82F6, #10B981);
-    border-radius: 4px;
-    transform: translateY(-50%);
-    z-index: 2;
-  }
 `;
 
 const RoomSearch = ({ handleSearchResult }) => {
@@ -144,6 +145,19 @@ const RoomSearch = ({ handleSearchResult }) => {
   const [endDate, setEndDate] = useState(null);
   const [priceRange, setPriceRange] = useState([0, 10000000]); // Giá từ 0 đến 10 triệu VND
   const [error, setError] = useState('');
+
+  // Tính toán vị trí và độ rộng của thanh khoảng giá
+  const getSliderStyle = () => {
+    const min = 0;
+    const max = 10000000;
+    const leftPercent = ((priceRange[0] - min) / (max - min)) * 100;
+    const rightPercent = ((priceRange[1] - min) / (max - min)) * 100;
+
+    return {
+      left: `${leftPercent}%`,
+      width: `${rightPercent - leftPercent}%`
+    };
+  };
 
   // Inject CSS styles for dual range slider
   useEffect(() => {
@@ -264,8 +278,17 @@ const RoomSearch = ({ handleSearchResult }) => {
             Khoảng giá: {formatPrice(priceRange[0])} - {formatPrice(priceRange[1])}
           </label>
           <div className="px-2">
-
             <div className="dual-range-slider">
+              {/* Track nền */}
+              <div className="slider-track"></div>
+
+              {/* Thanh hiển thị khoảng giá được chọn */}
+              <div
+                className="slider-range"
+                style={getSliderStyle()}
+              ></div>
+
+              {/* Input slider cho giá tối thiểu */}
               <input
                 type="range"
                 min="0"
@@ -280,6 +303,8 @@ const RoomSearch = ({ handleSearchResult }) => {
                 }}
                 className="range-min"
               />
+
+              {/* Input slider cho giá tối đa */}
               <input
                 type="range"
                 min="0"
@@ -288,20 +313,19 @@ const RoomSearch = ({ handleSearchResult }) => {
                 value={priceRange[1]}
                 onChange={(e) => {
                   const newMax = parseInt(e.target.value);
-                  console.log('Max slider changed to:', newMax);
                   if (newMax > priceRange[0]) {
                     setPriceRange([priceRange[0], newMax]);
-                    console.log('Updated priceRange:', [priceRange[0], newMax]);
                   }
                 }}
                 className="range-max"
               />
             </div>
+
+            {/* Hiển thị giá trị min/max */}
             <div className="flex justify-between text-xs text-gray-500 mt-2">
               <span>0đ</span>
               <span>10 triệu</span>
             </div>
-
           </div>
         </div>
         <div className="flex items-end">
