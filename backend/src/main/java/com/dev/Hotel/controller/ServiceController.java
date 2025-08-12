@@ -131,22 +131,34 @@ public class ServiceController {
                 return "DV001";
             }
 
-            // Lấy ID đầu tiên (lớn nhất)
-            String maxId = allIds.get(0);
-            System.out.println("DEBUG: Max ID from database: " + maxId);
+            // Tìm số lớn nhất trong tất cả ID
+            int maxNumber = 0;
+            for (String id : allIds) {
+                if (id != null && id.startsWith("DV") && id.length() >= 5) {
+                    try {
+                        String numberPart = id.substring(2);
+                        int number = Integer.parseInt(numberPart);
+                        if (number > maxNumber) {
+                            maxNumber = number;
+                        }
+                    } catch (NumberFormatException e) {
+                        System.out.println("DEBUG: Invalid ID format: " + id);
+                    }
+                }
+            }
 
-            // Trích xuất số từ ID (ví dụ: DV001 -> 001)
-            String numberPart = maxId.substring(2);
-            int nextNumber = Integer.parseInt(numberPart) + 1;
+            int nextNumber = maxNumber + 1;
             String newId = String.format("DV%03d", nextNumber);
 
+            System.out.println("DEBUG: Max number found: " + maxNumber);
             System.out.println("DEBUG: Generated next ID: " + newId);
             return newId;
         } catch (Exception e) {
             System.out.println("DEBUG: Error generating ID: " + e.getMessage());
             e.printStackTrace();
-            // Fallback nếu có lỗi
-            return "DV001";
+            // Fallback với timestamp để đảm bảo unique
+            long timestamp = System.currentTimeMillis() % 1000;
+            return "DV" + String.format("%03d", timestamp);
         }
     }
 
