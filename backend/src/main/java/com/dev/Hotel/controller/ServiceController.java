@@ -57,6 +57,13 @@ public class ServiceController {
             if (newId == null || newId.trim().isEmpty()) {
                 newId = generateNextDichVuId();
                 System.out.println("DEBUG: Generated new ID: " + newId);
+
+                // Double check: Đảm bảo ID được tạo không trùng
+                while (dichVuRepository.existsById(newId)) {
+                    System.out.println("DEBUG: ID " + newId + " already exists, generating next one");
+                    newId = generateNextDichVuId();
+                }
+                System.out.println("DEBUG: Final unique ID: " + newId);
             } else {
                 System.out.println("DEBUG: Using provided ID: " + newId);
                 // Check if manually provided ID already exists
