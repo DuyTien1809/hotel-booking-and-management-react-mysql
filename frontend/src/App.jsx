@@ -34,6 +34,7 @@ import InvoicePage from './pages/staff/InvoicePage'
 import WalkInCheckIn from './pages/staff/WalkInCheckIn'
 import StaffRoomManagement from './pages/staff/RoomManagement'
 import StaffServiceManagement from './pages/staff/ServiceManagement'
+import RoomChangeManagement from './pages/staff/RoomChangeManagement'
 
 // Admin pages (Quản lý)
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -93,6 +94,7 @@ function App() {
             <Route path="invoices" element={<InvoicePage />} />
             <Route path="walkin" element={<WalkInCheckIn />} />
             <Route path="rooms" element={<StaffRoomManagement />} />
+            <Route path="room-changes" element={<RoomChangeManagement />} />
             <Route path="services" element={<StaffServiceManagement />} />
           </Route>
 

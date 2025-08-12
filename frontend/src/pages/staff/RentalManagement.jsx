@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from 'react'
-import { 
-  ChevronDown, 
-  ChevronRight, 
-  Search, 
-  Users, 
+import {
+  ChevronDown,
+  ChevronRight,
+  Search,
+  Users,
   Calendar,
   MapPin,
   User,
   Plus,
   Trash2,
-  X
+  X,
+  RefreshCw
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { rentalManagementService } from '../../services/rentalManagementService'
 import { formatDate, formatCurrency } from '../../utils/formatters'
+import RoomChangeModal from '../../components/staff/RoomChangeModal'
 
 const RentalManagement = () => {
   const [rentals, setRentals] = useState([])
@@ -23,6 +25,8 @@ const RentalManagement = () => {
   const [roomGuests, setRoomGuests] = useState({}) // {ctId: [guests]}
   const [editingRoom, setEditingRoom] = useState(null) // {rentalId, ctId}
   const [newGuestCCCD, setNewGuestCCCD] = useState('')
+  const [showRoomChangeModal, setShowRoomChangeModal] = useState(false)
+  const [selectedCtPhieuThue, setSelectedCtPhieuThue] = useState(null)
 
   useEffect(() => {
     fetchRentals()
@@ -200,6 +204,18 @@ const RentalManagement = () => {
     }
   }
 
+  const handleRoomChange = (ctPhieuThue) => {
+    setSelectedCtPhieuThue(ctPhieuThue)
+    setShowRoomChangeModal(true)
+  }
+
+  const handleRoomChangeSuccess = () => {
+    setShowRoomChangeModal(false)
+    setSelectedCtPhieuThue(null)
+    fetchRentals() // Reload data
+    toast.success('Đổi phòng thành công!')
+  }
+
   const filteredRentals = rentals.filter(rental => {
     if (!searchTerm) return true
     
@@ -282,13 +298,22 @@ const RentalManagement = () => {
                 onCancelEditing={cancelEditingRoom}
                 onAddGuest={addGuestToRoom}
                 onRemoveGuest={removeGuestFromRoom}
+                onRoomChange={handleRoomChange}
                 getStatusColor={getStatusColor}
               />
             ))
           )}
         </div>
       </div>
-      
+
+      {/* Room Change Modal */}
+      <RoomChangeModal
+        isOpen={showRoomChangeModal}
+        onClose={() => setShowRoomChangeModal(false)}
+        ctPhieuThue={selectedCtPhieuThue}
+        onSuccess={handleRoomChangeSuccess}
+      />
+
     </div>
   )
 }
@@ -306,6 +331,7 @@ const RentalCard = ({
   onCancelEditing,
   onAddGuest,
   onRemoveGuest,
+  onRoomChange,
   getStatusColor
 }) => {
   return (
@@ -373,6 +399,7 @@ const RentalCard = ({
                   onCancelEditing={onCancelEditing}
                   onAddGuest={onAddGuest}
                   onRemoveGuest={(cccd) => onRemoveGuest(ct.idCtPt, cccd)}
+                  onRoomChange={onRoomChange}
                 />
               )) || (
                 <div className="text-center py-4 text-gray-500">
@@ -398,7 +425,8 @@ const RoomCard = ({
   onStartEditing,
   onCancelEditing,
   onAddGuest,
-  onRemoveGuest
+  onRemoveGuest,
+  onRoomChange
 }) => {
   return (
     <div className="bg-white rounded-lg border p-4">
@@ -416,11 +444,20 @@ const RoomCard = ({
           </p>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <Users className="w-4 h-4 text-gray-400" />
-          <span className="text-sm text-gray-600">
-            {guests.length} khách
-          </span>
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <Users className="w-4 h-4 text-gray-400" />
+            <span className="text-sm text-gray-600">
+              {guests.length} khách
+            </span>
+          </div>
+          <button
+            onClick={() => onRoomChange(ct)}
+            className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 px-2 py-1 border border-blue-200 rounded hover:bg-blue-50"
+          >
+            <RefreshCw className="w-3 h-3" />
+            Đổi phòng
+          </button>
         </div>
       </div>
 

@@ -13,7 +13,7 @@ const Footer = () => {
               <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-lg">H</span>
               </div>
-              <span className="text-xl font-bold">Hotel Booking</span>
+              <span className="text-xl font-bold">HOTEL BOOKING</span>
             </div>
             <p className="text-gray-300 mb-4">
               Hệ thống quản lý đặt phòng khách sạn hiện đại, mang đến trải nghiệm tuyệt vời cho khách hàng.
@@ -21,11 +21,11 @@ const Footer = () => {
             <div className="flex space-x-4">
               <div className="flex items-center space-x-2 text-gray-300">
                 <Phone className="w-4 h-4" />
-                <span>+84 123 456 789</span>
+                <span>+84 818 181 948</span>
               </div>
               <div className="flex items-center space-x-2 text-gray-300">
                 <Mail className="w-4 h-4" />
-                <span>info@hotelbooking.com</span>
+                <span>booking@hotel.com</span>
               </div>
             </div>
           </div>
@@ -63,15 +63,15 @@ const Footer = () => {
             <div className="space-y-2">
               <div className="flex items-start space-x-2 text-gray-300">
                 <MapPin className="w-4 h-4 mt-1" />
-                <span>123 Đường ABC, Quận XYZ, TP. Hồ Chí Minh</span>
+                <span>97 Man Thiện, Hiệp Phú, Thủ Đức, Hồ Chí Minh</span>
               </div>
               <div className="flex items-center space-x-2 text-gray-300">
                 <Phone className="w-4 h-4" />
-                <span>+84 123 456 789</span>
+                <span>+84 818 181 948</span>
               </div>
               <div className="flex items-center space-x-2 text-gray-300">
                 <Mail className="w-4 h-4" />
-                <span>info@hotelbooking.com</span>
+                <span>booking@hotel.com</span>
               </div>
             </div>
           </div>
