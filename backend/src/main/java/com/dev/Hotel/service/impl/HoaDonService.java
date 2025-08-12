@@ -24,19 +24,19 @@ public class HoaDonService implements IHoaDonService {
 
     @Autowired
     private HoaDonRepository hoaDonRepository;
-    
+
     @Autowired
     private PhieuThueRepository phieuThueRepository;
-    
+
     @Autowired
     private NhanVienRepository nhanVienRepository;
-    
+
     @Autowired
     private CtPhieuThueRepository ctPhieuThueRepository;
-    
+
     @Autowired
     private CtDichVuRepository ctDichVuRepository;
-    
+
     @Autowired
     private CtPhuThuRepository ctPhuThuRepository;
 
@@ -86,13 +86,13 @@ public class HoaDonService implements IHoaDonService {
 
             // Find PhieuThue
             PhieuThue phieuThue = phieuThueRepository.findById(request.getIdPt())
-                .orElseThrow(() -> new OurException("Không tìm thấy phiếu thuê"));
+                    .orElseThrow(() -> new OurException("Không tìm thấy phiếu thuê"));
 
             // Find NhanVien
             NhanVien nhanVien = null;
             if (request.getIdNv() != null) {
                 nhanVien = nhanVienRepository.findById(request.getIdNv())
-                    .orElseThrow(() -> new OurException("Không tìm thấy nhân viên"));
+                        .orElseThrow(() -> new OurException("Không tìm thấy nhân viên"));
             }
 
             // Generate invoice ID
@@ -130,7 +130,7 @@ public class HoaDonService implements IHoaDonService {
         try {
             // Find PhieuThue
             PhieuThue phieuThue = phieuThueRepository.findById(idPt)
-                .orElseThrow(() -> new OurException("Không tìm thấy phiếu thuê"));
+                    .orElseThrow(() -> new OurException("Không tìm thấy phiếu thuê"));
 
             // Check if invoice already exists
             Optional<HoaDon> existingInvoice = hoaDonRepository.findByPhieuThue(phieuThue);
@@ -160,12 +160,32 @@ public class HoaDonService implements IHoaDonService {
 
             // Cập nhật ID hóa đơn vào tất cả CtPhieuThue
             List<CtPhieuThue> ctPhieuThueList = ctPhieuThueRepository.findByPhieuThue(phieuThue);
-            System.out.println("Updating " + ctPhieuThueList.size() + " CtPhieuThue records with invoice ID: " + savedHoaDon.getIdHd());
+            System.out.println("Updating " + ctPhieuThueList.size() + " CtPhieuThue records with invoice ID: "
+                    + savedHoaDon.getIdHd());
 
             for (CtPhieuThue ctPhieuThue : ctPhieuThueList) {
                 ctPhieuThue.setIdHd(savedHoaDon.getIdHd());
                 CtPhieuThue updated = ctPhieuThueRepository.save(ctPhieuThue);
-                System.out.println("Updated CtPhieuThue ID: " + updated.getIdCtPt() + " with invoice ID: " + updated.getIdHd());
+                System.out.println(
+                        "Updated CtPhieuThue ID: " + updated.getIdCtPt() + " with invoice ID: " + updated.getIdHd());
+
+                // Cập nhật ID hóa đơn vào tất cả CtDichVu của CtPhieuThue này
+                List<CtDichVu> ctDichVuList = ctDichVuRepository.findByCtPhieuThue(ctPhieuThue);
+                for (CtDichVu ctDichVu : ctDichVuList) {
+                    if (!"Đã thanh toán".equals(ctDichVu.getTtThanhToan())) {
+                        ctDichVu.setIdHd(savedHoaDon.getIdHd());
+                        ctDichVuRepository.save(ctDichVu);
+                    }
+                }
+
+                // Cập nhật ID hóa đơn vào tất cả CtPhuThu của CtPhieuThue này
+                List<CtPhuThu> ctPhuThuList = ctPhuThuRepository.findByCtPhieuThue(ctPhieuThue);
+                for (CtPhuThu ctPhuThu : ctPhuThuList) {
+                    if (!"Đã thanh toán".equals(ctPhuThu.getTtThanhToan())) {
+                        ctPhuThu.setIdHd(savedHoaDon.getIdHd());
+                        ctPhuThuRepository.save(ctPhuThu);
+                    }
+                }
             }
 
             response.setStatusCode(200);
@@ -189,7 +209,8 @@ public class HoaDonService implements IHoaDonService {
         List<CtPhieuThue> ctPhieuThueList = ctPhieuThueRepository.findByPhieuThue(phieuThue);
         for (CtPhieuThue ctPhieuThue : ctPhieuThueList) {
             if (ctPhieuThue.getDonGia() != null) {
-                // Calculate days with new logic: only count extra day if checkout after midnight
+                // Calculate days with new logic: only count extra day if checkout after
+                // midnight
                 LocalDate checkInDate = ctPhieuThue.getNgayDen();
                 LocalDate checkOutDate = ctPhieuThue.getNgayDi() != null ? ctPhieuThue.getNgayDi() : LocalDate.now();
 
@@ -200,12 +221,13 @@ public class HoaDonService implements IHoaDonService {
             }
         }
 
-        // Add service charges - find by CtPhieuThue, chỉ tính các dịch vụ chưa thanh toán
+        // Add service charges - find by CtPhieuThue, chỉ tính các dịch vụ chưa thanh
+        // toán
         for (CtPhieuThue ctPhieuThue : ctPhieuThueList) {
             List<CtDichVu> ctDichVuList = ctDichVuRepository.findByCtPhieuThue(ctPhieuThue);
             for (CtDichVu ctDichVu : ctDichVuList) {
                 if (ctDichVu.getDonGia() != null && ctDichVu.getSoLuong() != null
-                    && !"Đã thanh toán".equals(ctDichVu.getTtThanhToan())) {
+                        && !"Đã thanh toán".equals(ctDichVu.getTtThanhToan())) {
                     total = total.add(ctDichVu.getDonGia().multiply(BigDecimal.valueOf(ctDichVu.getSoLuong())));
                 }
             }
@@ -216,7 +238,7 @@ public class HoaDonService implements IHoaDonService {
             List<CtPhuThu> ctPhuThuList = ctPhuThuRepository.findByCtPhieuThue(ctPhieuThue);
             for (CtPhuThu ctPhuThu : ctPhuThuList) {
                 if (ctPhuThu.getDonGia() != null && ctPhuThu.getSoLuong() != null
-                    && !"Đã thanh toán".equals(ctPhuThu.getTtThanhToan())) {
+                        && !"Đã thanh toán".equals(ctPhuThu.getTtThanhToan())) {
                     total = total.add(ctPhuThu.getDonGia().multiply(BigDecimal.valueOf(ctPhuThu.getSoLuong())));
                 }
             }
@@ -247,7 +269,7 @@ public class HoaDonService implements IHoaDonService {
         Response response = new Response();
         try {
             HoaDon hoaDon = hoaDonRepository.findById(idHd)
-                .orElseThrow(() -> new OurException("Không tìm thấy hóa đơn"));
+                    .orElseThrow(() -> new OurException("Không tìm thấy hóa đơn"));
 
             if (request.getTongTien() != null) {
                 hoaDon.setTongTien(request.getTongTien());
@@ -277,7 +299,7 @@ public class HoaDonService implements IHoaDonService {
         Response response = new Response();
         try {
             HoaDon hoaDon = hoaDonRepository.findById(idHd)
-                .orElseThrow(() -> new OurException("Không tìm thấy hóa đơn"));
+                    .orElseThrow(() -> new OurException("Không tìm thấy hóa đơn"));
 
             hoaDonRepository.delete(hoaDon);
 
@@ -299,7 +321,7 @@ public class HoaDonService implements IHoaDonService {
         Response response = new Response();
         try {
             PhieuThue phieuThue = phieuThueRepository.findById(idPt)
-                .orElseThrow(() -> new OurException("Không tìm thấy phiếu thuê"));
+                    .orElseThrow(() -> new OurException("Không tìm thấy phiếu thuê"));
 
             Optional<HoaDon> hoaDonOptional = hoaDonRepository.findByPhieuThue(phieuThue);
             if (hoaDonOptional.isPresent()) {
@@ -326,7 +348,7 @@ public class HoaDonService implements IHoaDonService {
         Response response = new Response();
         try {
             HoaDon hoaDon = hoaDonRepository.findById(idHd)
-                .orElseThrow(() -> new OurException("Không tìm thấy hóa đơn"));
+                    .orElseThrow(() -> new OurException("Không tìm thấy hóa đơn"));
 
             hoaDon.setTrangThai(trangThai);
             HoaDon updatedHoaDon = hoaDonRepository.save(hoaDon);
@@ -351,9 +373,9 @@ public class HoaDonService implements IHoaDonService {
         try {
             LocalDate start = LocalDate.parse(startDate);
             LocalDate end = LocalDate.parse(endDate);
-            
+
             List<HoaDon> hoaDonList = hoaDonRepository.findByNgayLapBetween(start, end);
-            
+
             response.setStatusCode(200);
             response.setMessage("Thành công");
             response.setHoaDonList(EntityDTOMapper.mapHoaDonListToDTO(hoaDonList));
@@ -370,7 +392,7 @@ public class HoaDonService implements IHoaDonService {
         Response response = new Response();
         try {
             List<HoaDon> hoaDonList = hoaDonRepository.findByTrangThai(trangThai);
-            
+
             response.setStatusCode(200);
             response.setMessage("Thành công");
             response.setHoaDonList(EntityDTOMapper.mapHoaDonListToDTO(hoaDonList));

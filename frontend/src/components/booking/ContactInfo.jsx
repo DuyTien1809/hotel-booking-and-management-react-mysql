@@ -31,26 +31,26 @@ const ContactInfo = ({ bookingData, setBookingData, onNext, onBack }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!customerInfo.fullName.trim()) {
+    if (!customerInfo.fullName || !customerInfo.fullName.trim()) {
       newErrors.fullName = 'Vui lòng nhập họ tên';
     }
 
-    if (!customerInfo.phone.trim()) {
+    if (!customerInfo.phone || !customerInfo.phone.trim()) {
       newErrors.phone = 'Vui lòng nhập số điện thoại';
-    } else if (!/^[0-9]{10,11}$/.test(customerInfo.phone)) {
-      newErrors.phone = 'Số điện thoại không hợp lệ';
+    } else if (!/^[0-9]{10,11}$/.test(customerInfo.phone.trim())) {
+      newErrors.phone = 'Số điện thoại không hợp lệ (10-11 số)';
     }
 
-    if (!customerInfo.email.trim()) {
+    if (!customerInfo.email || !customerInfo.email.trim()) {
       newErrors.email = 'Vui lòng nhập email';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerInfo.email)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerInfo.email.trim())) {
       newErrors.email = 'Email không hợp lệ';
     }
 
-    if (!customerInfo.idCard.trim()) {
+    if (!customerInfo.idCard || !customerInfo.idCard.trim()) {
       newErrors.idCard = 'Vui lòng nhập CCCD/CMND';
-    } else if (!/^[0-9]{9,12}$/.test(customerInfo.idCard)) {
-      newErrors.idCard = 'CCCD/CMND không hợp lệ';
+    } else if (!/^[0-9]{9,12}$/.test(customerInfo.idCard.trim())) {
+      newErrors.idCard = 'CCCD/CMND không hợp lệ (9-12 số)';
     }
 
     setErrors(newErrors);
@@ -73,12 +73,23 @@ const ContactInfo = ({ bookingData, setBookingData, onNext, onBack }) => {
   };
 
   const handleContinue = () => {
+    // Validate booking data first
+    if (!bookingData.checkIn || !bookingData.checkOut || !bookingData.totalAmount) {
+      alert('Thông tin đặt phòng không đầy đủ. Vui lòng quay lại bước trước để kiểm tra.');
+      return;
+    }
+
     if (validateForm()) {
-      setBookingData({
+      const updatedBookingData = {
         ...bookingData,
         customerInfo
-      });
-      onNext();
+      };
+      setBookingData(updatedBookingData);
+
+      // Small delay to ensure state is updated
+      setTimeout(() => {
+        onNext();
+      }, 100);
     }
   };
 

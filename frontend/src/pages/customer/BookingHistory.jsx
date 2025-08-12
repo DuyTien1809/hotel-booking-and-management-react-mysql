@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react'
 import { Calendar, Clock, CheckCircle, XCircle, Eye, Download } from 'lucide-react'
 import Pagination from '../../components/common/Pagination'
 import { api } from '../../services/api'
+import { useAuth } from '../../contexts/AuthContext'
 
 const BookingHistory = () => {
+  const { user } = useAuth()
   const [bookings, setBookings] = useState([])
   const [filteredBookings, setFilteredBookings] = useState([])
   const [loading, setLoading] = useState(true)
@@ -13,20 +15,72 @@ const BookingHistory = () => {
   const [dateFilter, setDateFilter] = useState('')
 
   useEffect(() => {
-    fetchBookingHistory()
-  }, [])
+    if (user) {
+      fetchBookingHistory()
+    }
+  }, [user])
 
   const fetchBookingHistory = async () => {
     try {
       setLoading(true)
-      // Gọi API thực tế để lấy lịch sử đặt phòng
-      const response = await api.get('/api/phieu-dat/khach-hang')
+
+      console.log('Current user data:', user)
+
+      // Kiểm tra user và lấy CCCD với nhiều fallback
+      if (!user) {
+        console.error('User not found')
+        setLoading(false)
+        return
+      }
+
+      // Thử nhiều field có thể chứa CCCD
+      const userCCCD = user.cccd || user.id || user.maKhachHang || user.userId
+
+      if (!userCCCD) {
+        console.error('CCCD not found in user data:', user)
+        setLoading(false)
+        return
+      }
+
+      console.log('Fetching booking history for CCCD:', userCCCD)
+
+      // Gọi API với CCCD của user
+      const response = await api.get(`/api/phieu-dat/khach-hang/${userCCCD}`)
+      console.log('API response:', response.data)
+
       const bookingData = response.data.phieuDatList || []
+      console.log('Booking data:', bookingData)
+      console.log('First booking sample:', bookingData[0])
+
+      // Debug: Log all field names in first booking
+      if (bookingData[0]) {
+        console.log('Available fields in booking:', Object.keys(bookingData[0]))
+        console.log('Status value:', bookingData[0].trangThai)
+        console.log('Room info:', {
+          tenKp: bookingData[0].tenKp,
+          tenLp: bookingData[0].tenLp,
+          idHangPhong: bookingData[0].idHangPhong
+        })
+        console.log('Date info:', {
+          ngayDat: bookingData[0].ngayDat,
+          ngayBdThue: bookingData[0].ngayBdThue,
+          ngayDi: bookingData[0].ngayDi
+        })
+        console.log('Money info:', {
+          soTienCoc: bookingData[0].soTienCoc
+        })
+      }
 
       setBookings(bookingData)
       setFilteredBookings(bookingData)
     } catch (error) {
       console.error('Error fetching booking history:', error)
+      console.error('Error details:', error.response?.data || error.message)
+
+      // Nếu lỗi 403, có thể do authentication
+      if (error.response?.status === 403) {
+        console.error('Access denied - check authentication')
+      }
     } finally {
       setLoading(false)
     }
@@ -34,31 +88,74 @@ const BookingHistory = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'completed': return 'text-green-600 bg-green-100'
-      case 'confirmed': return 'text-blue-600 bg-blue-100'
-      case 'pending': return 'text-yellow-600 bg-yellow-100'
-      case 'cancelled': return 'text-red-600 bg-red-100'
-      default: return 'text-gray-600 bg-gray-100'
+      case 'completed':
+      case 'Đã hoàn thành':
+      case 'Hoàn thành':
+      case 'COMPLETED':
+        return 'text-green-600 bg-green-100'
+      case 'confirmed':
+      case 'Đã xác nhận':
+      case 'Xác nhận':
+      case 'CONFIRMED':
+        return 'text-blue-600 bg-blue-100'
+      case 'pending':
+      case 'Chờ xác nhận':
+      case 'PENDING':
+        return 'text-yellow-600 bg-yellow-100'
+      case 'cancelled':
+      case 'Đã hủy':
+      case 'CANCELLED':
+        return 'text-red-600 bg-red-100'
+      default:
+        return 'text-gray-600 bg-gray-100'
     }
   }
 
   const getStatusText = (status) => {
     switch (status) {
-      case 'completed': return 'Đã hoàn thành'
-      case 'confirmed': return 'Đã xác nhận'
-      case 'pending': return 'Chờ xác nhận'
-      case 'cancelled': return 'Đã hủy'
-      default: return 'Không xác định'
+      case 'completed':
+      case 'COMPLETED':
+      case 'Hoàn thành':
+        return 'Đã hoàn thành'
+      case 'confirmed':
+      case 'CONFIRMED':
+      case 'Xác nhận':
+        return 'Xác nhận'
+      case 'pending':
+      case 'PENDING':
+      case 'Chờ xác nhận':
+        return 'Chờ xác nhận'
+      case 'cancelled':
+      case 'CANCELLED':
+      case 'Đã hủy':
+        return 'Đã hủy'
+      default:
+        return status || 'Không xác định'
     }
   }
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'completed': return <CheckCircle className="w-4 h-4" />
-      case 'confirmed': return <Calendar className="w-4 h-4" />
-      case 'pending': return <Clock className="w-4 h-4" />
-      case 'cancelled': return <XCircle className="w-4 h-4" />
-      default: return <Clock className="w-4 h-4" />
+      case 'completed':
+      case 'COMPLETED':
+      case 'Đã hoàn thành':
+      case 'Hoàn thành':
+        return <CheckCircle className="w-4 h-4" />
+      case 'confirmed':
+      case 'CONFIRMED':
+      case 'Đã xác nhận':
+      case 'Xác nhận':
+        return <Calendar className="w-4 h-4" />
+      case 'pending':
+      case 'PENDING':
+      case 'Chờ xác nhận':
+        return <Clock className="w-4 h-4" />
+      case 'cancelled':
+      case 'CANCELLED':
+      case 'Đã hủy':
+        return <XCircle className="w-4 h-4" />
+      default:
+        return <Clock className="w-4 h-4" />
     }
   }
 
@@ -109,6 +206,29 @@ const BookingHistory = () => {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
+      </div>
+    )
+  }
+
+  // Kiểm tra user data
+  if (!user) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-600">Vui lòng đăng nhập để xem lịch sử đặt phòng</p>
+      </div>
+    )
+  }
+
+  const userCCCD = user.cccd || user.id || user.maKhachHang || user.userId
+  if (!userCCCD) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-600">Không tìm thấy thông tin khách hàng</p>
+        <p className="text-sm text-gray-500 mt-2">Vui lòng liên hệ hỗ trợ</p>
+        <div className="mt-4">
+          <p className="text-xs text-gray-400">Debug: User data</p>
+          <pre className="text-xs text-gray-400 mt-2">{JSON.stringify(user, null, 2)}</pre>
+        </div>
       </div>
     )
   }
@@ -201,36 +321,38 @@ const BookingHistory = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {currentBookings.map((booking) => (
-                    <tr key={booking.id} className="hover:bg-gray-50">
+                    <tr key={booking.idPd || booking.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          {booking.maPhieuThue}
+                          {booking.idPd || booking.maPhieuThue || 'N/A'}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {booking.createdAt}
+                          {booking.ngayDat || booking.createdAt || 'N/A'}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
-                            Phòng {booking.roomNumber}
+                            {booking.tenLp || booking.roomNumber || 'N/A'}
                           </div>
-                          <div className="text-sm text-gray-500">{booking.roomType}</div>
+                          <div className="text-sm text-gray-500">
+                            {booking.tenKp || booking.roomType || 'N/A'}
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          {booking.checkIn} - {booking.checkOut}
+                          {booking.ngayBdThue || booking.checkIn || 'N/A'} - {booking.ngayDi || booking.checkOut || 'N/A'}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(booking.status)}`}>
-                          {getStatusIcon(booking.status)}
-                          <span className="ml-1">{getStatusText(booking.status)}</span>
+                        <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(booking.trangThai)}`}>
+                          {getStatusIcon(booking.trangThai)}
+                          <span className="ml-1">{getStatusText(booking.trangThai)}</span>
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {booking.total.toLocaleString('vi-VN')} VNĐ
+                        {(booking.soTienCoc || booking.total || 0).toLocaleString('vi-VN')} VNĐ
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">

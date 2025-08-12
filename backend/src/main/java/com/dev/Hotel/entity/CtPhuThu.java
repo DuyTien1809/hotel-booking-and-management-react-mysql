@@ -12,6 +12,9 @@ public class CtPhuThu {
     @EmbeddedId
     private CtPhuThuId id;
 
+    @Column(name = "ID_HD")
+    private String idHd;
+
     @Column(name = "TT_THANH_TOAN")
     private String ttThanhToan;
 
@@ -31,4 +34,8 @@ public class CtPhuThu {
     @MapsId("idCtPt")
     @JoinColumn(name = "ID_CT_PT")
     private CtPhieuThue ctPhieuThue;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ID_HD", insertable = false, updatable = false)
+    private HoaDon hoaDon;
 }

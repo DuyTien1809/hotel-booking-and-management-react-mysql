@@ -11,6 +11,8 @@ const BookingModal = ({ room, searchDates, onClose }) => {
     checkIn: null,
     checkOut: null,
     guests: 1,
+    nights: 0,
+    roomQuantity: 1,
     customerInfo: null,
     totalAmount: 0,
     depositAmount: 0

@@ -67,6 +67,11 @@ public class NhanVien {
     @JoinColumn(name = "ID_BP")
     private BoPhan boPhan;
 
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "ID_NQ")
+    private NhomQuyen nhomQuyen;
+
     // Manual getters and setters
     public String getIdNv() {
         return idNv;

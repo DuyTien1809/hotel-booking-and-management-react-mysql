@@ -11,7 +11,7 @@ import java.time.LocalDate;
 class GiaDichVuId implements Serializable {
     @Column(name = "ID_DV")
     private String idDv;
-    
+
     @Column(name = "NGAY_AP_DUNG")
     private LocalDate ngayApDung;
 }
@@ -31,21 +31,9 @@ class GiaPhuThuId implements Serializable {
 class CtKhuyenMaiId implements Serializable {
     @Column(name = "ID_KM")
     private String idKm;
-    
+
     @Column(name = "ID_HANG_PHONG")
     private Integer idHangPhong;
-}
-
-
-
-@Data
-@Embeddable
-class PhanQuyenId implements Serializable {
-    @Column(name = "ID_NQ")
-    private String idNq;
-    
-    @Column(name = "ID_BP")
-    private String idBp;
 }
 
 @Data

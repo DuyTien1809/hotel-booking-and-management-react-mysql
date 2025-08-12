@@ -17,6 +17,7 @@ public class CtDichVuDTO {
     private LocalDate ngaySuDung;
     private BigDecimal donGia;
     private Integer soLuong;
+    private String idHd;
     private String ttThanhToan;
 
     // Phong info

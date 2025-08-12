@@ -22,6 +22,9 @@ public class CtDichVu {
     @Column(name = "SO_LUONG")
     private Integer soLuong;
 
+    @Column(name = "ID_HD")
+    private String idHd;
+
     @Column(name = "TT_THANH_TOAN")
     private String ttThanhToan;
 
@@ -35,4 +38,8 @@ public class CtDichVu {
     @MapsId("idDv")
     @JoinColumn(name = "ID_DV")
     private DichVu dichVu;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ID_HD", insertable = false, updatable = false)
+    private HoaDon hoaDon;
 }

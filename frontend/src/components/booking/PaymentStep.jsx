@@ -51,6 +51,25 @@ const PaymentStep = ({ bookingData, onBack, onComplete }) => {
     );
   }
 
+  // Check if booking data is valid
+  if (!bookingData || !bookingData.room || !bookingData.customerInfo) {
+    return (
+      <div className="text-center py-8">
+        <AlertCircle className="mx-auto text-red-500 mb-4" size={64} />
+        <h3 className="text-xl font-bold text-red-600 mb-2">Thiếu thông tin đặt phòng</h3>
+        <p className="text-gray-600 mb-4">
+          Vui lòng quay lại các bước trước để điền đầy đủ thông tin.
+        </p>
+        <button
+          onClick={onBack}
+          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Quay lại
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Payment Info */}

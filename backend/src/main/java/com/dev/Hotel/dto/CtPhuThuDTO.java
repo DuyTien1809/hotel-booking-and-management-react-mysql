@@ -13,6 +13,7 @@ public class CtPhuThuDTO {
     private String idPhuThu;
     private Integer idCtPt;
 
+    private String idHd;
     private String ttThanhToan;
     private BigDecimal donGia;
     private Integer soLuong;
@@ -31,7 +32,7 @@ public class CtPhuThuDTO {
 
     // Computed fields
     private BigDecimal thanhTien;
-    
+
     public BigDecimal getThanhTien() {
         if (donGia != null && soLuong != null) {
             return donGia.multiply(BigDecimal.valueOf(soLuong));

@@ -4,14 +4,46 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { roomService } from '../../services/roomService';
 import { formatDateToYMD } from '../../utils/dateUtils';
 
-// CSS cho dual range slider
+// CSS cho dual range slider và DatePicker
 const sliderStyles = `
   .dual-range-slider {
     position: relative;
     height: 40px;
-    margin: 20px 0;
+    margin: 15px 0;
     display: flex;
     align-items: center;
+    min-width: 120px;
+  }
+
+  /* DatePicker styles */
+  .react-datepicker-wrapper {
+    width: 100% !important;
+  }
+
+  .react-datepicker__input-container {
+    width: 100% !important;
+  }
+
+  .react-datepicker__input-container input {
+    width: 100% !important;
+    padding: 12px !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 8px !important;
+    font-size: 16px !important;
+    height: 48px !important;
+    box-sizing: border-box !important;
+    background-color: white !important;
+    color: #374151 !important;
+  }
+
+  .react-datepicker__input-container input:focus {
+    outline: none !important;
+    border-color: #3B82F6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+  }
+
+  .react-datepicker {
+    z-index: 9999 !important;
   }
 
   .dual-range-slider .slider-track {
@@ -42,11 +74,22 @@ const sliderStyles = `
     background: transparent;
     -webkit-appearance: none;
     appearance: none;
-    pointer-events: all;
+    pointer-events: none;
     outline: none;
-    z-index: 3;
     top: 50%;
     transform: translateY(-50%);
+  }
+
+  .dual-range-slider input[type="range"]::-webkit-slider-thumb {
+    pointer-events: all;
+    position: relative;
+    z-index: 10;
+  }
+
+  .dual-range-slider input[type="range"]::-moz-range-thumb {
+    pointer-events: all;
+    position: relative;
+    z-index: 10;
   }
 
   .dual-range-slider input[type="range"]::-webkit-slider-track {
@@ -138,6 +181,40 @@ const sliderStyles = `
   .dual-range-slider .range-max::-moz-range-thumb:hover {
     background: #DC2626;
   }
+
+  /* Đảm bảo slider min có z-index thấp hơn */
+  .dual-range-slider .range-min {
+    z-index: 3;
+  }
+
+  /* Đảm bảo slider max có z-index cao hơn */
+  .dual-range-slider .range-max {
+    z-index: 5;
+  }
+
+  /* Khi giá trị min gần bằng max, ưu tiên max slider */
+  .dual-range-slider .range-max::-webkit-slider-thumb {
+    z-index: 6;
+  }
+
+  .dual-range-slider .range-max::-moz-range-thumb {
+    z-index: 6;
+  }
+
+  /* Tooltip cho slider */
+  .dual-range-slider input[type="range"]:hover::-webkit-slider-thumb::after {
+    content: attr(data-value);
+    position: absolute;
+    top: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
 `;
 
 const RoomSearch = ({ handleSearchResult }) => {
@@ -145,6 +222,7 @@ const RoomSearch = ({ handleSearchResult }) => {
   const [endDate, setEndDate] = useState(null);
   const [priceRange, setPriceRange] = useState([0, 10000000]); // Giá từ 0 đến 10 triệu VND
   const [error, setError] = useState('');
+  const [activeSlider, setActiveSlider] = useState(null); // Track which slider is being dragged
 
   // Tính toán vị trí và độ rộng của thanh khoảng giá
   const getSliderStyle = () => {
@@ -250,35 +328,41 @@ const RoomSearch = ({ handleSearchResult }) => {
   };
 
   return (
-    <div className="w-full">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div>
+    <div className="w-full max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex-1">
           <label className="block text-sm font-medium text-gray-700 mb-2">Ngày nhận phòng</label>
           <DatePicker
             selected={startDate}
             onChange={(date) => setStartDate(date)}
             dateFormat="dd/MM/yyyy"
             placeholderText="Chọn ngày nhận phòng"
-            className="input"
+            className="w-full"
+            minDate={new Date()}
+            showPopperArrow={false}
+            popperPlacement="bottom-start"
           />
         </div>
-        <div>
+        <div className="flex-1">
           <label className="block text-sm font-medium text-gray-700 mb-2">Ngày trả phòng</label>
           <DatePicker
             selected={endDate}
             onChange={(date) => setEndDate(date)}
             dateFormat="dd/MM/yyyy"
             placeholderText="Chọn ngày trả phòng"
-            className="input"
+            className="w-full"
+            minDate={startDate || new Date()}
+            showPopperArrow={false}
+            popperPlacement="bottom-start"
           />
         </div>
 
-        <div>
+        <div className="flex-1">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Khoảng giá: {formatPrice(priceRange[0])} - {formatPrice(priceRange[1])}
+            Giá: {formatPrice(priceRange[0])} - {formatPrice(priceRange[1])}
           </label>
-          <div className="px-2">
-            <div className="dual-range-slider">
+          <div className="px-1" style={{ height: '48px', display: 'flex', alignItems: 'center' }}>
+            <div className="dual-range-slider" style={{ width: '100%' }}>
               {/* Track nền */}
               <div className="slider-track"></div>
 
@@ -297,11 +381,19 @@ const RoomSearch = ({ handleSearchResult }) => {
                 value={priceRange[0]}
                 onChange={(e) => {
                   const newMin = parseInt(e.target.value);
-                  if (newMin < priceRange[1]) {
-                    setPriceRange([newMin, priceRange[1]]);
-                  }
+                  // Đảm bảo min không vượt quá max - 500000 (1 step)
+                  const maxAllowed = priceRange[1] - 500000;
+                  const finalMin = Math.min(newMin, maxAllowed);
+                  setPriceRange([finalMin, priceRange[1]]);
                 }}
+                onMouseDown={() => setActiveSlider('min')}
+                onMouseUp={() => setActiveSlider(null)}
+                onTouchStart={() => setActiveSlider('min')}
+                onTouchEnd={() => setActiveSlider(null)}
                 className="range-min"
+                style={{
+                  zIndex: activeSlider === 'min' ? 6 : (priceRange[0] > priceRange[1] - 1000000 ? 5 : 3)
+                }}
               />
 
               {/* Input slider cho giá tối đa */}
@@ -313,23 +405,30 @@ const RoomSearch = ({ handleSearchResult }) => {
                 value={priceRange[1]}
                 onChange={(e) => {
                   const newMax = parseInt(e.target.value);
-                  if (newMax > priceRange[0]) {
-                    setPriceRange([priceRange[0], newMax]);
-                  }
+                  // Đảm bảo max không nhỏ hơn min + 500000 (1 step)
+                  const minAllowed = priceRange[0] + 500000;
+                  const finalMax = Math.max(newMax, minAllowed);
+                  setPriceRange([priceRange[0], finalMax]);
                 }}
+                onMouseDown={() => setActiveSlider('max')}
+                onMouseUp={() => setActiveSlider(null)}
+                onTouchStart={() => setActiveSlider('max')}
+                onTouchEnd={() => setActiveSlider(null)}
                 className="range-max"
+                style={{ zIndex: activeSlider === 'max' ? 6 : 5 }}
               />
             </div>
+          </div>
 
-            {/* Hiển thị giá trị min/max */}
-            <div className="flex justify-between text-xs text-gray-500 mt-2">
-              <span>0đ</span>
-              <span>10 triệu</span>
-            </div>
+          {/* Hiển thị giá trị min/max */}
+          <div className="flex justify-between text-xs text-gray-500 mt-1 px-1">
+            <span>0đ</span>
+            <span>10 triệu</span>
           </div>
         </div>
-        <div className="flex items-end">
-          <button className="btn-primary w-full" onClick={handleInternalSearch}>
+        <div className="flex-1">
+          <label className="block text-sm font-medium text-gray-700 mb-2">&nbsp;</label>
+          <button className="btn-primary w-full h-12 text-lg font-semibold" onClick={handleInternalSearch}>
             Tìm phòng
           </button>
         </div>

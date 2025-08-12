@@ -11,10 +11,10 @@ public class NhomQuyen {
     @Id
     @Column(name = "ID_NQ")
     private String idNq;
-    
+
     @Column(name = "TEN_NQ")
     private String tenNq;
-    
+
     @OneToMany(mappedBy = "nhomQuyen", cascade = CascadeType.ALL)
-    private List<PhanQuyen> danhSachPhanQuyen;
+    private List<NhanVien> danhSachNhanVien;
 }

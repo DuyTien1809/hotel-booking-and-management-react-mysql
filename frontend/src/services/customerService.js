@@ -143,5 +143,58 @@ export const customerService = {
       console.error('Error checking customer existence:', error)
       throw error
     }
+  },
+
+  // Get current customer profile (for logged in customer)
+  getProfile: async () => {
+    try {
+      const response = await api.get('/api/khach-hang/profile')
+      return response.data
+    } catch (error) {
+      console.error('Error fetching customer profile:', error)
+      throw error
+    }
+  },
+
+  // Update current customer profile
+  updateProfile: async (cccd, profileData) => {
+    try {
+      const response = await api.put(`/api/khach-hang/update-profile/${cccd}`, profileData)
+      return response.data
+    } catch (error) {
+      console.error('Error updating customer profile:', error)
+      throw error
+    }
+  },
+
+  // Change password for current customer
+  changePassword: async (cccd, passwordData) => {
+    try {
+      const response = await api.put(`/api/khach-hang/change-password/${cccd}`, null, {
+        params: {
+          oldPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword
+        }
+      })
+      return response.data
+    } catch (error) {
+      console.error('Error changing password:', error)
+      throw error
+    }
+  },
+
+  // Upload avatar for current customer
+  uploadAvatar: async (formData) => {
+    try {
+      const response = await api.post('/api/khach-hang/avatar', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+      return response.data
+    } catch (error) {
+      console.error('Error uploading avatar:', error)
+      throw error
+    }
   }
 }

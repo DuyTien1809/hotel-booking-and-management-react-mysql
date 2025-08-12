@@ -11,15 +11,15 @@ import java.time.LocalDate;
 class GiaDichVu {
     @EmbeddedId
     private GiaDichVuId id;
-    
+
     @Column(name = "GIA")
     private BigDecimal gia;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("idDv")
     @JoinColumn(name = "ID_DV")
     private DichVu dichVu;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_NV")
     private NhanVien nhanVien;
@@ -31,15 +31,15 @@ class GiaDichVu {
 class GiaPhuThu {
     @EmbeddedId
     private GiaPhuThuId id;
-    
+
     @Column(name = "GIA")
     private BigDecimal gia;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("idPhuThu")
     @JoinColumn(name = "ID_PHU_THU")
     private PhuThu phuThu;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_NV")
     private NhanVien nhanVien;
@@ -51,15 +51,15 @@ class GiaPhuThu {
 class CtKhuyenMai {
     @EmbeddedId
     private CtKhuyenMaiId id;
-    
+
     @Column(name = "PHAN_TRAM_GIAM")
     private BigDecimal phanTramGiam;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("idKm")
     @JoinColumn(name = "ID_KM")
     private KhuyenMai khuyenMai;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("idHangPhong")
     @JoinColumn(name = "ID_HANG_PHONG")
@@ -92,37 +92,19 @@ public class DoiPhong {
 
 @Data
 @Entity
-@Table(name = "phan_quyen")
-class PhanQuyen {
-    @EmbeddedId
-    private PhanQuyenId id;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("idNq")
-    @JoinColumn(name = "ID_NQ")
-    private NhomQuyen nhomQuyen;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("idBp")
-    @JoinColumn(name = "ID_BP")
-    private BoPhan boPhan;
-}
-
-@Data
-@Entity
 @Table(name = "quan_ly")
 class QuanLy {
     @EmbeddedId
     private QuanLyId id;
-    
+
     @Column(name = "NGAYBDQL")
     private LocalDate ngayBdQl;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("idBp")
     @JoinColumn(name = "ID_BP")
     private BoPhan boPhan;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("maNv")
     @JoinColumn(name = "MANV")

@@ -49,6 +49,11 @@ const PublicHeader = () => {
             <Link to="/rooms" className="text-gray-700 hover:text-primary-600 transition-colors">
               Phòng
             </Link>
+            {isAuthenticated() && user?.role === 'CUSTOMER' && (
+              <Link to="/customer/history" className="text-gray-700 hover:text-primary-600 transition-colors">
+                Lịch sử đặt phòng
+              </Link>
+            )}
             
             {isAuthenticated() ? (
               <div className="relative">
@@ -57,12 +62,14 @@ const PublicHeader = () => {
                   className="flex items-center space-x-2 text-gray-700 hover:text-primary-600 transition-colors"
                 >
                   <User className="w-5 h-5" />
-                  <span>{user?.hoTen ||
-                         user?.tenNhanVien ||
-                         user?.tenKhachHang ||
-                         `${user?.ho || ''} ${user?.ten || ''}`.trim() ||
-                         user?.email?.split('@')[0] ||
-                         'Người dùng'}</span>
+                  <span>{
+                    user?.hoTen ||
+                    (user?.ho && user?.ten ? `${user.ho} ${user.ten}`.trim() : '') ||
+                    user?.tenNhanVien ||
+                    user?.tenKhachHang ||
+                    user?.email?.split('@')[0] ||
+                    'Người dùng'
+                  }</span>
                 </button>
                 
                 {isUserMenuOpen && (
@@ -75,6 +82,16 @@ const PublicHeader = () => {
                       <Settings className="w-4 h-4 inline mr-2" />
                       Dashboard
                     </Link>
+                    {user?.role === 'CUSTOMER' && (
+                      <Link
+                        to="/customer/profile"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        <User className="w-4 h-4 inline mr-2" />
+                        Thông tin cá nhân
+                      </Link>
+                    )}
                     <button
                       onClick={handleLogout}
                       className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -130,6 +147,15 @@ const PublicHeader = () => {
               >
                 Phòng
               </Link>
+              {isAuthenticated() && user?.role === 'CUSTOMER' && (
+                <Link
+                  to="/customer/history"
+                  className="text-gray-700 hover:text-primary-600 transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Lịch sử đặt phòng
+                </Link>
+              )}
               
               {isAuthenticated() ? (
                 <>

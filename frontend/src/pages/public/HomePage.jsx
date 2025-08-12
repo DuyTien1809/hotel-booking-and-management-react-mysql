@@ -2,15 +2,27 @@ import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Search, Calendar, Users, Star, Wifi, Car, Coffee, Dumbbell, MapPin, Phone, Mail, Award, Shield, Clock } from 'lucide-react'
 import RoomSearch from '../../components/common/RoomSearch'
-import RoomResult from '../../components/common/RoomResult'
+import RoomSearchResult from '../../components/common/RoomSearchResult'
 import { api } from '../../services/api'
 import { roomService } from '../../services/roomService'
 
 const HomePage = () => {
   const [roomSearchResults, setRoomSearchResults] = useState([])
+  const [searchDates, setSearchDates] = useState({
+    checkIn: null,
+    checkOut: null
+  })
 
-  const handleSearchResult = (results) => {
+  const handleSearchResult = (results, searchData) => {
     setRoomSearchResults(results)
+
+    // Lưu thông tin ngày tìm kiếm
+    if (searchData) {
+      setSearchDates({
+        checkIn: searchData.startDate,
+        checkOut: searchData.endDate
+      })
+    }
   }
 
   const [featuredRooms, setFeaturedRooms] = useState([])
@@ -116,7 +128,7 @@ const HomePage = () => {
             </p>
 
             {/* Search Form */}
-            <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-6xl mx-auto animate-fadeInUp" style={{animationDelay: '0.4s'}}>
+            <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-7xl mx-auto animate-fadeInUp" style={{animationDelay: '0.4s'}}>
               <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">
                 Tìm Kiếm Phòng Lý Tưởng
               </h3>
@@ -140,7 +152,7 @@ const HomePage = () => {
         <section className="py-16 bg-gray-50">
           <div className="container">
             <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Kết quả tìm kiếm</h2>
-            <RoomResult roomSearchResults={roomSearchResults} />
+            <RoomSearchResult searchResults={roomSearchResults} searchDates={searchDates} />
           </div>
         </section>
       )}

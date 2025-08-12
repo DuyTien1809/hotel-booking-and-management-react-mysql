@@ -51,6 +51,11 @@ public class EntityDTOMapper {
             dto.setTenBp(nhanVien.getBoPhan().getTenBp());
         }
 
+        if (nhanVien.getNhomQuyen() != null) {
+            dto.setIdNq(nhanVien.getNhomQuyen().getIdNq());
+            dto.setTenNq(nhanVien.getNhomQuyen().getTenNq());
+        }
+
         return dto;
     }
 
@@ -432,6 +437,7 @@ public class EntityDTOMapper {
         dto.setNgaySuDung(ctDichVu.getNgaySuDung());
         dto.setDonGia(ctDichVu.getDonGia());
         dto.setSoLuong(ctDichVu.getSoLuong());
+        dto.setIdHd(ctDichVu.getIdHd());
         dto.setTtThanhToan(ctDichVu.getTtThanhToan());
 
         if (ctDichVu.getCtPhieuThue() != null) {
@@ -485,6 +491,7 @@ public class EntityDTOMapper {
             dto.setIdCtPt(ctPhuThu.getId().getIdCtPt());
         }
 
+        dto.setIdHd(ctPhuThu.getIdHd());
         dto.setTtThanhToan(ctPhuThu.getTtThanhToan());
         dto.setDonGia(ctPhuThu.getDonGia());
         dto.setSoLuong(ctPhuThu.getSoLuong());

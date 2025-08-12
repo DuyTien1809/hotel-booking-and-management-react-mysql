@@ -1,26 +1,87 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { User, Mail, Phone, MapPin, Calendar, Lock, Save, Edit } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { customerService } from '../../services/customerService'
 
 const CustomerProfile = () => {
-  const { user } = useAuth()
+  const { user, updateUser } = useAuth()
+  const [loading, setLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [formData, setFormData] = useState({
-    ho: user?.ho || '',
-    ten: user?.ten || '',
-    email: user?.email || '',
-    soDienThoai: user?.soDienThoai || '',
-    diaChi: user?.diaChi || '',
-    ngaySinh: user?.ngaySinh || '',
-    gioiTinh: user?.gioiTinh || ''
+    ho: '',
+    ten: '',
+    email: '',
+    sdt: '',
+    diaChi: '',
+    maSoThue: '',
+    cccd: ''
   })
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   })
+
+  // Fetch profile data on component mount
+  useEffect(() => {
+    fetchProfile()
+  }, [])
+
+
+
+  const fetchProfile = async () => {
+    try {
+      setLoading(true)
+
+      // Nếu có user từ context, sử dụng CCCD để lấy thông tin chi tiết
+      if (user?.cccd || user?.id) {
+        const cccd = user.cccd || user.id
+        const response = await customerService.getCustomerById(cccd)
+
+        if (response.statusCode === 200 && response.khachHang) {
+          const customerData = response.khachHang
+          setFormData({
+            ho: customerData.ho || '',
+            ten: customerData.ten || '',
+            email: customerData.email || '',
+            sdt: customerData.sdt || '',
+            diaChi: customerData.diaChi || '',
+            maSoThue: customerData.maSoThue || '',
+            cccd: customerData.cccd || ''
+          })
+        }
+      } else {
+        // Fallback: sử dụng dữ liệu từ user context
+        setFormData({
+          ho: user?.ho || '',
+          ten: user?.ten || '',
+          email: user?.email || '',
+          sdt: user?.sdt || user?.soDienThoai || '',
+          diaChi: user?.diaChi || '',
+          maSoThue: user?.maSoThue || '',
+          cccd: user?.cccd || user?.id || ''
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error)
+      toast.error('Không thể tải thông tin cá nhân')
+
+      // Fallback: sử dụng dữ liệu từ user context
+      setFormData({
+        ho: user?.ho || '',
+        ten: user?.ten || '',
+        email: user?.email || '',
+        sdt: user?.sdt || user?.soDienThoai || '',
+        diaChi: user?.diaChi || '',
+        maSoThue: user?.maSoThue || '',
+        cccd: user?.cccd || user?.id || ''
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -41,11 +102,52 @@ const CustomerProfile = () => {
   const handleSaveProfile = async (e) => {
     e.preventDefault()
     try {
-      // TODO: Call API to update profile
-      toast.success('Cập nhật thông tin thành công!')
-      setIsEditing(false)
+      setLoading(true)
+
+      // Chuẩn bị dữ liệu để gửi
+      const updateData = {
+        ho: formData.ho,
+        ten: formData.ten,
+        email: formData.email,
+        sdt: formData.sdt,
+        diaChi: formData.diaChi,
+        maSoThue: formData.maSoThue
+      }
+
+      console.log('Updating profile with data:', updateData)
+      console.log('User CCCD:', formData.cccd)
+
+      // Gọi API để cập nhật thông tin
+      const response = await customerService.updateProfile(formData.cccd, updateData)
+
+      if (response.statusCode === 200) {
+        toast.success('Cập nhật thông tin thành công!')
+        setIsEditing(false)
+
+        // Cập nhật user context với thông tin mới
+        const updatedUserInfo = {
+          ho: updateData.ho,
+          ten: updateData.ten,
+          email: updateData.email,
+          sdt: updateData.sdt,
+          diaChi: updateData.diaChi,
+          maSoThue: updateData.maSoThue,
+          hoTen: `${updateData.ho} ${updateData.ten}`.trim()
+        }
+
+        console.log('Updating user context with:', updatedUserInfo)
+        updateUser(updatedUserInfo)
+
+        // Refresh profile data
+        await fetchProfile()
+      } else {
+        toast.error(response.message || 'Có lỗi xảy ra khi cập nhật thông tin')
+      }
     } catch (error) {
+      console.error('Error updating profile:', error)
       toast.error('Có lỗi xảy ra khi cập nhật thông tin')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -62,18 +164,53 @@ const CustomerProfile = () => {
       return
     }
 
-    try {
-      // TODO: Call API to change password
-      toast.success('Đổi mật khẩu thành công!')
-      setIsChangingPassword(false)
-      setPasswordData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      })
-    } catch (error) {
-      toast.error('Có lỗi xảy ra khi đổi mật khẩu')
+    if (passwordData.currentPassword === passwordData.newPassword) {
+      toast.error('Mật khẩu mới không được trùng với mật khẩu cũ')
+      return
     }
+
+    try {
+      setLoading(true)
+
+      const changePasswordData = {
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      }
+
+      console.log('Changing password for user:', formData.cccd)
+
+      // Gọi API để đổi mật khẩu
+      const response = await customerService.changePassword(formData.cccd, changePasswordData)
+
+      if (response.statusCode === 200) {
+        toast.success('Đổi mật khẩu thành công!')
+        setIsChangingPassword(false)
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        })
+      } else {
+        toast.error(response.message || 'Có lỗi xảy ra khi đổi mật khẩu')
+      }
+    } catch (error) {
+      console.error('Error changing password:', error)
+      if (error.response?.status === 400) {
+        toast.error('Mật khẩu hiện tại không đúng')
+      } else {
+        toast.error('Có lỗi xảy ra khi đổi mật khẩu')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    )
   }
 
   return (
@@ -89,6 +226,7 @@ const CustomerProfile = () => {
             <button
               onClick={() => setIsEditing(true)}
               className="btn-outline"
+              disabled={loading}
             >
               <Edit className="w-4 h-4 mr-2" />
               Chỉnh sửa
@@ -140,6 +278,20 @@ const CustomerProfile = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
+                    CCCD
+                  </label>
+                  <input
+                    type="text"
+                    name="cccd"
+                    value={formData.cccd}
+                    disabled={true}
+                    className="input bg-gray-50"
+                    placeholder="Số CCCD"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Email
                   </label>
                   <input
@@ -159,8 +311,8 @@ const CustomerProfile = () => {
                   </label>
                   <input
                     type="tel"
-                    name="soDienThoai"
-                    value={formData.soDienThoai}
+                    name="sdt"
+                    value={formData.sdt}
                     onChange={handleInputChange}
                     disabled={!isEditing}
                     className="input"
@@ -183,34 +335,17 @@ const CustomerProfile = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Ngày sinh
+                    Mã số thuế
                   </label>
                   <input
-                    type="date"
-                    name="ngaySinh"
-                    value={formData.ngaySinh}
+                    type="text"
+                    name="maSoThue"
+                    value={formData.maSoThue}
                     onChange={handleInputChange}
                     disabled={!isEditing}
                     className="input"
+                    placeholder="Mã số thuế (tùy chọn)"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Giới tính
-                  </label>
-                  <select
-                    name="gioiTinh"
-                    value={formData.gioiTinh}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                    className="input"
-                  >
-                    <option value="">Chọn giới tính</option>
-                    <option value="Nam">Nam</option>
-                    <option value="Nữ">Nữ</option>
-                    <option value="Khác">Khác</option>
-                  </select>
                 </div>
               </div>
 
