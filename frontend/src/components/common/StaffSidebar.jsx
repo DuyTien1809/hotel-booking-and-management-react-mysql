@@ -1,6 +1,6 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
-import { Home, Calendar, UserCheck, UserX, Users, UserPlus, Building, Settings, CreditCard, FileText } from 'lucide-react'
+import { Home, Calendar, UserCheck, UserX, Users, UserPlus, Building, Settings, CreditCard, FileText, RefreshCw } from 'lucide-react'
 
 const StaffSidebar = () => {
   const menuItems = [
@@ -45,6 +45,11 @@ const StaffSidebar = () => {
       path: '/staff/rooms',
       icon: Building,
       label: 'Quản lý phòng'
+    },
+    {
+      path: '/staff/room-changes',
+      icon: RefreshCw,
+      label: 'Quản lý đổi phòng'
     },
     {
       path: '/staff/services',

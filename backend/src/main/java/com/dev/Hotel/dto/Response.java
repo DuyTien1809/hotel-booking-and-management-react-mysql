@@ -84,6 +84,15 @@ public class Response {
     // Available rooms by hang phong
     private List<AvailableRoomsByHangPhongDTO> availableRoomsByHangPhongList;
 
+    // Room change related DTOs
+    private DoiPhongDTO doiPhong;
+    private List<DoiPhongDTO> doiPhongList;
+    private RoomChangeEligibilityDTO roomChangeEligibility;
+    private RoomChangeFeeCalculationDTO roomChangeFeeCalculation;
+
+    // Statistics
+    private List<Object[]> statistics;
+
     // Getters and Setters
     public int getStatusCode() {
         return statusCode;

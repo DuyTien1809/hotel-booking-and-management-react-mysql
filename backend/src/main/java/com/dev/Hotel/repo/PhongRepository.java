@@ -28,7 +28,11 @@ public interface PhongRepository extends JpaRepository<Phong, String> {
     @Query("SELECT p FROM Phong p WHERE p.trangThai.tenTrangThai = 'Trống'")
     List<Phong> findAvailableRooms();
 
-    @Query("SELECT p FROM Phong p WHERE p.trangThai.tenTrangThai = 'Đã có khách'")
+    @Query("SELECT DISTINCT p FROM Phong p " +
+           "JOIN CtPhieuThue ct ON ct.phong = p " +
+           "JOIN ct.phieuThue pt " +
+           "WHERE p.trangThai.tenTrangThai = 'Đã có khách' " +
+           "AND NOT EXISTS (SELECT hd FROM HoaDon hd WHERE hd.phieuThue = pt)")
     List<Phong> findOccupiedRooms();
 
     @Query("SELECT p FROM Phong p WHERE p.trangThai.tenTrangThai = 'Đang bảo trì'")
@@ -48,7 +52,11 @@ public interface PhongRepository extends JpaRepository<Phong, String> {
     @Query("SELECT COUNT(p) FROM Phong p WHERE p.trangThai.tenTrangThai = 'Trống'")
     long countAvailableRooms();
 
-    @Query("SELECT COUNT(p) FROM Phong p WHERE p.trangThai.tenTrangThai = 'Đã có khách'")
+    @Query("SELECT COUNT(DISTINCT p) FROM Phong p " +
+           "JOIN CtPhieuThue ct ON ct.phong = p " +
+           "JOIN ct.phieuThue pt " +
+           "WHERE p.trangThai.tenTrangThai = 'Đã có khách' " +
+           "AND NOT EXISTS (SELECT hd FROM HoaDon hd WHERE hd.phieuThue = pt)")
     long countOccupiedRooms();
 
     @Query("SELECT COUNT(p) FROM Phong p WHERE p.trangThai.tenTrangThai = 'Đang bảo trì'")

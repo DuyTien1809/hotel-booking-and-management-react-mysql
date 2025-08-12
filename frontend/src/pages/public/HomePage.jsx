@@ -217,7 +217,7 @@ const HomePage = () => {
         <div className="container">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">Phòng Nổi Bật</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-600 mx-auto whitespace-nowrap">
               Khám phá các loại phòng tuyệt vời với thiết kế hiện đại và tiện nghi đầy đủ
             </p>
           </div>
@@ -348,7 +348,7 @@ const HomePage = () => {
                   </div>
                   <div>
                     <div className="font-semibold">Hotline</div>
-                    <div className="text-primary-100">1900 1234 (24/7)</div>
+                    <div className="text-primary-100">1900 1999 (24/7)</div>
                   </div>
                 </div>
 
@@ -368,7 +368,7 @@ const HomePage = () => {
                   </div>
                   <div>
                     <div className="font-semibold">Địa chỉ</div>
-                    <div className="text-primary-100">123 Đường ABC, Quận 1, TP.HCM</div>
+                    <div className="text-primary-100">97 Man Thiện, Hiệp Phú, Thủ Đức, Hồ Chí Minh</div>
                   </div>
                 </div>
               </div>
@@ -378,7 +378,7 @@ const HomePage = () => {
               <h3 className="text-2xl font-bold mb-6 text-center">Đặt Phòng Ngay</h3>
               <div className="space-y-4">
                 <button className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-4 rounded-xl transition-colors duration-200 btn-glow">
-                  Gọi Ngay: 1900 1234
+                  Gọi Ngay: 1900 1999
                 </button>
                 <button className="w-full bg-white bg-opacity-20 hover:bg-opacity-30 border-2 border-white text-white font-semibold py-4 rounded-xl transition-all duration-200 btn-glow">
                   Chat Trực Tuyến
