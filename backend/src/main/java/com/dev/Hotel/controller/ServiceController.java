@@ -30,7 +30,7 @@ public class ServiceController {
     private JdbcTemplate jdbcTemplate;
 
     // ===== DỊCH VỤ APIs =====
-    
+
     @GetMapping("/dich-vu")
     public ResponseEntity<Response> getAllDichVu() {
         Response response = new Response();
@@ -47,19 +47,64 @@ public class ServiceController {
     }
 
     @PostMapping("/dich-vu")
-    public ResponseEntity<Response> createDichVu(@RequestBody DichVu dichVu) {
+    public ResponseEntity<Response> createDichVu(@RequestBody java.util.Map<String, Object> request) {
         Response response = new Response();
         try {
+            // Auto-generate ID if not provided
+            String newId = (String) request.get("idDv");
+            System.out.println("DEBUG: Received idDv from request: " + newId);
+
+            if (newId == null || newId.trim().isEmpty()) {
+                newId = generateNextDichVuId();
+                System.out.println("DEBUG: Generated new ID: " + newId);
+            } else {
+                System.out.println("DEBUG: Using provided ID: " + newId);
+                // Check if manually provided ID already exists
+                if (dichVuRepository.existsById(newId)) {
+                    response.setStatusCode(400);
+                    response.setMessage("ID dịch vụ đã tồn tại: " + newId);
+                    return ResponseEntity.ok(response);
+                }
+            }
+
+            // Create DichVu
+            DichVu dichVu = new DichVu();
+            dichVu.setIdDv(newId);
+            dichVu.setTenDv((String) request.get("tenDv"));
+            dichVu.setMoTa((String) request.get("moTa"));
+            dichVu.setDonViTinh((String) request.get("donViTinh"));
+
             DichVu savedDichVu = dichVuRepository.save(dichVu);
-            
-            // Tạo giá mặc định - không cần ID_NV khi tạo giá mặc định
-            jdbcTemplate.update(
-                "INSERT INTO gia_dich_vu (ID_DV, NGAY_AP_DUNG, GIA, ID_NV) VALUES (?, ?, ?, ?)",
-                savedDichVu.getIdDv(), LocalDate.now(), BigDecimal.ZERO, null
-            );
-            
+
+            // Tạo giá từ request thay vì giá mặc định
+            String giaStr = (String) request.get("gia");
+            BigDecimal gia = BigDecimal.ZERO;
+            if (giaStr != null && !giaStr.trim().isEmpty()) {
+                gia = new BigDecimal(giaStr);
+            }
+
+            // Kiểm tra xem đã có giá cho dịch vụ này trong ngày hôm nay chưa
+            LocalDate today = LocalDate.now();
+            Integer existingPriceCount = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM gia_dich_vu WHERE ID_DV = ? AND NGAY_AP_DUNG = ?",
+                    Integer.class, savedDichVu.getIdDv(), today);
+
+            if (existingPriceCount != null && existingPriceCount > 0) {
+                // Nếu đã có giá trong ngày hôm nay, UPDATE thay vì INSERT
+                jdbcTemplate.update(
+                        "UPDATE gia_dich_vu SET GIA = ?, ID_NV = ? WHERE ID_DV = ? AND NGAY_AP_DUNG = ?",
+                        gia, null, savedDichVu.getIdDv(), today);
+                System.out.println("DEBUG: Updated existing price for " + savedDichVu.getIdDv());
+            } else {
+                // Nếu chưa có, INSERT mới
+                jdbcTemplate.update(
+                        "INSERT INTO gia_dich_vu (ID_DV, NGAY_AP_DUNG, GIA, ID_NV) VALUES (?, ?, ?, ?)",
+                        savedDichVu.getIdDv(), today, gia, null);
+                System.out.println("DEBUG: Inserted new price for " + savedDichVu.getIdDv());
+            }
+
             response.setStatusCode(200);
-            response.setMessage("Tạo dịch vụ thành công");
+            response.setMessage("Tạo dịch vụ thành công với ID: " + newId);
             response.setDichVu(EntityDTOMapper.mapDichVuToDTO(savedDichVu));
         } catch (Exception e) {
             response.setStatusCode(500);
@@ -68,8 +113,39 @@ public class ServiceController {
         return ResponseEntity.ok(response);
     }
 
+    private String generateNextDichVuId() {
+        try {
+            // Lấy tất cả ID dịch vụ theo thứ tự giảm dần
+            List<String> allIds = dichVuRepository.findAllDichVuIdsOrderByDesc();
+            System.out.println("DEBUG: All IDs from database: " + allIds);
+
+            if (allIds.isEmpty()) {
+                System.out.println("DEBUG: No existing IDs, returning DV001");
+                return "DV001";
+            }
+
+            // Lấy ID đầu tiên (lớn nhất)
+            String maxId = allIds.get(0);
+            System.out.println("DEBUG: Max ID from database: " + maxId);
+
+            // Trích xuất số từ ID (ví dụ: DV001 -> 001)
+            String numberPart = maxId.substring(2);
+            int nextNumber = Integer.parseInt(numberPart) + 1;
+            String newId = String.format("DV%03d", nextNumber);
+
+            System.out.println("DEBUG: Generated next ID: " + newId);
+            return newId;
+        } catch (Exception e) {
+            System.out.println("DEBUG: Error generating ID: " + e.getMessage());
+            e.printStackTrace();
+            // Fallback nếu có lỗi
+            return "DV001";
+        }
+    }
+
     @PutMapping("/dich-vu/{id}")
-    public ResponseEntity<Response> updateDichVu(@PathVariable String id, @RequestBody java.util.Map<String, Object> request) {
+    public ResponseEntity<Response> updateDichVu(@PathVariable String id,
+            @RequestBody java.util.Map<String, Object> request) {
         Response response = new Response();
         try {
             if (dichVuRepository.existsById(id)) {
@@ -99,16 +175,14 @@ public class ServiceController {
 
                     // Thử UPDATE trước
                     int rowsUpdated = jdbcTemplate.update(
-                        "UPDATE gia_dich_vu SET GIA = ?, ID_NV = ? WHERE ID_DV = ? AND NGAY_AP_DUNG = ?",
-                        price, idNv, id, today
-                    );
+                            "UPDATE gia_dich_vu SET GIA = ?, ID_NV = ? WHERE ID_DV = ? AND NGAY_AP_DUNG = ?",
+                            price, idNv, id, today);
 
                     // Nếu không có record nào được update, thì INSERT mới
                     if (rowsUpdated == 0) {
                         jdbcTemplate.update(
-                            "INSERT INTO gia_dich_vu (ID_DV, NGAY_AP_DUNG, GIA, ID_NV) VALUES (?, ?, ?, ?)",
-                            id, today, price, idNv
-                        );
+                                "INSERT INTO gia_dich_vu (ID_DV, NGAY_AP_DUNG, GIA, ID_NV) VALUES (?, ?, ?, ?)",
+                                id, today, price, idNv);
                     }
                 }
 
@@ -150,7 +224,8 @@ public class ServiceController {
     }
 
     @PutMapping("/dich-vu/{id}/price")
-    public ResponseEntity<Response> updateDichVuPrice(@PathVariable String id, @RequestBody java.util.Map<String, Object> request) {
+    public ResponseEntity<Response> updateDichVuPrice(@PathVariable String id,
+            @RequestBody java.util.Map<String, Object> request) {
         Response response = new Response();
         try {
             BigDecimal price = new BigDecimal(request.get("price").toString());
@@ -158,16 +233,14 @@ public class ServiceController {
 
             // Thử UPDATE trước
             int rowsUpdated = jdbcTemplate.update(
-                "UPDATE gia_dich_vu SET GIA = ?, ID_NV = ? WHERE ID_DV = ? AND NGAY_AP_DUNG = ?",
-                price, null, id, today
-            );
+                    "UPDATE gia_dich_vu SET GIA = ?, ID_NV = ? WHERE ID_DV = ? AND NGAY_AP_DUNG = ?",
+                    price, null, id, today);
 
             // Nếu không có record nào được update, thì INSERT mới
             if (rowsUpdated == 0) {
                 jdbcTemplate.update(
-                    "INSERT INTO gia_dich_vu (ID_DV, NGAY_AP_DUNG, GIA, ID_NV) VALUES (?, ?, ?, ?)",
-                    id, today, price, null
-                );
+                        "INSERT INTO gia_dich_vu (ID_DV, NGAY_AP_DUNG, GIA, ID_NV) VALUES (?, ?, ?, ?)",
+                        id, today, price, null);
             }
 
             response.setStatusCode(200);
@@ -181,7 +254,7 @@ public class ServiceController {
     }
 
     // ===== PHỤ THU APIs =====
-    
+
     @GetMapping("/phu-thu")
     public ResponseEntity<Response> getAllPhuThu() {
         Response response = new Response();
@@ -206,9 +279,8 @@ public class ServiceController {
 
             // Tạo giá mặc định trong bảng giaphuthu - không cần ID_NV khi tạo giá mặc định
             jdbcTemplate.update(
-                "INSERT INTO giaphuthu (ID_PHU_THU, NGAY_AP_DUNG, GIA, ID_NV) VALUES (?, ?, ?, ?)",
-                savedPhuThu.getIdPhuThu(), LocalDate.now(), BigDecimal.ZERO, null
-            );
+                    "INSERT INTO giaphuthu (ID_PHU_THU, NGAY_AP_DUNG, GIA, ID_NV) VALUES (?, ?, ?, ?)",
+                    savedPhuThu.getIdPhuThu(), LocalDate.now(), BigDecimal.ZERO, null);
 
             response.setStatusCode(200);
             response.setMessage("Tạo phụ thu thành công");
@@ -221,7 +293,8 @@ public class ServiceController {
     }
 
     @PutMapping("/phu-thu/{id}")
-    public ResponseEntity<Response> updatePhuThu(@PathVariable String id, @RequestBody java.util.Map<String, Object> request) {
+    public ResponseEntity<Response> updatePhuThu(@PathVariable String id,
+            @RequestBody java.util.Map<String, Object> request) {
         Response response = new Response();
         try {
             if (phuThuRepository.existsById(id)) {
@@ -250,16 +323,14 @@ public class ServiceController {
 
                     // Thử UPDATE trước
                     int rowsUpdated = jdbcTemplate.update(
-                        "UPDATE giaphuthu SET GIA = ?, ID_NV = ? WHERE ID_PHU_THU = ? AND NGAY_AP_DUNG = ?",
-                        price, idNv, id, today
-                    );
+                            "UPDATE giaphuthu SET GIA = ?, ID_NV = ? WHERE ID_PHU_THU = ? AND NGAY_AP_DUNG = ?",
+                            price, idNv, id, today);
 
                     // Nếu không có record nào được update, thì INSERT mới
                     if (rowsUpdated == 0) {
                         jdbcTemplate.update(
-                            "INSERT INTO giaphuthu (ID_PHU_THU, NGAY_AP_DUNG, GIA, ID_NV) VALUES (?, ?, ?, ?)",
-                            id, today, price, idNv
-                        );
+                                "INSERT INTO giaphuthu (ID_PHU_THU, NGAY_AP_DUNG, GIA, ID_NV) VALUES (?, ?, ?, ?)",
+                                id, today, price, idNv);
                     }
                 }
 
@@ -285,9 +356,8 @@ public class ServiceController {
             if (phuThuRepository.existsById(id)) {
                 // Kiểm tra xem có khách hàng nào đang sử dụng không
                 Integer usageCount = jdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM ct_phu_thu WHERE ID_PHU_THU = ?",
-                    Integer.class, id
-                );
+                        "SELECT COUNT(*) FROM ct_phu_thu WHERE ID_PHU_THU = ?",
+                        Integer.class, id);
 
                 if (usageCount != null && usageCount > 0) {
                     response.setStatusCode(400);
@@ -312,7 +382,8 @@ public class ServiceController {
     }
 
     @PutMapping("/phu-thu/{id}/price")
-    public ResponseEntity<Response> updatePhuThuPrice(@PathVariable String id, @RequestBody java.util.Map<String, Object> request) {
+    public ResponseEntity<Response> updatePhuThuPrice(@PathVariable String id,
+            @RequestBody java.util.Map<String, Object> request) {
         Response response = new Response();
         try {
             BigDecimal price = new BigDecimal(request.get("price").toString());
@@ -320,16 +391,14 @@ public class ServiceController {
 
             // Thử UPDATE trước
             int rowsUpdated = jdbcTemplate.update(
-                "UPDATE giaphuthu SET GIA = ?, ID_NV = ? WHERE ID_PHU_THU = ? AND NGAY_AP_DUNG = ?",
-                price, null, id, today
-            );
+                    "UPDATE giaphuthu SET GIA = ?, ID_NV = ? WHERE ID_PHU_THU = ? AND NGAY_AP_DUNG = ?",
+                    price, null, id, today);
 
             // Nếu không có record nào được update, thì INSERT mới
             if (rowsUpdated == 0) {
                 jdbcTemplate.update(
-                    "INSERT INTO giaphuthu (ID_PHU_THU, NGAY_AP_DUNG, GIA, ID_NV) VALUES (?, ?, ?, ?)",
-                    id, today, price, null
-                );
+                        "INSERT INTO giaphuthu (ID_PHU_THU, NGAY_AP_DUNG, GIA, ID_NV) VALUES (?, ?, ?, ?)",
+                        id, today, price, null);
             }
 
             response.setStatusCode(200);

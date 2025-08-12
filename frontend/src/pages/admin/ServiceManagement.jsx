@@ -1,21 +1,13 @@
 import React, { useState, useEffect } from 'react'
+import { toast } from 'react-hot-toast'
 import {
-  Search,
   Plus,
   Edit,
   Trash2,
-  Eye,
-  Coffee,
   Filter,
-  CheckCircle,
-  XCircle,
-  DollarSign,
-  Clock,
-  Star
+  Package
 } from 'lucide-react'
-import Pagination from '../../components/common/Pagination'
-import toast from 'react-hot-toast'
-import { dichVuService } from '../../services/dichVuService'
+import { api } from '../../services/api'
 import { formatCurrency } from '../../utils/formatters'
 
 const ServiceManagement = () => {
@@ -24,39 +16,47 @@ const ServiceManagement = () => {
   const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [servicesPerPage] = useState(12)
+  
+  // Search and filter states
+  const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState({
-    searchTerm: '',
-    category: '',
-    status: '',
+    unit: '',
     priceRange: ''
   })
+
+  // Modal states
   const [showAddModal, setShowAddModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
-  const [showDetailModal, setShowDetailModal] = useState(false)
   const [selectedService, setSelectedService] = useState(null)
+
+  // Form states
   const [serviceForm, setServiceForm] = useState({
-    tenDichVu: '',
+    tenDv: '',
     moTa: '',
-    gia: '',
-    danhMuc: '',
-    trangThai: 'active',
-    thoiGianThucHien: '',
-    donVi: ''
+    donViTinh: '',
+    gia: ''
   })
 
   useEffect(() => {
     fetchServices()
   }, [])
 
-  const fetchServices = async () => {
-    try {
-      setLoading(true)
-      // Gọi API để lấy danh sách dịch vụ
-      const response = await dichVuService.getAllDichVu()
-      const serviceData = response.dichVuList || []
+  useEffect(() => {
+    filterServices()
+  }, [searchTerm, filters, services])
 
-      setServices(serviceData)
-      setFilteredServices(serviceData)
+  const fetchServices = async () => {
+    setLoading(true)
+    try {
+      const response = await api.get('/api/services/dich-vu')
+      
+      if (response.data.statusCode === 200) {
+        const serviceData = response.data.dichVuList || []
+        setServices(serviceData)
+        setFilteredServices(serviceData)
+      } else {
+        toast.error(response.data.message || 'Lỗi khi tải danh sách dịch vụ')
+      }
     } catch (error) {
       console.error('Error fetching services:', error)
       toast.error('Lỗi khi tải danh sách dịch vụ')
@@ -65,96 +65,26 @@ const ServiceManagement = () => {
     }
   }
 
-  const handleFilterChange = (filterType, value) => {
-    const newFilters = { ...filters, [filterType]: value }
-    setFilters(newFilters)
-    applyFilters(newFilters)
-  }
+  const filterServices = () => {
+    let filtered = services.filter(service => 
+      service.tenDv?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      service.idDv?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      service.moTa?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
 
-  const applyFilters = (currentFilters) => {
-    let filtered = [...services]
-
-    // Filter by search term
-    if (currentFilters.searchTerm) {
-      const searchLower = currentFilters.searchTerm.toLowerCase()
-      filtered = filtered.filter(service =>
-        service.tenDichVu.toLowerCase().includes(searchLower) ||
-        service.moTa.toLowerCase().includes(searchLower) ||
-        service.danhMuc.toLowerCase().includes(searchLower)
-      )
-    }
-
-    // Filter by category
-    if (currentFilters.category) {
-      filtered = filtered.filter(service => service.danhMuc === currentFilters.category)
-    }
-
-    // Filter by status
-    if (currentFilters.status) {
-      filtered = filtered.filter(service => service.trangThai === currentFilters.status)
-    }
-
-    // Filter by price range
-    if (currentFilters.priceRange) {
-      const [min, max] = currentFilters.priceRange.split('-').map(Number)
-      filtered = filtered.filter(service => {
-        const price = service.gia
-        return max ? price >= min && price <= max : price >= min
-      })
+    if (filters.unit) {
+      filtered = filtered.filter(service => service.donViTinh === filters.unit)
     }
 
     setFilteredServices(filtered)
-    setCurrentPage(1)
-  }
-
-  const clearFilters = () => {
-    setFilters({
-      searchTerm: '',
-      category: '',
-      status: '',
-      priceRange: ''
-    })
-    setFilteredServices(services)
-    setCurrentPage(1)
-  }
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'active': return 'text-green-600 bg-green-100'
-      case 'inactive': return 'text-red-600 bg-red-100'
-      case 'maintenance': return 'text-yellow-600 bg-yellow-100'
-      default: return 'text-gray-600 bg-gray-100'
-    }
-  }
-
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'active': return 'Hoạt động'
-      case 'inactive': return 'Ngừng hoạt động'
-      case 'maintenance': return 'Bảo trì'
-      default: return 'Không xác định'
-    }
-  }
-
-  const getCategoryColor = (category) => {
-    switch (category) {
-      case 'Wellness': return 'text-purple-600 bg-purple-100'
-      case 'Food & Beverage': return 'text-orange-600 bg-orange-100'
-      case 'Housekeeping': return 'text-blue-600 bg-blue-100'
-      case 'Transportation': return 'text-green-600 bg-green-100'
-      default: return 'text-gray-600 bg-gray-100'
-    }
   }
 
   const handleAddService = () => {
     setServiceForm({
-      tenDichVu: '',
+      tenDv: '',
       moTa: '',
-      gia: '',
-      danhMuc: '',
-      trangThai: 'active',
-      thoiGianThucHien: '',
-      donVi: 'phút'
+      donViTinh: '',
+      gia: ''
     })
     setShowAddModal(true)
   }
@@ -162,84 +92,88 @@ const ServiceManagement = () => {
   const handleEditService = (service) => {
     setSelectedService(service)
     setServiceForm({
-      tenDichVu: service.tenDichVu,
-      moTa: service.moTa,
-      gia: service.gia.toString(),
-      danhMuc: service.danhMuc,
-      trangThai: service.trangThai,
-      thoiGianThucHien: service.thoiGianThucHien,
-      donVi: service.donVi
+      tenDv: service.tenDv,
+      moTa: service.moTa || '',
+      donViTinh: service.donViTinh || '',
+      gia: service.giaHienTai || ''
     })
     setShowEditModal(true)
   }
 
-  const handleViewService = (service) => {
-    setSelectedService(service)
-    setShowDetailModal(true)
-  }
-
-  const handleDeleteService = async (serviceId) => {
+  const handleDeleteService = async (idDv) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa dịch vụ này?')) {
       try {
-        // TODO: Call API to delete service
-        setServices(prev => prev.filter(service => service.id !== serviceId))
-        setFilteredServices(prev => prev.filter(service => service.id !== serviceId))
-        toast.success('Xóa dịch vụ thành công!')
+        const response = await api.delete(`/api/services/dich-vu/${idDv}`)
+        
+        if (response.data.statusCode === 200) {
+          toast.success('Xóa dịch vụ thành công!')
+          fetchServices()
+        } else {
+          toast.error(response.data.message || 'Xóa dịch vụ thất bại')
+        }
       } catch (error) {
-        toast.error('Có lỗi xảy ra khi xóa dịch vụ')
+        console.error('Error deleting service:', error)
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi xóa dịch vụ')
       }
     }
   }
 
   const handleSaveService = async (e) => {
     e.preventDefault()
+
+    if (!serviceForm.tenDv || !serviceForm.donViTinh || !serviceForm.gia) {
+      toast.error('Vui lòng điền đầy đủ thông tin')
+      return
+    }
+
     try {
       if (showEditModal) {
-        // TODO: Call API to update service
-        setServices(prev => prev.map(service =>
-          service.id === selectedService.id
-            ? {
-                ...service,
-                ...serviceForm,
-                gia: parseInt(serviceForm.gia)
-              }
-            : service
-        ))
-        toast.success('Cập nhật dịch vụ thành công!')
-      } else {
-        // TODO: Call API to create service
-        const newService = {
-          id: Date.now(),
-          ...serviceForm,
-          gia: parseInt(serviceForm.gia),
-          soLuongDat: 0,
-          danhGia: 0,
-          hinhAnh: '/api/placeholder/300/200'
-        }
-        setServices(prev => [...prev, newService])
-        toast.success('Thêm dịch vụ thành công!')
-      }
+        const response = await api.put(`/api/services/dich-vu/${selectedService.idDv}`, serviceForm)
 
-      setShowAddModal(false)
-      setShowEditModal(false)
-      setSelectedService(null)
-      applyFilters(filters)
+        if (response.data.statusCode === 200) {
+          toast.success('Cập nhật dịch vụ thành công!')
+          setShowEditModal(false)
+          setSelectedService(null)
+          fetchServices()
+        } else {
+          toast.error(response.data.message || 'Cập nhật dịch vụ thất bại')
+        }
+      } else {
+        // Khi thêm mới, không gửi idDv - để backend tự tạo
+        const response = await api.post('/api/services/dich-vu', serviceForm)
+
+        if (response.data.statusCode === 200) {
+          toast.success('Thêm dịch vụ thành công!')
+          setShowAddModal(false)
+          setServiceForm({
+            tenDv: '',
+            moTa: '',
+            donViTinh: '',
+            gia: ''
+          })
+          fetchServices()
+        } else {
+          toast.error(response.data.message || 'Thêm dịch vụ thất bại')
+        }
+      }
     } catch (error) {
-      toast.error('Có lỗi xảy ra khi lưu dịch vụ')
+      console.error('Error saving service:', error)
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lưu dịch vụ')
     }
   }
 
-  // Get current services for pagination
+  // Pagination
   const indexOfLastService = currentPage * servicesPerPage
   const indexOfFirstService = indexOfLastService - servicesPerPage
   const currentServices = filteredServices.slice(indexOfFirstService, indexOfLastService)
+  const totalPages = Math.ceil(filteredServices.length / servicesPerPage)
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber)
 
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     )
   }
@@ -250,7 +184,7 @@ const ServiceManagement = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Quản lý dịch vụ</h1>
-          <p className="text-gray-600 mt-2">Thêm, sửa, xóa và quản lý dịch vụ khách sạn</p>
+          <p className="text-gray-600 mt-2">Quản lý dịch vụ khách sạn</p>
         </div>
         <button
           onClick={handleAddService}
@@ -261,62 +195,6 @@ const ServiceManagement = () => {
         </button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="card">
-          <div className="flex items-center">
-            <div className="p-3 bg-blue-100 rounded-full">
-              <Coffee className="w-6 h-6 text-blue-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Tổng dịch vụ</p>
-              <p className="text-2xl font-bold text-gray-900">{services.length}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center">
-            <div className="p-3 bg-green-100 rounded-full">
-              <CheckCircle className="w-6 h-6 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Đang hoạt động</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {services.filter(s => s.trangThai === 'active').length}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center">
-            <div className="p-3 bg-yellow-100 rounded-full">
-              <Clock className="w-6 h-6 text-yellow-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Bảo trì</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {services.filter(s => s.trangThai === 'maintenance').length}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center">
-            <div className="p-3 bg-purple-100 rounded-full">
-              <DollarSign className="w-6 h-6 text-purple-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Doanh thu dịch vụ</p>
-              <p className="text-2xl font-bold text-gray-900">15M</p>
-              <p className="text-xs text-gray-500">VNĐ/tháng</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Search and Filters */}
       <div className="card">
         <div className="flex items-center mb-4">
@@ -324,82 +202,53 @@ const ServiceManagement = () => {
           <h2 className="text-xl font-semibold text-gray-900">Tìm kiếm và lọc</h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          {/* Search */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Tìm kiếm
             </label>
             <input
               type="text"
-              placeholder="Tên dịch vụ, mô tả..."
-              value={filters.searchTerm}
-              onChange={(e) => handleFilterChange('searchTerm', e.target.value)}
+              placeholder="Tên dịch vụ, ID, mô tả..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="input"
             />
           </div>
 
-          {/* Category Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Danh mục
+              Đơn vị tính
             </label>
             <select
-              value={filters.category}
-              onChange={(e) => handleFilterChange('category', e.target.value)}
+              value={filters.unit}
+              onChange={(e) => setFilters(prev => ({ ...prev, unit: e.target.value }))}
               className="input"
             >
               <option value="">Tất cả</option>
-              <option value="Wellness">Wellness</option>
-              <option value="Food & Beverage">Food & Beverage</option>
-              <option value="Housekeeping">Housekeeping</option>
-              <option value="Transportation">Transportation</option>
+              <option value="Lần">Lần</option>
+              <option value="Giờ">Giờ</option>
+              <option value="Ngày">Ngày</option>
+              <option value="Phần">Phần</option>
+              <option value="Suất">Suất</option>
             </select>
           </div>
 
-          {/* Status Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Trạng thái
-            </label>
-            <select
-              value={filters.status}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="input"
-            >
-              <option value="">Tất cả</option>
-              <option value="active">Hoạt động</option>
-              <option value="inactive">Ngừng hoạt động</option>
-              <option value="maintenance">Bảo trì</option>
-            </select>
-          </div>
-
-          {/* Price Range Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Khoảng giá
             </label>
             <select
               value={filters.priceRange}
-              onChange={(e) => handleFilterChange('priceRange', e.target.value)}
+              onChange={(e) => setFilters(prev => ({ ...prev, priceRange: e.target.value }))}
               className="input"
             >
               <option value="">Tất cả</option>
               <option value="0-100000">Dưới 100K</option>
-              <option value="100000-300000">100K - 300K</option>
-              <option value="300000-500000">300K - 500K</option>
-              <option value="500000-999999999">Trên 500K</option>
+              <option value="100000-500000">100K - 500K</option>
+              <option value="500000-1000000">500K - 1M</option>
+              <option value="1000000-">Trên 1M</option>
             </select>
-          </div>
-
-          {/* Clear Filters */}
-          <div className="flex items-end">
-            <button
-              onClick={clearFilters}
-              className="btn-outline w-full"
-            >
-              Xóa bộ lọc
-            </button>
           </div>
         </div>
       </div>
@@ -416,106 +265,101 @@ const ServiceManagement = () => {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {currentServices.map((service, index) => (
-                <div key={service.idDv || service.id || index} className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-                  <img
-                    src={service.hinhAnh}
-                    alt={service.tenDichVu}
-                    className="w-full h-48 object-cover"
-                  />
-
-                  <div className="p-4">
-                    <div className="flex justify-between items-start mb-2">
+                <div key={service.idDv || index} className="border rounded-lg p-4 hover:shadow-lg transition-shadow">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
                       <h3 className="text-lg font-semibold text-gray-900 truncate">
-                        {service.tenDichVu}
+                        {service.tenDv}
                       </h3>
-                      <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(service.trangThai)}`}>
-                        {getStatusText(service.trangThai)}
+                      <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                        ID: {service.idDv}
                       </span>
                     </div>
+                  </div>
 
-                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                      {service.moTa}
-                    </p>
+                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                    {service.moTa || 'Không có mô tả'}
+                  </p>
 
-                    <div className="space-y-2 text-sm text-gray-600 mb-4">
-                      <div className="flex justify-between">
-                        <span>Danh mục:</span>
-                        <span className={`px-2 py-1 text-xs rounded-full ${getCategoryColor(service.danhMuc)}`}>
-                          {service.danhMuc}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Giá:</span>
-                        <span className="font-semibold text-gray-900">
-                          {formatCurrency(service.gia)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Thời gian:</span>
-                        <span>{service.thoiGianThucHien || 'N/A'} {service.donVi || ''}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span>Đánh giá:</span>
-                        <div className="flex items-center">
-                          <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                          <span className="ml-1">{service.danhGia || '0'}</span>
-                        </div>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Đã đặt:</span>
-                        <span>{service.soLuongDat} lần</span>
-                      </div>
+                  <div className="space-y-2 text-sm text-gray-600 mb-4">
+                    <div className="flex justify-between">
+                      <span>Đơn vị tính:</span>
+                      <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                        {service.donViTinh}
+                      </span>
                     </div>
-
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleViewService(service)}
-                        className="flex-1 text-blue-600 hover:text-blue-800 text-sm font-medium"
-                      >
-                        <Eye className="w-4 h-4 inline mr-1" />
-                        Xem
-                      </button>
-                      <button
-                        onClick={() => handleEditService(service)}
-                        className="flex-1 text-green-600 hover:text-green-800 text-sm font-medium"
-                      >
-                        <Edit className="w-4 h-4 inline mr-1" />
-                        Sửa
-                      </button>
-                      <button
-                        onClick={() => handleDeleteService(service.id)}
-                        className="flex-1 text-red-600 hover:text-red-800 text-sm font-medium"
-                      >
-                        <Trash2 className="w-4 h-4 inline mr-1" />
-                        Xóa
-                      </button>
+                    <div className="flex justify-between">
+                      <span>Giá hiện tại:</span>
+                      <span className="font-semibold text-gray-900">
+                        {service.giaHienTai ? formatCurrency(service.giaHienTai) : 'Chưa có giá'}
+                      </span>
                     </div>
+                    {service.ngayApDungGia && (
+                      <div className="flex justify-between">
+                        <span>Ngày áp dụng:</span>
+                        <span>{new Date(service.ngayApDungGia).toLocaleDateString('vi-VN')}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleEditService(service)}
+                      className="flex-1 text-green-600 hover:text-green-800 text-sm font-medium"
+                    >
+                      <Edit className="w-4 h-4 inline mr-1" />
+                      Sửa
+                    </button>
+                    <button
+                      onClick={() => handleDeleteService(service.idDv)}
+                      className="flex-1 text-red-600 hover:text-red-800 text-sm font-medium"
+                    >
+                      <Trash2 className="w-4 h-4 inline mr-1" />
+                      Xóa
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
 
-            <Pagination
-              itemsPerPage={servicesPerPage}
-              totalItems={filteredServices.length}
-              currentPage={currentPage}
-              paginate={paginate}
-            />
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center mt-6">
+                <div className="flex space-x-2">
+                  {Array.from({ length: totalPages }, (_, i) => (
+                    <button
+                      key={i + 1}
+                      onClick={() => paginate(i + 1)}
+                      className={`px-3 py-2 text-sm font-medium rounded-md ${
+                        currentPage === i + 1
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <div className="text-center py-12">
-            <Coffee className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Không có dịch vụ nào
-            </h3>
-            <p className="text-gray-500">
-              Không tìm thấy dịch vụ nào phù hợp với bộ lọc
-            </p>
+            <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Không có dịch vụ nào</h3>
+            <p className="text-gray-600 mb-4">Bắt đầu bằng cách thêm dịch vụ đầu tiên</p>
+            <button
+              onClick={handleAddService}
+              className="btn-primary"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Thêm dịch vụ mới
+            </button>
           </div>
         )}
       </div>
 
-      {/* Add/Edit Service Modal */}
+      {/* Add/Edit Modal */}
       {(showAddModal || showEditModal) && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-1/2 lg:w-1/3 shadow-lg rounded-md bg-white">
@@ -537,14 +381,30 @@ const ServiceManagement = () => {
               </div>
 
               <form onSubmit={handleSaveService} className="space-y-4">
+                {showEditModal && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      ID dịch vụ
+                    </label>
+                    <input
+                      type="text"
+                      value={selectedService?.idDv || ''}
+                      className="input bg-gray-100"
+                      disabled
+                      placeholder="ID sẽ được tự động tạo"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">ID không thể thay đổi</p>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Tên dịch vụ
                   </label>
                   <input
                     type="text"
-                    value={serviceForm.tenDichVu}
-                    onChange={(e) => setServiceForm(prev => ({ ...prev, tenDichVu: e.target.value }))}
+                    value={serviceForm.tenDv}
+                    onChange={(e) => setServiceForm(prev => ({ ...prev, tenDv: e.target.value }))}
                     className="input"
                     required
                   />
@@ -559,88 +419,46 @@ const ServiceManagement = () => {
                     onChange={(e) => setServiceForm(prev => ({ ...prev, moTa: e.target.value }))}
                     className="input min-h-[80px]"
                     placeholder="Mô tả chi tiết về dịch vụ..."
-                    required
                   />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Giá (VNĐ)
-                    </label>
-                    <input
-                      type="number"
-                      value={serviceForm.gia}
-                      onChange={(e) => setServiceForm(prev => ({ ...prev, gia: e.target.value }))}
-                      className="input"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Danh mục
-                    </label>
-                    <select
-                      value={serviceForm.danhMuc}
-                      onChange={(e) => setServiceForm(prev => ({ ...prev, danhMuc: e.target.value }))}
-                      className="input"
-                      required
-                    >
-                      <option value="">Chọn danh mục</option>
-                      <option value="Wellness">Wellness</option>
-                      <option value="Food & Beverage">Food & Beverage</option>
-                      <option value="Housekeeping">Housekeeping</option>
-                      <option value="Transportation">Transportation</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Thời gian thực hiện
-                    </label>
-                    <input
-                      type="number"
-                      value={serviceForm.thoiGianThucHien}
-                      onChange={(e) => setServiceForm(prev => ({ ...prev, thoiGianThucHien: e.target.value }))}
-                      className="input"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Đơn vị
-                    </label>
-                    <select
-                      value={serviceForm.donVi}
-                      onChange={(e) => setServiceForm(prev => ({ ...prev, donVi: e.target.value }))}
-                      className="input"
-                      required
-                    >
-                      <option value="phút">Phút</option>
-                      <option value="giờ">Giờ</option>
-                      <option value="ngày">Ngày</option>
-                    </select>
-                  </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Trạng thái
+                    Đơn vị tính
                   </label>
                   <select
-                    value={serviceForm.trangThai}
-                    onChange={(e) => setServiceForm(prev => ({ ...prev, trangThai: e.target.value }))}
+                    value={serviceForm.donViTinh}
+                    onChange={(e) => setServiceForm(prev => ({ ...prev, donViTinh: e.target.value }))}
                     className="input"
                     required
                   >
-                    <option value="active">Hoạt động</option>
-                    <option value="inactive">Ngừng hoạt động</option>
-                    <option value="maintenance">Bảo trì</option>
+                    <option value="">Chọn đơn vị tính</option>
+                    <option value="Lần">Lần</option>
+                    <option value="Giờ">Giờ</option>
+                    <option value="Ngày">Ngày</option>
+                    <option value="Phần">Phần</option>
+                    <option value="Suất">Suất</option>
+                    <option value="Chai">Chai</option>
+                    <option value="Ly">Ly</option>
+                    <option value="Kg">Kg</option>
+                    <option value="Gói">Gói</option>
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Giá dịch vụ (VNĐ)
+                  </label>
+                  <input
+                    type="number"
+                    value={serviceForm.gia}
+                    onChange={(e) => setServiceForm(prev => ({ ...prev, gia: e.target.value }))}
+                    className="input"
+                    placeholder="VD: 100000"
+                    min="0"
+                    step="1000"
+                    required
+                  />
                 </div>
 
                 <div className="flex justify-end space-x-3 mt-6">
@@ -663,95 +481,6 @@ const ServiceManagement = () => {
                   </button>
                 </div>
               </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Service Detail Modal */}
-      {showDetailModal && selectedService && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-2/3 lg:w-1/2 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">
-                  Chi tiết dịch vụ
-                </h3>
-                <button
-                  onClick={() => setShowDetailModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ×
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <img
-                  src={selectedService.hinhAnh}
-                  alt={selectedService.tenDichVu}
-                  className="w-full h-64 object-cover rounded-lg"
-                />
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Tên dịch vụ</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedService.tenDichVu}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Danh mục</label>
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getCategoryColor(selectedService.danhMuc)}`}>
-                      {selectedService.danhMuc}
-                    </span>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Giá</label>
-                    <p className="mt-1 text-sm text-gray-900">{formatCurrency(selectedService.gia)}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Thời gian</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedService.thoiGianThucHien} {selectedService.donVi}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Đánh giá</label>
-                    <div className="flex items-center mt-1">
-                      <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                      <span className="ml-1 text-sm text-gray-900">{selectedService.danhGia}/5</span>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Số lượng đặt</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedService.soLuongDat} lần</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Trạng thái</label>
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedService.trangThai)}`}>
-                      {getStatusText(selectedService.trangThai)}
-                    </span>
-                  </div>
-                  <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700">Mô tả</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedService.moTa}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-3 mt-6">
-                <button
-                  onClick={() => setShowDetailModal(false)}
-                  className="btn-outline"
-                >
-                  Đóng
-                </button>
-                <button
-                  onClick={() => {
-                    setShowDetailModal(false)
-                    handleEditService(selectedService)
-                  }}
-                  className="btn-primary"
-                >
-                  Chỉnh sửa
-                </button>
-              </div>
             </div>
           </div>
         </div>

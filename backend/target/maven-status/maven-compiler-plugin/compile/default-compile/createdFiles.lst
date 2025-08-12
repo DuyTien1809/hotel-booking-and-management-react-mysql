@@ -7,7 +7,6 @@ com\dev\Hotel\service\interfac\IKieuPhongService.class
 com\dev\Hotel\entity\GiaPhuThu.class
 com\dev\Hotel\entity\AnhHangPhong.class
 com\dev\Hotel\controller\PhuThuController.class
-com\dev\Hotel\controller\TienNghiController$TienNghiRequest.class
 com\dev\Hotel\dto\CheckInWalkInRequest$KhachHangInfo.class
 com\dev\Hotel\repo\DoiPhongRepository.class
 com\dev\Hotel\dto\KhachHangDTO.class
@@ -39,6 +38,7 @@ com\dev\Hotel\service\interfac\INhanVienService.class
 com\dev\Hotel\controller\GuestManagementController.class
 com\dev\Hotel\security\CorsConfig$1.class
 com\dev\Hotel\service\impl\CustomerService.class
+com\dev\Hotel\dto\TienNghiRequest.class
 com\dev\Hotel\repo\BoPhanRepository.class
 com\dev\Hotel\service\impl\ReportService.class
 com\dev\Hotel\repo\CtPhuThuRepository.class

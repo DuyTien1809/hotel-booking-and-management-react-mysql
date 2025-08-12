@@ -59,6 +59,7 @@ D:\HaoHaoHao\Hoc Hanh\HKThuctap\main\hotel-booking-and-management-react-mysql\ba
 D:\HaoHaoHao\Hoc Hanh\HKThuctap\main\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\dto\RoomChangeEligibilityDTO.java
 D:\HaoHaoHao\Hoc Hanh\HKThuctap\main\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\dto\RoomChangeFeeCalculationDTO.java
 D:\HaoHaoHao\Hoc Hanh\HKThuctap\main\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\dto\TienNghiDTO.java
+D:\HaoHaoHao\Hoc Hanh\HKThuctap\main\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\dto\TienNghiRequest.java
 D:\HaoHaoHao\Hoc Hanh\HKThuctap\main\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\dto\UpdateBookingRequest.java
 D:\HaoHaoHao\Hoc Hanh\HKThuctap\main\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\entity\AnhHangPhong.java
 D:\HaoHaoHao\Hoc Hanh\HKThuctap\main\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\entity\BoPhan.java

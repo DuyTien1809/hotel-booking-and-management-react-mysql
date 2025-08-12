@@ -37,15 +37,27 @@ const RoomManagement = () => {
   const [roomForm, setRoomForm] = useState({
     soPhong: '',
     tang: '',
-    idKieuPhong: '',
-    idLoaiPhong: '',
+    idKieuPhong: '', // Sẽ dùng làm idHangPhong
     idTrangThai: '',
     moTa: ''
   })
+  const [hangPhongList, setHangPhongList] = useState([])
 
   useEffect(() => {
     fetchRooms()
+    fetchHangPhong()
   }, [])
+
+  const fetchHangPhong = async () => {
+    try {
+      const response = await api.get('/api/hang-phong/all')
+      if (response.data.statusCode === 200) {
+        setHangPhongList(response.data.hangPhongList || [])
+      }
+    } catch (error) {
+      console.error('Error fetching hang phong:', error)
+    }
+  }
 
   const fetchRooms = async () => {
     try {
@@ -145,7 +157,6 @@ const RoomManagement = () => {
       soPhong: '',
       tang: '',
       idKieuPhong: '',
-      idLoaiPhong: '',
       idTrangThai: 'TT001',
       moTa: ''
     })
@@ -157,54 +168,80 @@ const RoomManagement = () => {
     setRoomForm({
       soPhong: room.soPhong,
       tang: room.tang.toString(),
-      idKieuPhong: room.idKp || '',
-      idLoaiPhong: room.idLp || '',
+      idKieuPhong: room.idHangPhong || '',
       idTrangThai: room.idTt || '',
       moTa: room.moTa || ''
     })
     setShowEditModal(true)
   }
 
-  const handleDeleteRoom = async (roomId) => {
+  const handleDeleteRoom = async (soPhong) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa phòng này?')) {
       try {
-        // TODO: Call API to delete room
-        setRooms(prev => prev.filter(room => room.id !== roomId))
-        setFilteredRooms(prev => prev.filter(room => room.id !== roomId))
-        toast.success('Xóa phòng thành công!')
+        const response = await api.delete(`/api/phong/delete/${soPhong}`)
+
+        if (response.data.statusCode === 200) {
+          setRooms(prev => prev.filter(room => room.soPhong !== soPhong))
+          setFilteredRooms(prev => prev.filter(room => room.soPhong !== soPhong))
+          toast.success('Xóa phòng thành công!')
+        } else {
+          toast.error(response.data.message || 'Xóa phòng thất bại')
+        }
       } catch (error) {
-        toast.error('Có lỗi xảy ra khi xóa phòng')
+        console.error('Error deleting room:', error)
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi xóa phòng')
       }
     }
   }
 
   const handleSaveRoom = async (e) => {
     e.preventDefault()
+
+    // Validate form
+    if (!roomForm.soPhong || !roomForm.tang || !roomForm.idKieuPhong) {
+      toast.error('Vui lòng điền đầy đủ thông tin')
+      return
+    }
+
     try {
       if (showEditModal) {
-        // TODO: Call API to update room
-        setRooms(prev => prev.map(room =>
-          room.id === selectedRoom.id
-            ? { ...room, ...roomForm, tang: parseInt(roomForm.tang) }
-            : room
-        ))
-        toast.success('Cập nhật phòng thành công!')
-      } else {
-        // Gọi API để tạo phòng mới
-        const response = await api.post('/api/phong/create', {
-          ...roomForm,
-          tang: parseInt(roomForm.tang)
-        })
+        // Call API to update room
+        const updateData = {
+          soPhong: roomForm.soPhong,
+          tang: parseInt(roomForm.tang),
+          hangPhong: { idHangPhong: parseInt(roomForm.idKieuPhong) },
+          trangThai: { idTt: roomForm.idTrangThai }
+        }
 
-        if (response.data.success) {
-          toast.success('Tạo phòng thành công!')
+        const response = await api.put(`/api/phong/update/${selectedRoom.soPhong}`, updateData)
+
+        if (response.data.statusCode === 200) {
+          toast.success('Cập nhật phòng thành công!')
           fetchRooms() // Refresh danh sách phòng
           setShowEditModal(false)
+          setSelectedRoom(null)
+        } else {
+          toast.error(response.data.message || 'Cập nhật phòng thất bại')
+        }
+      } else {
+        // Call API to create new room
+        const roomData = {
+          soPhong: roomForm.soPhong,
+          tang: parseInt(roomForm.tang),
+          hangPhong: { idHangPhong: parseInt(roomForm.idKieuPhong) },
+          trangThai: { idTt: roomForm.idTrangThai || 'TT001' }
+        }
+
+        const response = await api.post('/api/phong/create', roomData)
+
+        if (response.data.statusCode === 200) {
+          toast.success('Tạo phòng thành công!')
+          fetchRooms() // Refresh danh sách phòng
+          setShowAddModal(false)
           setRoomForm({
             soPhong: '',
             tang: '',
             idKieuPhong: '',
-            idLoaiPhong: '',
             idTrangThai: 'TT001',
             moTa: ''
           })
@@ -213,7 +250,8 @@ const RoomManagement = () => {
         }
       }
     } catch (error) {
-      toast.error('Có lỗi xảy ra khi lưu phòng')
+      console.error('Error saving room:', error)
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lưu phòng')
     }
   }
 
@@ -477,7 +515,7 @@ const RoomManagement = () => {
                       Sửa
                     </button>
                     <button
-                      onClick={() => handleDeleteRoom(room.id)}
+                      onClick={() => handleDeleteRoom(room.soPhong)}
                       className="flex-1 text-red-600 hover:text-red-800 text-sm font-medium"
                     >
                       <Trash2 className="w-4 h-4 inline mr-1" />
@@ -563,7 +601,7 @@ const RoomManagement = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Kiểu phòng
+                    Hạng phòng
                   </label>
                   <select
                     value={roomForm.idKieuPhong}
@@ -571,31 +609,12 @@ const RoomManagement = () => {
                     className="input"
                     required
                   >
-                    <option value="">Chọn kiểu phòng</option>
-                    <option value="KP01">Single</option>
-                    <option value="KP02">Double</option>
-                    <option value="KP03">Twin</option>
-                    <option value="KP04">Family</option>
-                    <option value="KP05">Suite</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Loại phòng
-                  </label>
-                  <select
-                    value={roomForm.idLoaiPhong}
-                    onChange={(e) => setRoomForm(prev => ({ ...prev, idLoaiPhong: e.target.value }))}
-                    className="input"
-                    required
-                  >
-                    <option value="">Chọn loại phòng</option>
-                    <option value="LP01">Standard</option>
-                    <option value="LP02">Superior</option>
-                    <option value="LP03">VIP</option>
-                    <option value="LP04">Deluxe</option>
-                    <option value="LP05">Executive</option>
+                    <option value="">Chọn hạng phòng</option>
+                    {hangPhongList.map((hangPhong) => (
+                      <option key={hangPhong.idHangPhong} value={hangPhong.idHangPhong}>
+                        {hangPhong.tenKp} - {hangPhong.tenLp} ({formatCurrency(hangPhong.giaPhong)})
+                      </option>
+                    ))}
                   </select>
                 </div>
 

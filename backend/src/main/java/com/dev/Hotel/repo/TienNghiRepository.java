@@ -13,8 +13,8 @@ import java.util.List;
 public interface TienNghiRepository extends JpaRepository<TienNghi, String> {
 
     @Query(value = "SELECT t.* FROM tiennghi t " +
-                    "INNER JOIN cttiennghi ct ON t.ID_TN = ct.ID_TN " +
-                    "WHERE ct.ID_HANG_PHONG = :idHangPhong", nativeQuery = true)
+            "INNER JOIN cttiennghi ct ON t.ID_TN = ct.ID_TN " +
+            "WHERE ct.ID_HANG_PHONG = :idHangPhong", nativeQuery = true)
     List<TienNghi> findByHangPhongIdNative(@Param("idHangPhong") Integer idHangPhong);
 
     // Method for HangPhong entity
@@ -25,4 +25,8 @@ public interface TienNghiRepository extends JpaRepository<TienNghi, String> {
     // Test query để kiểm tra dữ liệu
     @Query(value = "SELECT COUNT(*) FROM cttiennghi WHERE ID_HANG_PHONG = :idHangPhong", nativeQuery = true)
     Integer countTienNghiByHangPhong(@Param("idHangPhong") Integer idHangPhong);
+
+    // Query để tìm ID tiện ích lớn nhất
+    @Query("SELECT MAX(t.idTn) FROM TienNghi t WHERE t.idTn LIKE 'TN%'")
+    String findMaxTienNghiId();
 }

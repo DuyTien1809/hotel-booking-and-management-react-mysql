@@ -1,6 +1,6 @@
 package com.dev.Hotel.service.impl;
 
-import com.dev.Hotel.controller.TienNghiController.TienNghiRequest;
+import com.dev.Hotel.dto.TienNghiRequest;
 import com.dev.Hotel.dto.Response;
 import com.dev.Hotel.dto.TienNghiDTO;
 import com.dev.Hotel.entity.TienNghi;
@@ -25,7 +25,7 @@ public class TienNghiService implements ITienNghiService {
         try {
             List<TienNghi> tienNghiList = tienNghiRepository.findAll();
             List<TienNghiDTO> tienNghiDTOList = EntityDTOMapper.mapTienNghiListToDTO(tienNghiList);
-            
+
             response.setStatusCode(200);
             response.setMessage("Thành công");
             response.setTienNghiList(tienNghiDTOList);
@@ -42,9 +42,9 @@ public class TienNghiService implements ITienNghiService {
         try {
             TienNghi tienNghi = tienNghiRepository.findById(id)
                     .orElseThrow(() -> new OurException("Tiện ích không tồn tại"));
-            
+
             TienNghiDTO tienNghiDTO = EntityDTOMapper.mapTienNghiToDTO(tienNghi);
-            
+
             response.setStatusCode(200);
             response.setMessage("Thành công");
             response.setTienNghi(tienNghiDTO);
@@ -62,13 +62,19 @@ public class TienNghiService implements ITienNghiService {
     public Response addTienNghi(TienNghiRequest request) {
         Response response = new Response();
         try {
-            // Kiểm tra ID đã tồn tại
-            if (tienNghiRepository.existsById(request.getIdTn())) {
-                throw new OurException("ID tiện ích đã tồn tại");
+            // Auto-generate ID if not provided
+            String newId = request.getIdTn();
+            if (newId == null || newId.trim().isEmpty()) {
+                newId = generateNextTienNghiId();
+            } else {
+                // Check if manually provided ID already exists
+                if (tienNghiRepository.existsById(newId)) {
+                    throw new OurException("ID tiện ích đã tồn tại: " + newId);
+                }
             }
 
             TienNghi tienNghi = new TienNghi();
-            tienNghi.setIdTn(request.getIdTn());
+            tienNghi.setIdTn(newId);
             tienNghi.setTenTn(request.getTenTn());
             tienNghi.setIcon(request.getIcon());
 
@@ -76,7 +82,7 @@ public class TienNghiService implements ITienNghiService {
             TienNghiDTO tienNghiDTO = EntityDTOMapper.mapTienNghiToDTO(savedTienNghi);
 
             response.setStatusCode(200);
-            response.setMessage("Thêm tiện ích thành công");
+            response.setMessage("Thêm tiện ích thành công với ID: " + newId);
             response.setTienNghi(tienNghiDTO);
         } catch (OurException e) {
             response.setStatusCode(400);
@@ -86,6 +92,27 @@ public class TienNghiService implements ITienNghiService {
             response.setMessage("Lỗi khi thêm tiện ích: " + e.getMessage());
         }
         return response;
+    }
+
+    private String generateNextTienNghiId() {
+        try {
+            // Tìm ID lớn nhất hiện tại
+            String maxId = tienNghiRepository.findMaxTienNghiId();
+
+            if (maxId == null) {
+                return "TN001";
+            }
+
+            // Trích xuất số từ ID (ví dụ: TN001 -> 001)
+            String numberPart = maxId.substring(2);
+            int nextNumber = Integer.parseInt(numberPart) + 1;
+
+            // Format lại thành TN + 3 chữ số
+            return String.format("TN%03d", nextNumber);
+        } catch (Exception e) {
+            // Fallback nếu có lỗi
+            return "TN001";
+        }
     }
 
     @Override

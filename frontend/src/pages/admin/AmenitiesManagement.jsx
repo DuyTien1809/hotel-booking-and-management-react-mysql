@@ -77,8 +77,15 @@ const AmenitiesManagement = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
-    if (!formData.idTn || !formData.tenTn || !formData.icon) {
+
+    // Khi tạo mới, không cần kiểm tra idTn vì sẽ auto-generate
+    if (!editingAmenity && (!formData.tenTn || !formData.icon)) {
+      toast.error('Vui lòng điền đầy đủ thông tin')
+      return
+    }
+
+    // Khi edit, cần kiểm tra đầy đủ
+    if (editingAmenity && (!formData.idTn || !formData.tenTn || !formData.icon)) {
       toast.error('Vui lòng điền đầy đủ thông tin')
       return
     }
@@ -88,7 +95,10 @@ const AmenitiesManagement = () => {
       if (editingAmenity) {
         response = await api.put(`/api/tien-nghi/update/${editingAmenity.idTn}`, formData)
       } else {
-        response = await api.post('/api/tien-nghi/add', formData)
+        // Khi tạo mới, không gửi idTn để backend tự động tạo
+        const { idTn, ...dataToSend } = formData
+        console.log('Data to send:', dataToSend)
+        response = await api.post('/api/tien-nghi/add', dataToSend)
       }
 
       if (response.data.statusCode === 200) {
@@ -102,7 +112,8 @@ const AmenitiesManagement = () => {
       }
     } catch (error) {
       console.error('Error saving amenity:', error)
-      toast.error('Lỗi khi lưu tiện ích')
+      console.error('Error response:', error.response?.data)
+      toast.error(error.response?.data?.message || 'Lỗi khi lưu tiện ích')
     }
   }
 
@@ -232,23 +243,32 @@ const AmenitiesManagement = () => {
             <h2 className="text-xl font-bold mb-4">
               {editingAmenity ? 'Chỉnh sửa tiện ích' : 'Thêm tiện ích mới'}
             </h2>
+
+            {!editingAmenity && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  <span className="font-medium">💡 Lưu ý:</span> ID tiện ích sẽ được tự động tạo (TN001, TN002, ...)
+                </p>
+              </div>
+            )}
             
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  ID tiện ích
-                </label>
-                <input
-                  type="text"
-                  name="idTn"
-                  value={formData.idTn}
-                  onChange={handleInputChange}
-                  disabled={editingAmenity}
-                  className="input"
-                  placeholder="Nhập ID tiện ích"
-                  required
-                />
-              </div>
+              {editingAmenity && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    ID tiện ích
+                  </label>
+                  <input
+                    type="text"
+                    name="idTn"
+                    value={formData.idTn}
+                    onChange={handleInputChange}
+                    disabled={true}
+                    className="input bg-gray-100"
+                    placeholder="ID sẽ được tự động tạo"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
