@@ -32,7 +32,6 @@ com\dev\Hotel\entity\CtDichVu.class
 com\dev\Hotel\controller\TrangThaiController.class
 com\dev\Hotel\controller\PhongController.class
 com\dev\Hotel\dto\PhieuThueDTO.class
-com\dev\Hotel\entity\PhanQuyen.class
 com\dev\Hotel\repo\GiaHangPhongRepository.class
 com\dev\Hotel\controller\HealthController.class
 com\dev\Hotel\utils\Utils.class
@@ -133,7 +132,6 @@ com\dev\Hotel\entity\CtPhuThuId.class
 com\dev\Hotel\service\interfac\IServiceManagementService.class
 com\dev\Hotel\HotelApplication.class
 com\dev\Hotel\entity\HangPhong.class
-com\dev\Hotel\entity\PhanQuyenId.class
 com\dev\Hotel\dto\CreateInvoiceRequest$AdditionalChargeDTO.class
 com\dev\Hotel\dto\CtDichVuDTO.class
 com\dev\Hotel\service\impl\PhieuThueService.class
