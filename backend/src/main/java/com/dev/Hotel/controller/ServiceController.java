@@ -2,8 +2,11 @@ package com.dev.Hotel.controller;
 
 import com.dev.Hotel.dto.Response;
 import com.dev.Hotel.entity.DichVu;
+import com.dev.Hotel.entity.GiaDichVu;
+import com.dev.Hotel.entity.GiaDichVuId;
 import com.dev.Hotel.entity.PhuThu;
 import com.dev.Hotel.repo.DichVuRepository;
+import com.dev.Hotel.repo.GiaDichVuRepository;
 import com.dev.Hotel.repo.PhuThuRepository;
 import com.dev.Hotel.utils.EntityDTOMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +17,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/services")
@@ -22,6 +26,9 @@ public class ServiceController {
 
     @Autowired
     private DichVuRepository dichVuRepository;
+
+    @Autowired
+    private GiaDichVuRepository giaDichVuRepository;
 
     @Autowired
     private PhuThuRepository phuThuRepository;
@@ -90,23 +97,33 @@ public class ServiceController {
                 gia = new BigDecimal(giaStr);
             }
 
-            // Kiểm tra xem đã có giá cho dịch vụ này trong ngày hôm nay chưa
+            // Tạo hoặc cập nhật giá dịch vụ
             LocalDate today = LocalDate.now();
-            Integer existingPriceCount = jdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM gia_dich_vu WHERE ID_DV = ? AND NGAY_AP_DUNG = ?",
-                    Integer.class, savedDichVu.getIdDv(), today);
 
-            if (existingPriceCount != null && existingPriceCount > 0) {
-                // Nếu đã có giá trong ngày hôm nay, UPDATE thay vì INSERT
-                jdbcTemplate.update(
-                        "UPDATE gia_dich_vu SET GIA = ?, ID_NV = ? WHERE ID_DV = ? AND NGAY_AP_DUNG = ?",
-                        gia, null, savedDichVu.getIdDv(), today);
+            // Tạo composite key
+            GiaDichVuId giaDichVuId = new GiaDichVuId();
+            giaDichVuId.setIdDv(savedDichVu.getIdDv());
+            giaDichVuId.setNgayApDung(today);
+
+            // Kiểm tra xem đã có giá cho dịch vụ này trong ngày hôm nay chưa
+            Optional<GiaDichVu> existingPrice = giaDichVuRepository.findByIdDvAndNgayApDung(
+                    savedDichVu.getIdDv(), today);
+
+            if (existingPrice.isPresent()) {
+                // Nếu đã có giá trong ngày hôm nay, UPDATE
+                GiaDichVu giaDichVu = existingPrice.get();
+                giaDichVu.setGia(gia);
+                giaDichVu.setIdNv(null);
+                giaDichVuRepository.save(giaDichVu);
                 System.out.println("DEBUG: Updated existing price for " + savedDichVu.getIdDv());
             } else {
                 // Nếu chưa có, INSERT mới
-                jdbcTemplate.update(
-                        "INSERT INTO gia_dich_vu (ID_DV, NGAY_AP_DUNG, GIA, ID_NV) VALUES (?, ?, ?, ?)",
-                        savedDichVu.getIdDv(), today, gia, null);
+                GiaDichVu giaDichVu = new GiaDichVu();
+                giaDichVu.setId(giaDichVuId);
+                giaDichVu.setGia(gia);
+                giaDichVu.setIdNv(null);
+                giaDichVu.setDichVu(savedDichVu);
+                giaDichVuRepository.save(giaDichVu);
                 System.out.println("DEBUG: Inserted new price for " + savedDichVu.getIdDv());
             }
 
@@ -192,16 +209,28 @@ public class ServiceController {
                     LocalDate today = LocalDate.now();
                     String idNv = (String) request.get("idNv");
 
-                    // Thử UPDATE trước
-                    int rowsUpdated = jdbcTemplate.update(
-                            "UPDATE gia_dich_vu SET GIA = ?, ID_NV = ? WHERE ID_DV = ? AND NGAY_AP_DUNG = ?",
-                            price, idNv, id, today);
+                    // Tạo composite key
+                    GiaDichVuId giaDichVuId = new GiaDichVuId();
+                    giaDichVuId.setIdDv(id);
+                    giaDichVuId.setNgayApDung(today);
 
-                    // Nếu không có record nào được update, thì INSERT mới
-                    if (rowsUpdated == 0) {
-                        jdbcTemplate.update(
-                                "INSERT INTO gia_dich_vu (ID_DV, NGAY_AP_DUNG, GIA, ID_NV) VALUES (?, ?, ?, ?)",
-                                id, today, price, idNv);
+                    // Kiểm tra xem đã có giá cho dịch vụ này trong ngày hôm nay chưa
+                    Optional<GiaDichVu> existingPrice = giaDichVuRepository.findByIdDvAndNgayApDung(id, today);
+
+                    if (existingPrice.isPresent()) {
+                        // Nếu đã có giá trong ngày hôm nay, UPDATE
+                        GiaDichVu giaDichVu = existingPrice.get();
+                        giaDichVu.setGia(price);
+                        giaDichVu.setIdNv(idNv);
+                        giaDichVuRepository.save(giaDichVu);
+                    } else {
+                        // Nếu chưa có, INSERT mới
+                        GiaDichVu giaDichVu = new GiaDichVu();
+                        giaDichVu.setId(giaDichVuId);
+                        giaDichVu.setGia(price);
+                        giaDichVu.setIdNv(idNv);
+                        giaDichVu.setDichVu(updatedDichVu);
+                        giaDichVuRepository.save(giaDichVu);
                     }
                 }
 
@@ -250,16 +279,35 @@ public class ServiceController {
             BigDecimal price = new BigDecimal(request.get("price").toString());
             LocalDate today = LocalDate.now();
 
-            // Thử UPDATE trước
-            int rowsUpdated = jdbcTemplate.update(
-                    "UPDATE gia_dich_vu SET GIA = ?, ID_NV = ? WHERE ID_DV = ? AND NGAY_AP_DUNG = ?",
-                    price, null, id, today);
+            // Tạo composite key
+            GiaDichVuId giaDichVuId = new GiaDichVuId();
+            giaDichVuId.setIdDv(id);
+            giaDichVuId.setNgayApDung(today);
 
-            // Nếu không có record nào được update, thì INSERT mới
-            if (rowsUpdated == 0) {
-                jdbcTemplate.update(
-                        "INSERT INTO gia_dich_vu (ID_DV, NGAY_AP_DUNG, GIA, ID_NV) VALUES (?, ?, ?, ?)",
-                        id, today, price, null);
+            // Kiểm tra xem đã có giá cho dịch vụ này trong ngày hôm nay chưa
+            Optional<GiaDichVu> existingPrice = giaDichVuRepository.findByIdDvAndNgayApDung(id, today);
+
+            if (existingPrice.isPresent()) {
+                // Nếu đã có giá trong ngày hôm nay, UPDATE
+                GiaDichVu giaDichVu = existingPrice.get();
+                giaDichVu.setGia(price);
+                giaDichVu.setIdNv(null);
+                giaDichVuRepository.save(giaDichVu);
+            } else {
+                // Nếu chưa có, INSERT mới
+                Optional<DichVu> dichVuOpt = dichVuRepository.findById(id);
+                if (dichVuOpt.isPresent()) {
+                    GiaDichVu giaDichVu = new GiaDichVu();
+                    giaDichVu.setId(giaDichVuId);
+                    giaDichVu.setGia(price);
+                    giaDichVu.setIdNv(null);
+                    giaDichVu.setDichVu(dichVuOpt.get());
+                    giaDichVuRepository.save(giaDichVu);
+                } else {
+                    response.setStatusCode(404);
+                    response.setMessage("Dịch vụ không tồn tại");
+                    return ResponseEntity.ok(response);
+                }
             }
 
             response.setStatusCode(200);

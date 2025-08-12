@@ -8,7 +8,7 @@ import java.time.LocalDate;
 
 @Data
 @Embeddable
-class GiaDichVuId implements Serializable {
+public class GiaDichVuId implements Serializable {
     @Column(name = "ID_DV")
     private String idDv;
 

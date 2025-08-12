@@ -7,26 +7,6 @@ import java.time.LocalDate;
 
 @Data
 @Entity
-@Table(name = "gia_dich_vu")
-class GiaDichVu {
-    @EmbeddedId
-    private GiaDichVuId id;
-
-    @Column(name = "GIA")
-    private BigDecimal gia;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("idDv")
-    @JoinColumn(name = "ID_DV")
-    private DichVu dichVu;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_NV")
-    private NhanVien nhanVien;
-}
-
-@Data
-@Entity
 @Table(name = "ctkhuyenmai")
 class CtKhuyenMai {
     @EmbeddedId
