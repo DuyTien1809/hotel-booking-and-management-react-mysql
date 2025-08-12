@@ -11,7 +11,9 @@ import {
   UserPlus,
   Building,
   Settings,
-  Users
+  Users,
+  RefreshCw,
+  FileText
 } from 'lucide-react'
 
 const StaffDashboard = () => {
@@ -115,7 +117,9 @@ const StaffDashboard = () => {
       <StaffStatsCards stats={stats} />
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="space-y-6">
+        {/* First row - 4 main actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Link to="/staff/reservations" className="card hover:shadow-lg transition-shadow">
           <div className="text-center">
             <div className="p-4 bg-blue-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
@@ -126,67 +130,90 @@ const StaffDashboard = () => {
           </div>
         </Link>
 
-        <Link to="/staff/checkin" className="card hover:shadow-lg transition-shadow">
-          <div className="text-center">
-            <div className="p-4 bg-green-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <UserCheck className="w-8 h-8 text-green-600" />
+          <Link to="/staff/checkin" className="card hover:shadow-lg transition-shadow">
+            <div className="text-center">
+              <div className="p-4 bg-green-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <UserCheck className="w-8 h-8 text-green-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Check-in</h3>
+              <p className="text-gray-600">Thực hiện check-in cho khách hàng</p>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Check-in</h3>
-            <p className="text-gray-600">Thực hiện check-in cho khách hàng</p>
-          </div>
-        </Link>
+          </Link>
 
-        <Link to="/staff/checkout" className="card hover:shadow-lg transition-shadow">
-          <div className="text-center">
-            <div className="p-4 bg-purple-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <UserX className="w-8 h-8 text-purple-600" />
+          <Link to="/staff/checkout" className="card hover:shadow-lg transition-shadow">
+            <div className="text-center">
+              <div className="p-4 bg-purple-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <UserX className="w-8 h-8 text-purple-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Check-out</h3>
+              <p className="text-gray-600">Thực hiện check-out cho khách hàng</p>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Check-out</h3>
-            <p className="text-gray-600">Thực hiện check-out cho khách hàng</p>
-          </div>
-        </Link>
+          </Link>
 
-
-
-        <Link to="/staff/walkin" className="card hover:shadow-lg transition-shadow">
-          <div className="text-center">
-            <div className="p-4 bg-teal-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <UserPlus className="w-8 h-8 text-teal-600" />
+          <Link to="/staff/walkin" className="card hover:shadow-lg transition-shadow">
+            <div className="text-center">
+              <div className="p-4 bg-teal-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <UserPlus className="w-8 h-8 text-teal-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Walk-in Check-in</h3>
+              <p className="text-gray-600">Check-in khách không đặt trước</p>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Walk-in Check-in</h3>
-            <p className="text-gray-600">Check-in khách không đặt trước</p>
-          </div>
-        </Link>
+          </Link>
+        </div>
 
-        <Link to="/staff/rooms" className="card hover:shadow-lg transition-shadow">
-          <div className="text-center">
-            <div className="p-4 bg-indigo-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <Building className="w-8 h-8 text-indigo-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Quản lý phòng</h3>
-            <p className="text-gray-600">Quản lý thông tin phòng khách sạn</p>
-          </div>
-        </Link>
+        {/* Second row - 6 management actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
 
-        <Link to="/staff/services" className="card hover:shadow-lg transition-shadow">
-          <div className="text-center">
-            <div className="p-4 bg-purple-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <Settings className="w-8 h-8 text-purple-600" />
+          <Link to="/staff/rooms" className="card hover:shadow-lg transition-shadow">
+            <div className="text-center">
+              <div className="p-4 bg-indigo-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Building className="w-8 h-8 text-indigo-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Quản lý phòng</h3>
+              <p className="text-gray-600">Quản lý thông tin phòng khách sạn</p>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Dịch vụ & Phụ thu</h3>
-            <p className="text-gray-600">Quản lý dịch vụ và phụ thu khách sạn</p>
-          </div>
-        </Link>
+          </Link>
 
-        <Link to="/staff/rentals" className="card hover:shadow-lg transition-shadow">
-          <div className="text-center">
-            <div className="p-4 bg-orange-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <Users className="w-8 h-8 text-orange-600" />
+          <Link to="/staff/services" className="card hover:shadow-lg transition-shadow">
+            <div className="text-center">
+              <div className="p-4 bg-purple-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Settings className="w-8 h-8 text-purple-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Dịch vụ & Phụ thu</h3>
+              <p className="text-gray-600">Quản lý dịch vụ và phụ thu khách sạn</p>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Quản lý thuê phòng</h3>
-            <p className="text-gray-600">Quản lý chi tiết phiếu thuê và khách ở</p>
-          </div>
-        </Link>
+          </Link>
+
+          <Link to="/staff/rentals" className="card hover:shadow-lg transition-shadow">
+            <div className="text-center">
+              <div className="p-4 bg-orange-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Users className="w-8 h-8 text-orange-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Quản lý thuê phòng</h3>
+              <p className="text-gray-600">Quản lý chi tiết phiếu thuê và khách ở</p>
+            </div>
+          </Link>
+
+          <Link to="/staff/room-changes" className="card hover:shadow-lg transition-shadow">
+            <div className="text-center">
+              <div className="p-4 bg-cyan-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <RefreshCw className="w-8 h-8 text-cyan-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Quản lý đổi phòng</h3>
+              <p className="text-gray-600">Theo dõi và xử lý yêu cầu đổi phòng</p>
+            </div>
+          </Link>
+
+          <Link to="/staff/invoices" className="card hover:shadow-lg transition-shadow">
+            <div className="text-center">
+              <div className="p-4 bg-emerald-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <FileText className="w-8 h-8 text-emerald-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Quản lý hóa đơn</h3>
+              <p className="text-gray-600">Xem và quản lý hóa đơn thanh toán</p>
+            </div>
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
