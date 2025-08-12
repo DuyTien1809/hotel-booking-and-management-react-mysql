@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/nhanvien")
 @CrossOrigin(origins = "*")
@@ -18,8 +20,8 @@ public class NhanVienController {
 
     @PostMapping("/register")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<Response> register(@RequestBody NhanVien nhanVien) {
-        Response response = nhanVienService.register(nhanVien);
+    public ResponseEntity<Response> register(@RequestBody Map<String, Object> requestData) {
+        Response response = nhanVienService.registerFromMap(requestData);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 

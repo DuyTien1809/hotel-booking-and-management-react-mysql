@@ -261,6 +261,7 @@ const StaffManagement = () => {
       setSelectedStaff(null)
     } catch (error) {
       console.error('Error saving staff:', error)
+      console.error('Error response:', error.response?.data)
       toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lưu nhân viên')
     }
   }

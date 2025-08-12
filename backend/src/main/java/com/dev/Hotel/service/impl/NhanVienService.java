@@ -3,8 +3,12 @@ package com.dev.Hotel.service.impl;
 import com.dev.Hotel.dto.LoginRequest;
 import com.dev.Hotel.dto.Response;
 import com.dev.Hotel.entity.NhanVien;
+import com.dev.Hotel.entity.BoPhan;
+import com.dev.Hotel.entity.NhomQuyen;
 import com.dev.Hotel.exception.OurException;
 import com.dev.Hotel.repo.NhanVienRepository;
+import com.dev.Hotel.repo.BoPhanRepository;
+import com.dev.Hotel.repo.NhomQuyenRepository;
 import com.dev.Hotel.service.EmailService;
 import com.dev.Hotel.service.interfac.INhanVienService;
 import com.dev.Hotel.utils.EntityDTOMapper;
@@ -17,12 +21,20 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
+import java.time.LocalDate;
 
 @Service
 public class NhanVienService implements INhanVienService {
 
     @Autowired
     private NhanVienRepository nhanVienRepository;
+
+    @Autowired
+    private BoPhanRepository boPhanRepository;
+
+    @Autowired
+    private NhomQuyenRepository nhomQuyenRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -121,7 +133,7 @@ public class NhanVienService implements INhanVienService {
             if (nhanVien.getEmail() != null && nhanVienRepository.existsByEmail(nhanVien.getEmail())) {
                 throw new OurException("Email đã tồn tại: " + nhanVien.getEmail());
             }
-            if (nhanVienRepository.existsByUsername(nhanVien.getUsername())) {
+            if (nhanVien.getUsername() != null && nhanVienRepository.existsByUsername(nhanVien.getUsername())) {
                 throw new OurException("Username đã tồn tại: " + nhanVien.getUsername());
             }
 
@@ -129,12 +141,111 @@ public class NhanVienService implements INhanVienService {
             String newEmployeeId = generateNextEmployeeId();
             nhanVien.setIdNv(newEmployeeId);
 
+            // Set BoPhan and NhomQuyen objects if IDs are provided
+            // Note: Frontend sends idBp and idNq as separate fields, need to create objects
+            if (nhanVien.getBoPhan() != null && nhanVien.getBoPhan().getIdBp() != null) {
+                BoPhan boPhan = boPhanRepository.findById(nhanVien.getBoPhan().getIdBp()).orElse(null);
+                nhanVien.setBoPhan(boPhan);
+            }
+
+            if (nhanVien.getNhomQuyen() != null && nhanVien.getNhomQuyen().getIdNq() != null) {
+                NhomQuyen nhomQuyen = nhomQuyenRepository.findById(nhanVien.getNhomQuyen().getIdNq()).orElse(null);
+                nhanVien.setNhomQuyen(nhomQuyen);
+            }
+
             nhanVien.setPassword(passwordEncoder.encode(nhanVien.getPassword()));
             NhanVien savedNhanVien = nhanVienRepository.save(nhanVien);
 
             response.setStatusCode(200);
             response.setMessage("Đăng ký nhân viên thành công với ID: " + newEmployeeId);
-            // Note: Set nhanVien field in response - will be added to Response DTO
+
+        } catch (OurException e) {
+            response.setStatusCode(400);
+            response.setMessage(e.getMessage());
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi trong quá trình đăng ký: " + e.getMessage());
+        }
+        return response;
+    }
+
+    @Override
+    public Response registerFromMap(Map<String, Object> requestData) {
+        Response response = new Response();
+        try {
+            // Create NhanVien object from Map
+            NhanVien nhanVien = new NhanVien();
+
+            // Set basic fields
+            nhanVien.setHo((String) requestData.get("ho"));
+            nhanVien.setTen((String) requestData.get("ten"));
+            nhanVien.setEmail((String) requestData.get("email"));
+            nhanVien.setSdt((String) requestData.get("sdt"));
+            nhanVien.setDiaChi((String) requestData.get("diaChi"));
+            nhanVien.setPhai((String) requestData.get("phai"));
+            nhanVien.setUsername((String) requestData.get("username"));
+            nhanVien.setPassword((String) requestData.get("password"));
+
+            // Parse ngaySinh if provided
+            String ngaySinhStr = (String) requestData.get("ngaySinh");
+            if (ngaySinhStr != null && !ngaySinhStr.isEmpty()) {
+                nhanVien.setNgaySinh(LocalDate.parse(ngaySinhStr));
+            }
+
+            // Validate required fields
+            if (nhanVien.getUsername() == null || nhanVien.getUsername().trim().isEmpty()) {
+                throw new OurException("Username không được để trống");
+            }
+            if (nhanVien.getPassword() == null || nhanVien.getPassword().trim().isEmpty()) {
+                throw new OurException("Password không được để trống");
+            }
+            if (nhanVien.getHo() == null || nhanVien.getHo().trim().isEmpty()) {
+                throw new OurException("Họ không được để trống");
+            }
+            if (nhanVien.getTen() == null || nhanVien.getTen().trim().isEmpty()) {
+                throw new OurException("Tên không được để trống");
+            }
+
+            // Check for existing email and username
+            if (nhanVien.getEmail() != null && nhanVienRepository.existsByEmail(nhanVien.getEmail())) {
+                throw new OurException("Email đã tồn tại: " + nhanVien.getEmail());
+            }
+            if (nhanVienRepository.existsByUsername(nhanVien.getUsername())) {
+                throw new OurException("Username đã tồn tại: " + nhanVien.getUsername());
+            }
+
+            // Auto-generate ID
+            String newEmployeeId = generateNextEmployeeId();
+            nhanVien.setIdNv(newEmployeeId);
+
+            // Set BoPhan if provided
+            String idBp = (String) requestData.get("idBp");
+            if (idBp != null && !idBp.trim().isEmpty()) {
+                BoPhan boPhan = boPhanRepository.findById(idBp).orElse(null);
+                if (boPhan != null) {
+                    nhanVien.setBoPhan(boPhan);
+                } else {
+                    throw new OurException("Không tìm thấy bộ phận với ID: " + idBp);
+                }
+            }
+
+            // Set NhomQuyen if provided
+            String idNq = (String) requestData.get("idNq");
+            if (idNq != null && !idNq.trim().isEmpty()) {
+                NhomQuyen nhomQuyen = nhomQuyenRepository.findById(idNq).orElse(null);
+                if (nhomQuyen != null) {
+                    nhanVien.setNhomQuyen(nhomQuyen);
+                } else {
+                    throw new OurException("Không tìm thấy nhóm quyền với ID: " + idNq);
+                }
+            }
+
+            // Encode password and save
+            nhanVien.setPassword(passwordEncoder.encode(nhanVien.getPassword()));
+            nhanVienRepository.save(nhanVien);
+
+            response.setStatusCode(200);
+            response.setMessage("Đăng ký nhân viên thành công với ID: " + newEmployeeId);
 
         } catch (OurException e) {
             response.setStatusCode(400);
