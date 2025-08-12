@@ -15,6 +15,9 @@ public interface NhanVienRepository extends JpaRepository<NhanVien, String> {
 
     boolean existsByUsername(String username);
 
+    @Query("SELECT MAX(nv.idNv) FROM NhanVien nv WHERE nv.idNv LIKE 'NV%'")
+    String findMaxEmployeeId();
+
     Optional<NhanVien> findByEmail(String email);
 
     Optional<NhanVien> findByUsername(String username);

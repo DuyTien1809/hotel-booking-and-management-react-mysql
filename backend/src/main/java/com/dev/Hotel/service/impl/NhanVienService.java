@@ -98,22 +98,42 @@ public class NhanVienService implements INhanVienService {
         }
     }
 
+    private String generateNextEmployeeId() {
+        // Lấy ID nhân viên lớn nhất hiện tại
+        String maxId = nhanVienRepository.findMaxEmployeeId();
+
+        if (maxId == null || maxId.isEmpty()) {
+            return "NV01"; // ID đầu tiên
+        }
+
+        // Lấy số từ ID (bỏ prefix "NV")
+        String numberPart = maxId.substring(2);
+        int nextNumber = Integer.parseInt(numberPart) + 1;
+
+        // Format với 2 chữ số, có leading zero
+        return String.format("NV%02d", nextNumber);
+    }
+
     @Override
     public Response register(NhanVien nhanVien) {
         Response response = new Response();
         try {
-            if (nhanVienRepository.existsByEmail(nhanVien.getEmail())) {
+            if (nhanVien.getEmail() != null && nhanVienRepository.existsByEmail(nhanVien.getEmail())) {
                 throw new OurException("Email đã tồn tại: " + nhanVien.getEmail());
             }
             if (nhanVienRepository.existsByUsername(nhanVien.getUsername())) {
                 throw new OurException("Username đã tồn tại: " + nhanVien.getUsername());
             }
 
+            // Tự động generate ID nhân viên
+            String newEmployeeId = generateNextEmployeeId();
+            nhanVien.setIdNv(newEmployeeId);
+
             nhanVien.setPassword(passwordEncoder.encode(nhanVien.getPassword()));
             NhanVien savedNhanVien = nhanVienRepository.save(nhanVien);
 
             response.setStatusCode(200);
-            response.setMessage("Đăng ký nhân viên thành công");
+            response.setMessage("Đăng ký nhân viên thành công với ID: " + newEmployeeId);
             // Note: Set nhanVien field in response - will be added to Response DTO
 
         } catch (OurException e) {

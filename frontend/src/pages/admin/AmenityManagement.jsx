@@ -19,6 +19,7 @@ import {
 import Pagination from '../../components/common/Pagination'
 import toast from 'react-hot-toast'
 import { api } from '../../services/api'
+import AmenityIcon from '../../components/common/AmenityIcon.jsx'
 
 const AmenityManagement = () => {
   const [amenities, setAmenities] = useState([])
@@ -447,7 +448,7 @@ const AmenityManagement = () => {
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center space-x-3">
                       <div className="p-2 bg-gray-100 rounded-lg">
-                        {getIconComponent(amenity.icon)}
+                        <AmenityIcon amenity={amenity} className="w-8 h-8" />
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 truncate">
@@ -722,7 +723,7 @@ const AmenityManagement = () => {
               <div className="space-y-4">
                 <div className="flex items-center space-x-4 mb-6">
                   <div className="p-4 bg-gray-100 rounded-lg">
-                    {getIconComponent(selectedAmenity.icon)}
+                    <AmenityIcon amenity={selectedAmenity} className="w-8 h-8" showTooltip={true} />
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900">{selectedAmenity.tenTienNghi}</h2>

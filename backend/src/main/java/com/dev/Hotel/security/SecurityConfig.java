@@ -30,11 +30,11 @@ import com.dev.Hotel.service.CustomUserDetailsService;
 @EnableWebSecurity
 public class SecurityConfig {
 
-
     @Autowired
     private CustomUserDetailsService customUserDetailsService;
-//    @Autowired
-//    private JWTAuthFilter jwtAuthFilter;
+
+    @Autowired
+    private JWTAuthFilter jwtAuthFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
@@ -42,11 +42,13 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(request -> request
                         .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/api/**", "/rooms/**", "/bookings/**", "/images/**", "/health", "/actuator/**").permitAll()
-                        .anyRequest().authenticated())
+                        .requestMatchers("/api/**", "/rooms/**", "/bookings/**", "/images/**", "/health",
+                                "/actuator/**")
+                        .permitAll()
+                        .anyRequest().permitAll())
                 .sessionManagement(manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authenticationProvider(authenticationProvider());
-//                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return httpSecurity.build();
     }
@@ -78,8 +80,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+            throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 }
-

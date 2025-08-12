@@ -129,6 +129,11 @@ public class RoomAvailabilityService implements IRoomAvailabilityService {
                                     checkOut);
                             dto.setAveragePrice(averagePrice);
 
+                            // Get price segments for detailed breakdown
+                            List<RoomPricingService.PriceSegment> priceSegments = roomPricingService
+                                    .getPriceSegments(idHangPhong, checkIn, checkOut);
+                            dto.setPriceSegments(new ArrayList<>(priceSegments));
+
                             System.out.println("Found price for room " + idHangPhong + ": current=" + giaHienTai
                                     + ", total=" + totalPrice);
                         } catch (Exception priceException) {
@@ -214,8 +219,8 @@ public class RoomAvailabilityService implements IRoomAvailabilityService {
         try {
             System.out.println("Enriching details for room " + idHangPhong);
 
-            // Lấy thông tin HangPhong
-            Optional<HangPhong> hangPhongOpt = hangPhongRepository.findById(idHangPhong);
+            // Lấy thông tin HangPhong với eager loading cho images
+            Optional<HangPhong> hangPhongOpt = hangPhongRepository.findByIdWithImages(idHangPhong);
             if (hangPhongOpt.isPresent()) {
                 HangPhong hangPhong = hangPhongOpt.get();
                 System.out.println("Found HangPhong: " + hangPhong.getIdHangPhong());

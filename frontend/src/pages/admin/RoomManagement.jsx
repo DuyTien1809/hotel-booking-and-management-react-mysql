@@ -10,11 +10,13 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Calendar
 } from 'lucide-react'
 import Pagination from '../../components/common/Pagination'
 import toast from 'react-hot-toast'
 import { api } from '../../services/api'
+import { formatCurrency } from '../../utils/formatters'
 
 const RoomManagement = () => {
   const [rooms, setRooms] = useState([])
@@ -24,7 +26,8 @@ const RoomManagement = () => {
   const [roomsPerPage] = useState(12)
   const [filters, setFilters] = useState({
     searchTerm: '',
-    roomType: '',
+    kieuPhong: '',
+    loaiPhong: '',
     status: '',
     floor: ''
   })
@@ -35,6 +38,7 @@ const RoomManagement = () => {
     soPhong: '',
     tang: '',
     idKieuPhong: '',
+    idLoaiPhong: '',
     idTrangThai: '',
     moTa: ''
   })
@@ -78,9 +82,14 @@ const RoomManagement = () => {
       )
     }
 
-    // Filter by room type
-    if (currentFilters.roomType) {
-      filtered = filtered.filter(room => room.tenKp === currentFilters.roomType)
+    // Filter by kiểu phòng (room type)
+    if (currentFilters.kieuPhong) {
+      filtered = filtered.filter(room => room.tenKp === currentFilters.kieuPhong)
+    }
+
+    // Filter by loại phòng (room category)
+    if (currentFilters.loaiPhong) {
+      filtered = filtered.filter(room => room.tenLp === currentFilters.loaiPhong)
     }
 
     // Filter by status
@@ -100,7 +109,8 @@ const RoomManagement = () => {
   const clearFilters = () => {
     setFilters({
       searchTerm: '',
-      roomType: '',
+      kieuPhong: '',
+      loaiPhong: '',
       status: '',
       floor: ''
     })
@@ -111,9 +121,10 @@ const RoomManagement = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'Trống': return 'text-green-600 bg-green-100'
-      case 'Đã thuê': return 'text-blue-600 bg-blue-100'
-      case 'Bảo trì': return 'text-red-600 bg-red-100'
-      case 'Dọn dẹp': return 'text-yellow-600 bg-yellow-100'
+      case 'Đã có khách': return 'text-blue-600 bg-blue-100'
+      case 'Đang dọn dẹp': return 'text-yellow-600 bg-yellow-100'
+      case 'Đang bảo trì': return 'text-red-600 bg-red-100'
+      case 'Đã đặt': return 'text-purple-600 bg-purple-100'
       default: return 'text-gray-600 bg-gray-100'
     }
   }
@@ -121,9 +132,10 @@ const RoomManagement = () => {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'Trống': return <CheckCircle className="w-4 h-4" />
-      case 'Đã thuê': return <Clock className="w-4 h-4" />
-      case 'Bảo trì': return <XCircle className="w-4 h-4" />
-      case 'Dọn dẹp': return <AlertCircle className="w-4 h-4" />
+      case 'Đã có khách': return <Clock className="w-4 h-4" />
+      case 'Đang dọn dẹp': return <AlertCircle className="w-4 h-4" />
+      case 'Đang bảo trì': return <XCircle className="w-4 h-4" />
+      case 'Đã đặt': return <Calendar className="w-4 h-4" />
       default: return <Clock className="w-4 h-4" />
     }
   }
@@ -133,7 +145,8 @@ const RoomManagement = () => {
       soPhong: '',
       tang: '',
       idKieuPhong: '',
-      idTrangThai: '1',
+      idLoaiPhong: '',
+      idTrangThai: 'TT001',
       moTa: ''
     })
     setShowAddModal(true)
@@ -144,9 +157,10 @@ const RoomManagement = () => {
     setRoomForm({
       soPhong: room.soPhong,
       tang: room.tang.toString(),
-      idKieuPhong: room.idKieuPhong || '1',
-      idTrangThai: room.idTrangThai.toString(),
-      moTa: room.moTa
+      idKieuPhong: room.idKp || '',
+      idLoaiPhong: room.idLp || '',
+      idTrangThai: room.idTt || '',
+      moTa: room.moTa || ''
     })
     setShowEditModal(true)
   }
@@ -189,9 +203,10 @@ const RoomManagement = () => {
           setRoomForm({
             soPhong: '',
             tang: '',
-            maKp: '',
-            maLp: '',
-            maTrangThai: ''
+            idKieuPhong: '',
+            idLoaiPhong: '',
+            idTrangThai: 'TT001',
+            moTa: ''
           })
         } else {
           toast.error(response.data.message || 'Tạo phòng thất bại')
@@ -235,58 +250,74 @@ const RoomManagement = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <div className="card">
-          <div className="flex items-center">
-            <div className="p-3 bg-blue-100 rounded-full">
+          <div className="text-center">
+            <div className="p-3 bg-blue-100 rounded-full w-12 h-12 mx-auto mb-2 flex items-center justify-center">
               <Building className="w-6 h-6 text-blue-600" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Tổng phòng</p>
-              <p className="text-2xl font-bold text-gray-900">{rooms.length}</p>
-            </div>
+            <p className="text-sm font-medium text-gray-600">Tổng phòng</p>
+            <p className="text-2xl font-bold text-gray-900">{rooms.length}</p>
           </div>
         </div>
 
         <div className="card">
-          <div className="flex items-center">
-            <div className="p-3 bg-green-100 rounded-full">
+          <div className="text-center">
+            <div className="p-3 bg-green-100 rounded-full w-12 h-12 mx-auto mb-2 flex items-center justify-center">
               <CheckCircle className="w-6 h-6 text-green-600" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Phòng trống</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {rooms.filter(r => r.tenTrangThai === 'Trống').length}
-              </p>
-            </div>
+            <p className="text-sm font-medium text-gray-600">Trống</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {rooms.filter(r => r.tenTrangThai === 'Trống').length}
+            </p>
           </div>
         </div>
 
         <div className="card">
-          <div className="flex items-center">
-            <div className="p-3 bg-blue-100 rounded-full">
+          <div className="text-center">
+            <div className="p-3 bg-blue-100 rounded-full w-12 h-12 mx-auto mb-2 flex items-center justify-center">
               <Clock className="w-6 h-6 text-blue-600" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Đã thuê</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {rooms.filter(r => r.tenTrangThai === 'Đã thuê').length}
-              </p>
-            </div>
+            <p className="text-sm font-medium text-gray-600">Đã có khách</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {rooms.filter(r => r.tenTrangThai === 'Đã có khách').length}
+            </p>
           </div>
         </div>
 
         <div className="card">
-          <div className="flex items-center">
-            <div className="p-3 bg-red-100 rounded-full">
+          <div className="text-center">
+            <div className="p-3 bg-yellow-100 rounded-full w-12 h-12 mx-auto mb-2 flex items-center justify-center">
+              <AlertCircle className="w-6 h-6 text-yellow-600" />
+            </div>
+            <p className="text-sm font-medium text-gray-600">Đang dọn dẹp</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {rooms.filter(r => r.tenTrangThai === 'Đang dọn dẹp').length}
+            </p>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="text-center">
+            <div className="p-3 bg-red-100 rounded-full w-12 h-12 mx-auto mb-2 flex items-center justify-center">
               <XCircle className="w-6 h-6 text-red-600" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Bảo trì</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {rooms.filter(r => r.tenTrangThai === 'Bảo trì').length}
-              </p>
+            <p className="text-sm font-medium text-gray-600">Đang bảo trì</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {rooms.filter(r => r.tenTrangThai === 'Đang bảo trì').length}
+            </p>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="text-center">
+            <div className="p-3 bg-purple-100 rounded-full w-12 h-12 mx-auto mb-2 flex items-center justify-center">
+              <Calendar className="w-6 h-6 text-purple-600" />
             </div>
+            <p className="text-sm font-medium text-gray-600">Đã đặt</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {rooms.filter(r => r.tenTrangThai === 'Đã đặt').length}
+            </p>
           </div>
         </div>
       </div>
@@ -298,7 +329,7 @@ const RoomManagement = () => {
           <h2 className="text-xl font-semibold text-gray-900">Tìm kiếm và lọc</h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           {/* Search */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -313,21 +344,41 @@ const RoomManagement = () => {
             />
           </div>
 
-          {/* Room Type Filter */}
+          {/* Kiểu phòng Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Kiểu phòng
+            </label>
+            <select
+              value={filters.kieuPhong}
+              onChange={(e) => handleFilterChange('kieuPhong', e.target.value)}
+              className="input"
+            >
+              <option value="">Tất cả</option>
+              <option value="Single">Single</option>
+              <option value="Double">Double</option>
+              <option value="Twin">Twin</option>
+              <option value="Family">Family</option>
+              <option value="Suite">Suite</option>
+            </select>
+          </div>
+
+          {/* Loại phòng Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Loại phòng
             </label>
             <select
-              value={filters.roomType}
-              onChange={(e) => handleFilterChange('roomType', e.target.value)}
+              value={filters.loaiPhong}
+              onChange={(e) => handleFilterChange('loaiPhong', e.target.value)}
               className="input"
             >
               <option value="">Tất cả</option>
               <option value="Standard">Standard</option>
-              <option value="Deluxe">Deluxe</option>
-              <option value="Suite">Suite</option>
+              <option value="Superior">Superior</option>
               <option value="VIP">VIP</option>
+              <option value="Deluxe">Deluxe</option>
+              <option value="Executive">Executive</option>
             </select>
           </div>
 
@@ -343,9 +394,10 @@ const RoomManagement = () => {
             >
               <option value="">Tất cả</option>
               <option value="Trống">Trống</option>
-              <option value="Đã thuê">Đã thuê</option>
-              <option value="Bảo trì">Bảo trì</option>
-              <option value="Dọn dẹp">Dọn dẹp</option>
+              <option value="Đã có khách">Đã có khách</option>
+              <option value="Đang dọn dẹp">Đang dọn dẹp</option>
+              <option value="Đang bảo trì">Đang bảo trì</option>
+              <option value="Đã đặt">Đã đặt</option>
             </select>
           </div>
 
@@ -390,8 +442,8 @@ const RoomManagement = () => {
         {filteredRooms.length > 0 ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {currentRooms.map((room) => (
-                <div key={room.id} className="border rounded-lg p-4 hover:shadow-lg transition-shadow">
+              {currentRooms.map((room, index) => (
+                <div key={room.soPhong || room.id || index} className="border rounded-lg p-4 hover:shadow-lg transition-shadow">
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900">
@@ -409,7 +461,7 @@ const RoomManagement = () => {
                     <div><span className="font-medium">Loại:</span> {room.tenKp}</div>
                     <div><span className="font-medium">Giường:</span> {room.tenLp}</div>
                     <div><span className="font-medium">Diện tích:</span> {room.dienTich}m²</div>
-                    <div><span className="font-medium">Giá:</span> {room.giaPhong?.toLocaleString('vi-VN')} VNĐ</div>
+                    <div><span className="font-medium">Giá:</span> {formatCurrency(room.giaPhong)}</div>
                   </div>
 
                   <div className="flex space-x-2">
@@ -511,6 +563,44 @@ const RoomManagement = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Kiểu phòng
+                  </label>
+                  <select
+                    value={roomForm.idKieuPhong}
+                    onChange={(e) => setRoomForm(prev => ({ ...prev, idKieuPhong: e.target.value }))}
+                    className="input"
+                    required
+                  >
+                    <option value="">Chọn kiểu phòng</option>
+                    <option value="KP01">Single</option>
+                    <option value="KP02">Double</option>
+                    <option value="KP03">Twin</option>
+                    <option value="KP04">Family</option>
+                    <option value="KP05">Suite</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Loại phòng
+                  </label>
+                  <select
+                    value={roomForm.idLoaiPhong}
+                    onChange={(e) => setRoomForm(prev => ({ ...prev, idLoaiPhong: e.target.value }))}
+                    className="input"
+                    required
+                  >
+                    <option value="">Chọn loại phòng</option>
+                    <option value="LP01">Standard</option>
+                    <option value="LP02">Superior</option>
+                    <option value="LP03">VIP</option>
+                    <option value="LP04">Deluxe</option>
+                    <option value="LP05">Executive</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Trạng thái
                   </label>
                   <select
@@ -519,10 +609,11 @@ const RoomManagement = () => {
                     className="input"
                     required
                   >
-                    <option value="1">Trống</option>
-                    <option value="2">Đã thuê</option>
-                    <option value="3">Bảo trì</option>
-                    <option value="4">Dọn dẹp</option>
+                    <option value="TT001">Trống</option>
+                    <option value="TT002">Đã có khách</option>
+                    <option value="TT003">Đang dọn dẹp</option>
+                    <option value="TT004">Đang bảo trì</option>
+                    <option value="TT005">Đã đặt</option>
                   </select>
                 </div>
 

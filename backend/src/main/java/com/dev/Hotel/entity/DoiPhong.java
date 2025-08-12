@@ -27,26 +27,6 @@ class GiaDichVu {
 
 @Data
 @Entity
-@Table(name = "giaphuthu")
-class GiaPhuThu {
-    @EmbeddedId
-    private GiaPhuThuId id;
-
-    @Column(name = "GIA")
-    private BigDecimal gia;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("idPhuThu")
-    @JoinColumn(name = "ID_PHU_THU")
-    private PhuThu phuThu;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_NV")
-    private NhanVien nhanVien;
-}
-
-@Data
-@Entity
 @Table(name = "ctkhuyenmai")
 class CtKhuyenMai {
     @EmbeddedId

@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { Users, Wifi, Car, Coffee, Star, Eye } from 'lucide-react';
+import { Users, Eye } from 'lucide-react';
+import { getAmenityIcon } from '../../utils/amenityIcons.jsx';
+import AmenityIcon from './AmenityIcon.jsx';
 import BookingModal from '../booking/BookingModal';
+import { formatPrice, getDisplayPrice, formatPriceSegments } from '../../utils/priceUtils.js';
 
 const RoomSearchResult = ({ searchResults, searchDates }) => {
   const [selectedRoom, setSelectedRoom] = useState(null);
@@ -20,13 +23,7 @@ const RoomSearchResult = ({ searchResults, searchDates }) => {
     setShowDetailModal(true);
   };
 
-  // Format giá tiền
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(price);
-  };
+  // Format giá tiền - now using utility function
 
   // Render tiện nghi với icon
   const renderAmenities = (amenities) => {
@@ -44,24 +41,13 @@ const RoomSearchResult = ({ searchResults, searchDates }) => {
         <div className="flex flex-wrap gap-2">
           {amenities.map((amenity, index) => (
             <span key={index} className="flex items-center gap-1 text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded">
-              {getAmenityIcon(amenity.icon)}
+              <AmenityIcon amenity={amenity} className="w-3.5 h-3.5" />
               {amenity.tenTn}
             </span>
           ))}
         </div>
       </div>
     );
-  };
-
-  // Lấy icon cho tiện nghi
-  const getAmenityIcon = (iconName) => {
-    const iconMap = {
-      'wifi': <Wifi size={14} />,
-      'parking': <Car size={14} />,
-      'coffee': <Coffee size={14} />,
-      'star': <Star size={14} />
-    };
-    return iconMap[iconName] || <Star size={14} />;
   };
 
   // Render khuyến mãi
@@ -93,7 +79,13 @@ const RoomSearchResult = ({ searchResults, searchDates }) => {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-4">Kết quả tìm kiếm</h2>
+      {/* Header - Kết quả tìm kiếm */}
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Kết quả tìm kiếm</h2>
+        <p className="text-gray-600">
+          Tìm thấy {searchResults.length} hạng phòng phù hợp
+        </p>
+      </div>
 
       {/* Grid layout - 3 hạng phòng trên một hàng */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -105,21 +97,15 @@ const RoomSearchResult = ({ searchResults, searchDates }) => {
                 <img
                   src={room.danhSachAnhUrl[0]}
                   alt={`${room.tenKieuPhong} - ${room.tenLoaiPhong}`}
-                  className="w-full h-40 object-cover"
+                  className="w-full h-56 object-cover"
                 />
               ) : (
-                <div className="w-full h-40 bg-gray-200 flex items-center justify-center">
+                <div className="w-full h-56 bg-gray-200 flex items-center justify-center">
                   <span className="text-gray-400 text-sm">Không có hình ảnh</span>
                 </div>
               )}
 
-              {/* Rating badge */}
-              <div className="absolute top-2 right-2 bg-white rounded-full px-2 py-1 shadow-md">
-                <div className="flex items-center gap-1">
-                  <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                  <span className="text-xs font-medium">4.5</span>
-                </div>
-              </div>
+
             </div>
 
             {/* Nội dung card */}
@@ -131,22 +117,22 @@ const RoomSearchResult = ({ searchResults, searchDates }) => {
 
               {/* Giá */}
               <div className="text-right mb-3">
-                {room.totalPrice && (
-                  <div>
-                    <div className="text-xl font-bold text-blue-600">
-                      {formatPrice(room.totalPrice)}
+                {(() => {
+                  const displayPrice = getDisplayPrice(room);
+                  if (!displayPrice) return null;
+
+                  return (
+                    <div>
+                      {displayPrice.prefix && (
+                        <div className="text-sm text-gray-600 mb-1">{displayPrice.prefix}</div>
+                      )}
+                      <div className="text-xl font-bold text-blue-600">
+                        {formatPrice(displayPrice.price)}
+                      </div>
+                      <div className="text-xs text-gray-500">{displayPrice.label}</div>
                     </div>
-                    <div className="text-xs text-gray-500">/tổng cộng</div>
-                  </div>
-                )}
-                {!room.totalPrice && room.giaHienTai && (
-                  <div>
-                    <div className="text-xl font-bold text-blue-600">
-                      {formatPrice(room.giaHienTai)}
-                    </div>
-                    <div className="text-xs text-gray-500">/đêm</div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
 
               {/* Tags loại phòng */}
@@ -168,7 +154,8 @@ const RoomSearchResult = ({ searchResults, searchDates }) => {
               {room.danhSachTienNghi && room.danhSachTienNghi.length > 0 && (
                 <div className="flex flex-wrap gap-1 mb-3">
                   {room.danhSachTienNghi.slice(0, 3).map((amenity, idx) => (
-                    <span key={idx} className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded border">
+                    <span key={idx} className="flex items-center gap-1 text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded border">
+                      <AmenityIcon amenity={amenity} className="w-3 h-3" />
                       {amenity.tenTn}
                     </span>
                   ))}
@@ -210,7 +197,7 @@ const RoomSearchResult = ({ searchResults, searchDates }) => {
       {/* Detail Modal - 2 Column Layout */}
       {showDetailModal && detailRoom && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[85vh] overflow-hidden shadow-2xl">
+          <div className="bg-white rounded-xl max-w-7xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
             {/* Header */}
             <div className="flex justify-between items-center p-6 border-b">
               <h2 className="text-2xl font-bold text-gray-800">
@@ -227,16 +214,16 @@ const RoomSearchResult = ({ searchResults, searchDates }) => {
               </button>
             </div>
 
-            <div className="flex h-[calc(85vh-80px)]">
+            <div className="flex h-[calc(90vh-80px)]">
               {/* Left Column - Room Details */}
-              <div className="flex-1 p-6 overflow-y-auto">
+              <div className="flex-[2] p-6 overflow-y-auto">
                 {/* Hero Image */}
                 {detailRoom.danhSachAnhUrl && detailRoom.danhSachAnhUrl.length > 0 && (
                   <div className="mb-6">
                     <img
                       src={detailRoom.danhSachAnhUrl[0]}
                       alt={detailRoom.tenKieuPhong}
-                      className="w-full h-64 object-cover rounded-xl"
+                      className="w-full h-72 object-cover rounded-xl"
                     />
                   </div>
                 )}
@@ -255,10 +242,10 @@ const RoomSearchResult = ({ searchResults, searchDates }) => {
                   {detailRoom.danhSachTienNghi && detailRoom.danhSachTienNghi.length > 0 && (
                     <div>
                       <h3 className="text-lg font-bold text-gray-800 mb-3">Tiện nghi</h3>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                         {detailRoom.danhSachTienNghi.map((amenity, idx) => (
                           <div key={idx} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            <AmenityIcon amenity={amenity} className="w-4 h-4 text-blue-500" showTooltip={true} />
                             <span className="text-sm text-gray-700">{amenity.tenTn}</span>
                           </div>
                         ))}
@@ -293,13 +280,13 @@ const RoomSearchResult = ({ searchResults, searchDates }) => {
                   {detailRoom.danhSachAnhUrl && detailRoom.danhSachAnhUrl.length > 1 && (
                     <div>
                       <h3 className="text-lg font-bold text-gray-800 mb-3">Hình ảnh khác</h3>
-                      <div className="grid grid-cols-2 gap-3">
-                        {detailRoom.danhSachAnhUrl.slice(1, 5).map((url, index) => (
+                      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                        {detailRoom.danhSachAnhUrl.slice(1, 9).map((url, index) => (
                           <img
                             key={index}
                             src={url}
                             alt={`${detailRoom.tenKieuPhong} - ${index + 2}`}
-                            className="w-full h-24 object-cover rounded-lg hover:scale-105 transition-transform cursor-pointer"
+                            className="w-full h-32 object-cover rounded-lg hover:scale-105 transition-transform cursor-pointer"
                           />
                         ))}
                       </div>
@@ -309,14 +296,48 @@ const RoomSearchResult = ({ searchResults, searchDates }) => {
               </div>
 
               {/* Right Column - Pricing & Booking */}
-              <div className="w-80 bg-gray-50 p-6 flex flex-col">
+              <div className="flex-1 bg-gray-50 p-6 flex flex-col min-w-[320px] max-w-[400px]">
                 <div className="flex-1">
                   {/* Price Card */}
                   <div className="bg-white rounded-xl p-6 shadow-lg mb-6">
                     <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">Giá hạng phòng</h3>
 
                     <div className="text-center mb-6">
-                      {detailRoom.totalPrice && (
+                      {detailRoom.priceSegments && detailRoom.priceSegments.length > 0 ? (
+                        <div>
+                          <h4 className="text-lg font-semibold text-gray-800 mb-3">Chi tiết giá</h4>
+                          <div className="space-y-2">
+                            {formatPriceSegments(detailRoom.priceSegments).map((segment, index) => (
+                              <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <div className="text-left">
+                                  <div className="text-sm font-medium text-gray-700">
+                                    {segment.formattedDateRange}
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    {segment.nightsText}
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="font-medium text-blue-600">
+                                    {segment.formattedPrice}
+                                  </div>
+                                  <div className="text-xs text-gray-500">/đêm</div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          {detailRoom.totalPrice && (
+                            <div className="mt-4 pt-3 border-t border-gray-200">
+                              <div className="flex justify-between items-center">
+                                <span className="text-lg font-semibold text-gray-800">Tổng cộng:</span>
+                                <span className="text-2xl font-bold text-blue-600">
+                                  {formatPrice(detailRoom.totalPrice)}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : detailRoom.totalPrice ? (
                         <div>
                           <div className="text-3xl font-bold text-blue-600 mb-1">
                             {formatPrice(detailRoom.totalPrice)}
@@ -328,15 +349,14 @@ const RoomSearchResult = ({ searchResults, searchDates }) => {
                             </div>
                           )}
                         </div>
-                      )}
-                      {!detailRoom.totalPrice && detailRoom.giaHienTai && (
+                      ) : detailRoom.giaHienTai ? (
                         <div>
                           <div className="text-3xl font-bold text-blue-600 mb-1">
                             {formatPrice(detailRoom.giaHienTai)}
                           </div>
                           <div className="text-sm text-gray-500">/ đêm</div>
                         </div>
-                      )}
+                      ) : null}
                     </div>
 
                     {/* Booking Button */}

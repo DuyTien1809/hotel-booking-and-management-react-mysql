@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -357,10 +358,15 @@ public class HangPhongService implements IHangPhongService {
             long numberOfNights = java.time.temporal.ChronoUnit.DAYS.between(checkIn, checkOut);
             boolean hasPriceChanges = roomPricingService.hasPriceChanges(idHangPhong, checkIn, checkOut);
 
+            // Get price segments for detailed breakdown
+            List<RoomPricingService.PriceSegment> priceSegments = roomPricingService.getPriceSegments(idHangPhong,
+                    checkIn, checkOut);
+
             response.setStatusCode(200);
             response.setMessage("Thành công");
             response.setRoomPrice(totalPrice);
             response.setMinDeposit(totalPrice.multiply(BigDecimal.valueOf(0.2))); // 20% deposit
+            response.setPriceSegments(new ArrayList<>(priceSegments));
 
             // Add additional info
             Map<String, Object> priceDetails = new java.util.HashMap<>();
@@ -373,6 +379,76 @@ public class HangPhongService implements IHangPhongService {
         } catch (Exception e) {
             response.setStatusCode(500);
             response.setMessage("Lỗi khi tính giá: " + e.getMessage());
+        }
+        return response;
+    }
+
+    /**
+     * Get all hang phong with current prices for homepage display
+     */
+    public Response getAllHangPhongWithPrices() {
+        Response response = new Response();
+        try {
+            List<HangPhong> hangPhongList = hangPhongRepository.findAllWithDetails();
+
+            // Convert to HotHangPhongDTO format with current prices
+            List<com.dev.Hotel.dto.HotHangPhongDTO> hotHangPhongList = new java.util.ArrayList<>();
+
+            for (HangPhong hangPhong : hangPhongList) {
+                com.dev.Hotel.dto.HotHangPhongDTO dto = new com.dev.Hotel.dto.HotHangPhongDTO();
+                dto.setIdHangPhong(hangPhong.getIdHangPhong());
+                dto.setMoTa(hangPhong.getKieuPhong().getTenKp() + " - " + hangPhong.getLoaiPhong().getTenLp());
+                dto.setTenKp(hangPhong.getKieuPhong().getTenKp());
+                dto.setTenLp(hangPhong.getLoaiPhong().getTenLp());
+                dto.setSoLuotThue(0L); // Default value since we don't have booking count here
+
+                // Get current price using pricing service
+                BigDecimal currentPrice = roomPricingService.getCurrentPrice(hangPhong.getIdHangPhong());
+                dto.setGiaHienTai(currentPrice);
+
+                hotHangPhongList.add(dto);
+            }
+
+            response.setStatusCode(200);
+            response.setMessage("Thành công");
+            response.setHotHangPhongList(hotHangPhongList);
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi lấy danh sách hạng phòng với giá: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return response;
+    }
+
+    @Override
+    public Response getHotHangPhongThisMonth() {
+        Response response = new Response();
+        try {
+            // Gọi stored procedure để lấy top 3 hạng phòng hot nhất
+            List<Object[]> results = hangPhongRepository.getTop3HotHangPhongThisMonth();
+
+            // Convert Object[] thành HotHangPhongDTO
+            List<com.dev.Hotel.dto.HotHangPhongDTO> hotHangPhongList = new java.util.ArrayList<>();
+
+            for (Object[] row : results) {
+                com.dev.Hotel.dto.HotHangPhongDTO dto = new com.dev.Hotel.dto.HotHangPhongDTO();
+                dto.setIdHangPhong((Integer) row[0]);
+                dto.setMoTa((String) row[1]);
+                dto.setTenKp((String) row[2]);
+                dto.setTenLp((String) row[3]);
+                dto.setSoLuotThue(((Number) row[4]).longValue());
+                dto.setGiaHienTai((BigDecimal) row[5]);
+
+                hotHangPhongList.add(dto);
+            }
+
+            response.setStatusCode(200);
+            response.setMessage("Thành công");
+            response.setHotHangPhongList(hotHangPhongList);
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi lấy hạng phòng hot: " + e.getMessage());
+            e.printStackTrace();
         }
         return response;
     }

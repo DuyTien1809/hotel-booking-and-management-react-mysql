@@ -18,16 +18,6 @@ class GiaDichVuId implements Serializable {
 
 @Data
 @Embeddable
-class GiaPhuThuId implements Serializable {
-    @Column(name = "ID_PHU_THU")
-    private String idPhuThu;
-
-    @Column(name = "NGAY_AP_DUNG")
-    private LocalDate ngayApDung;
-}
-
-@Data
-@Embeddable
 class CtKhuyenMaiId implements Serializable {
     @Column(name = "ID_KM")
     private String idKm;

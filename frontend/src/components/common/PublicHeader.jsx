@@ -46,8 +46,8 @@ const PublicHeader = () => {
             <Link to="/" className="text-gray-700 hover:text-primary-600 transition-colors">
               Trang chủ
             </Link>
-            <Link to="/rooms" className="text-gray-700 hover:text-primary-600 transition-colors">
-              Phòng
+            <Link to="/customer/booking" className="text-gray-700 hover:text-primary-600 transition-colors">
+              Đặt phòng
             </Link>
             {isAuthenticated() && user?.role === 'CUSTOMER' && (
               <Link to="/customer/history" className="text-gray-700 hover:text-primary-600 transition-colors">
@@ -141,12 +141,13 @@ const PublicHeader = () => {
                 Trang chủ
               </Link>
               <Link
-                to="/rooms"
+                to="/customer/booking"
                 className="text-gray-700 hover:text-primary-600 transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Phòng
+                Đặt phòng
               </Link>
+
               {isAuthenticated() && user?.role === 'CUSTOMER' && (
                 <Link
                   to="/customer/history"

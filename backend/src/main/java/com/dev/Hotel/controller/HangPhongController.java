@@ -25,6 +25,18 @@ public class HangPhongController {
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
+    @GetMapping("/hot-this-month")
+    public ResponseEntity<Response> getHotHangPhongThisMonth() {
+        Response response = hangPhongService.getHotHangPhongThisMonth();
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    @GetMapping("/all-with-prices")
+    public ResponseEntity<Response> getAllHangPhongWithPrices() {
+        Response response = hangPhongService.getAllHangPhongWithPrices();
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
     @GetMapping("/get-by-id/{idHangPhong}")
     public ResponseEntity<Response> getHangPhongById(@PathVariable("idHangPhong") Integer idHangPhong) {
         Response response = hangPhongService.getHangPhongById(idHangPhong);

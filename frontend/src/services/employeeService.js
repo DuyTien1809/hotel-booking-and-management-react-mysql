@@ -41,5 +41,38 @@ export const employeeService = {
       console.error('Error fetching all employees:', error)
       throw error
     }
+  },
+
+  // Create new employee
+  createEmployee: async (employeeData) => {
+    try {
+      const response = await api.post('/api/nhanvien/register', employeeData)
+      return response.data
+    } catch (error) {
+      console.error('Error creating employee:', error)
+      throw error
+    }
+  },
+
+  // Get all departments (bo phan)
+  getAllDepartments: async () => {
+    try {
+      const response = await api.get('/api/bo-phan/all')
+      return response.data
+    } catch (error) {
+      console.error('Error fetching departments:', error)
+      throw error
+    }
+  },
+
+  // Get all roles (nhom quyen)
+  getAllRoles: async () => {
+    try {
+      const response = await api.get('/api/nhom-quyen/all')
+      return response.data
+    } catch (error) {
+      console.error('Error fetching roles:', error)
+      throw error
+    }
   }
 }

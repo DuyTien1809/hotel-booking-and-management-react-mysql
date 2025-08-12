@@ -16,8 +16,10 @@ import {
   User
 } from 'lucide-react'
 import { api } from '../../services/api'
+import { employeeService } from '../../services/employeeService'
 import Pagination from '../../components/common/Pagination'
 import toast from 'react-hot-toast'
+import { formatCurrency } from '../../utils/formatters'
 
 const StaffManagement = () => {
   const [staff, setStaff] = useState([])
@@ -31,6 +33,10 @@ const StaffManagement = () => {
     status: '',
     department: ''
   })
+
+  // Data for dropdowns
+  const [departments, setDepartments] = useState([])
+  const [roles, setRoles] = useState([])
   const [showAddModal, setShowAddModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showDetailModal, setShowDetailModal] = useState(false)
@@ -39,26 +45,27 @@ const StaffManagement = () => {
     ho: '',
     ten: '',
     email: '',
-    soDienThoai: '',
+    sdt: '',
     diaChi: '',
     ngaySinh: '',
-    gioiTinh: '',
-    chucVu: '',
-    phongBan: '',
-    luong: '',
-    ngayVaoLam: '',
-    trangThai: 'active'
+    phai: '',
+    username: '',
+    password: '',
+    idBp: '',
+    idNq: ''
   })
 
   useEffect(() => {
     fetchStaff()
+    fetchDepartments()
+    fetchRoles()
   }, [])
 
   const fetchStaff = async () => {
     try {
       setLoading(true)
       // Gọi API thực tế thay vì mock data
-      const response = await api.get('/api/nhanvien')
+      const response = await api.get('/api/nhanvien/all')
       const staffData = response.data.nhanVienList || []
 
       setStaff(staffData)
@@ -68,6 +75,30 @@ const StaffManagement = () => {
       // Có thể hiển thị thông báo lỗi cho user
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await employeeService.getAllDepartments()
+      if (response.statusCode === 200) {
+        setDepartments(response.boPhanList || [])
+      }
+    } catch (error) {
+      console.error('Error fetching departments:', error)
+      toast.error('Không thể tải danh sách bộ phận. Vui lòng kiểm tra kết nối backend.')
+    }
+  }
+
+  const fetchRoles = async () => {
+    try {
+      const response = await employeeService.getAllRoles()
+      if (response.statusCode === 200) {
+        setRoles(response.nhomQuyenList || [])
+      }
+    } catch (error) {
+      console.error('Error fetching roles:', error)
+      toast.error('Không thể tải danh sách nhóm quyền. Vui lòng kiểm tra kết nối backend.')
     }
   }
 
@@ -84,26 +115,27 @@ const StaffManagement = () => {
     if (currentFilters.searchTerm) {
       const searchLower = currentFilters.searchTerm.toLowerCase()
       filtered = filtered.filter(member =>
-        member.hoTen.toLowerCase().includes(searchLower) ||
-        member.email.toLowerCase().includes(searchLower) ||
-        member.soDienThoai.includes(searchLower) ||
-        member.chucVu.toLowerCase().includes(searchLower)
+        (member.ho + ' ' + member.ten).toLowerCase().includes(searchLower) ||
+        (member.email && member.email.toLowerCase().includes(searchLower)) ||
+        (member.sdt && member.sdt.includes(searchLower)) ||
+        (member.tenNq && member.tenNq.toLowerCase().includes(searchLower)) ||
+        (member.tenBp && member.tenBp.toLowerCase().includes(searchLower))
       )
     }
 
-    // Filter by role
+    // Filter by role (using tenBp)
     if (currentFilters.role) {
-      filtered = filtered.filter(member => member.role === currentFilters.role)
+      filtered = filtered.filter(member => member.tenBp === currentFilters.role)
     }
 
-    // Filter by status
+    // Filter by status (skip for now since we don't have status field)
     if (currentFilters.status) {
-      filtered = filtered.filter(member => member.trangThai === currentFilters.status)
+      // filtered = filtered.filter(member => member.trangThai === currentFilters.status)
     }
 
-    // Filter by department
+    // Filter by department (using tenBp)
     if (currentFilters.department) {
-      filtered = filtered.filter(member => member.phongBan === currentFilters.department)
+      filtered = filtered.filter(member => member.tenBp === currentFilters.department)
     }
 
     setFilteredStaff(filtered)
@@ -139,20 +171,18 @@ const StaffManagement = () => {
     }
   }
 
-  const getRoleColor = (role) => {
-    switch (role) {
-      case 'ADMIN': return 'text-purple-600 bg-purple-100'
-      case 'EMPLOYEE': return 'text-blue-600 bg-blue-100'
+  const getRoleColor = (tenBp) => {
+    switch (tenBp) {
+      case 'Quản lý': return 'text-purple-600 bg-purple-100'
+      case 'Lễ tân': return 'text-blue-600 bg-blue-100'
+      case 'Nhà hàng': return 'text-green-600 bg-green-100'
+      case 'Kế toán': return 'text-orange-600 bg-orange-100'
       default: return 'text-gray-600 bg-gray-100'
     }
   }
 
-  const getRoleText = (role) => {
-    switch (role) {
-      case 'ADMIN': return 'Quản lý'
-      case 'EMPLOYEE': return 'Nhân viên'
-      default: return 'Không xác định'
-    }
+  const getRoleText = (tenBp) => {
+    return tenBp || 'Không xác định'
   }
 
   const handleAddStaff = () => {
@@ -160,15 +190,14 @@ const StaffManagement = () => {
       ho: '',
       ten: '',
       email: '',
-      soDienThoai: '',
+      sdt: '',
       diaChi: '',
       ngaySinh: '',
-      gioiTinh: '',
-      chucVu: '',
-      phongBan: '',
-      luong: '',
-      ngayVaoLam: '',
-      trangThai: 'active'
+      phai: '',
+      username: '',
+      password: '',
+      idBp: '',
+      idNq: ''
     })
     setShowAddModal(true)
   }
@@ -214,37 +243,25 @@ const StaffManagement = () => {
     e.preventDefault()
     try {
       if (showEditModal) {
-        // TODO: Call API to update staff
-        setStaff(prev => prev.map(member =>
-          member.id === selectedStaff.id
-            ? {
-                ...member,
-                ...staffForm,
-                hoTen: `${staffForm.ho} ${staffForm.ten}`,
-                luong: parseInt(staffForm.luong)
-              }
-            : member
-        ))
-        toast.success('Cập nhật nhân viên thành công!')
+        // TODO: Implement update staff API
+        toast.error('Chức năng cập nhật nhân viên chưa được triển khai')
       } else {
-        // TODO: Call API to create staff
-        const newStaff = {
-          id: Date.now(),
-          ...staffForm,
-          hoTen: `${staffForm.ho} ${staffForm.ten}`,
-          luong: parseInt(staffForm.luong),
-          role: 'EMPLOYEE'
+        // Create new staff
+        const response = await employeeService.createEmployee(staffForm)
+        if (response.statusCode === 200) {
+          toast.success('Thêm nhân viên thành công!')
+          fetchStaff() // Refresh the list
+        } else {
+          toast.error(response.message || 'Có lỗi xảy ra khi thêm nhân viên')
         }
-        setStaff(prev => [...prev, newStaff])
-        toast.success('Thêm nhân viên thành công!')
       }
 
       setShowAddModal(false)
       setShowEditModal(false)
       setSelectedStaff(null)
-      applyFilters(filters)
     } catch (error) {
-      toast.error('Có lỗi xảy ra khi lưu nhân viên')
+      console.error('Error saving staff:', error)
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lưu nhân viên')
     }
   }
 
@@ -302,7 +319,7 @@ const StaffManagement = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Đang làm việc</p>
               <p className="text-2xl font-bold text-gray-900">
-                {staff.filter(s => s.trangThai === 'active').length}
+                {staff.length}
               </p>
             </div>
           </div>
@@ -316,7 +333,7 @@ const StaffManagement = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Quản lý</p>
               <p className="text-2xl font-bold text-gray-900">
-                {staff.filter(s => s.role === 'ADMIN').length}
+                {staff.filter(s => s.tenBp === 'Quản lý').length}
               </p>
             </div>
           </div>
@@ -330,7 +347,7 @@ const StaffManagement = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Nhân viên</p>
               <p className="text-2xl font-bold text-gray-900">
-                {staff.filter(s => s.role === 'EMPLOYEE').length}
+                {staff.filter(s => s.tenBp !== 'Quản lý').length}
               </p>
             </div>
           </div>
@@ -370,8 +387,10 @@ const StaffManagement = () => {
               className="input"
             >
               <option value="">Tất cả</option>
-              <option value="ADMIN">Quản lý</option>
-              <option value="EMPLOYEE">Nhân viên</option>
+              <option value="Quản lý">Quản lý</option>
+              <option value="Lễ tân">Lễ tân</option>
+              <option value="Nhà hàng">Nhà hàng</option>
+              <option value="Kế toán">Kế toán</option>
             </select>
           </div>
 
@@ -403,10 +422,10 @@ const StaffManagement = () => {
               className="input"
             >
               <option value="">Tất cả</option>
-              <option value="Front Office">Front Office</option>
-              <option value="Housekeeping">Housekeeping</option>
-              <option value="Management">Management</option>
-              <option value="Security">Security</option>
+              <option value="Quản lý">Quản lý</option>
+              <option value="Lễ tân">Lễ tân</option>
+              <option value="Nhà hàng">Nhà hàng</option>
+              <option value="Kế toán">Kế toán</option>
             </select>
           </div>
 
@@ -449,9 +468,6 @@ const StaffManagement = () => {
                       Vai trò
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Lương
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Trạng thái
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -460,15 +476,15 @@ const StaffManagement = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {currentStaff.map((member) => (
-                    <tr key={member.id} className="hover:bg-gray-50">
+                  {currentStaff.map((member, index) => (
+                    <tr key={member.idNv || member.id || index} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
-                            {member.hoTen}
+                            {member.ho} {member.ten}
                           </div>
                           <div className="text-sm text-gray-500">
-                            Vào làm: {member.ngayVaoLam}
+                            ID: {member.idNv}
                           </div>
                         </div>
                       </td>
@@ -476,7 +492,7 @@ const StaffManagement = () => {
                         <div className="text-sm text-gray-900">
                           <div className="flex items-center mb-1">
                             <Phone className="w-4 h-4 mr-1 text-gray-400" />
-                            {member.soDienThoai}
+                            {member.sdt || 'Không xác định'}
                           </div>
                           <div className="flex items-center">
                             <Mail className="w-4 h-4 mr-1 text-gray-400" />
@@ -486,21 +502,18 @@ const StaffManagement = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
-                          <div className="text-sm font-medium text-gray-900">{member.chucVu}</div>
-                          <div className="text-sm text-gray-500">{member.phongBan}</div>
+                          <div className="text-sm font-medium text-gray-900">{member.tenNq || 'Chưa xác định'}</div>
+                          <div className="text-sm text-gray-500">{member.tenBp || 'Chưa phân bộ phận'}</div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(member.role)}`}>
-                          {getRoleText(member.role)}
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(member.tenBp)}`}>
+                          {getRoleText(member.tenBp)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {member.luong.toLocaleString('vi-VN')} VNĐ
-                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(member.trangThai)}`}>
-                          {getStatusText(member.trangThai)}
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800`}>
+                          Hoạt động
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -576,6 +589,35 @@ const StaffManagement = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Username
+                    </label>
+                    <input
+                      type="text"
+                      value={staffForm.username}
+                      onChange={(e) => setStaffForm(prev => ({ ...prev, username: e.target.value }))}
+                      className="input"
+                      placeholder="Tên đăng nhập"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Password
+                    </label>
+                    <input
+                      type="password"
+                      value={staffForm.password}
+                      onChange={(e) => setStaffForm(prev => ({ ...prev, password: e.target.value }))}
+                      className="input"
+                      placeholder="Mật khẩu (tối thiểu 6 ký tự)"
+                      minLength="6"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Họ
                     </label>
                     <input
@@ -619,23 +661,29 @@ const StaffManagement = () => {
                     </label>
                     <input
                       type="tel"
-                      value={staffForm.soDienThoai}
-                      onChange={(e) => setStaffForm(prev => ({ ...prev, soDienThoai: e.target.value }))}
+                      value={staffForm.sdt}
+                      onChange={(e) => setStaffForm(prev => ({ ...prev, sdt: e.target.value }))}
                       className="input"
+                      pattern="[0-9]{10,11}"
+                      placeholder="0901234567"
                       required
                     />
                   </div>
 
-                  <div className="col-span-2">
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Địa chỉ
+                      Giới tính
                     </label>
-                    <input
-                      type="text"
-                      value={staffForm.diaChi}
-                      onChange={(e) => setStaffForm(prev => ({ ...prev, diaChi: e.target.value }))}
+                    <select
+                      value={staffForm.phai}
+                      onChange={(e) => setStaffForm(prev => ({ ...prev, phai: e.target.value }))}
                       className="input"
-                    />
+                      required
+                    >
+                      <option value="">Chọn giới tính</option>
+                      <option value="Nam">Nam</option>
+                      <option value="Nữ">Nữ</option>
+                    </select>
                   </div>
 
                   <div>
@@ -650,92 +698,54 @@ const StaffManagement = () => {
                     />
                   </div>
 
-                  <div>
+                  <div className="col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Giới tính
-                    </label>
-                    <select
-                      value={staffForm.gioiTinh}
-                      onChange={(e) => setStaffForm(prev => ({ ...prev, gioiTinh: e.target.value }))}
-                      className="input"
-                    >
-                      <option value="">Chọn giới tính</option>
-                      <option value="Nam">Nam</option>
-                      <option value="Nữ">Nữ</option>
-                      <option value="Khác">Khác</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Chức vụ
+                      Địa chỉ
                     </label>
                     <input
                       type="text"
-                      value={staffForm.chucVu}
-                      onChange={(e) => setStaffForm(prev => ({ ...prev, chucVu: e.target.value }))}
+                      value={staffForm.diaChi}
+                      onChange={(e) => setStaffForm(prev => ({ ...prev, diaChi: e.target.value }))}
                       className="input"
-                      required
+                      placeholder="Địa chỉ nhà"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Phòng ban
+                      Bộ phận
                     </label>
                     <select
-                      value={staffForm.phongBan}
-                      onChange={(e) => setStaffForm(prev => ({ ...prev, phongBan: e.target.value }))}
+                      value={staffForm.idBp}
+                      onChange={(e) => setStaffForm(prev => ({ ...prev, idBp: e.target.value }))}
                       className="input"
                       required
                     >
-                      <option value="">Chọn phòng ban</option>
-                      <option value="Front Office">Front Office</option>
-                      <option value="Housekeeping">Housekeeping</option>
-                      <option value="Management">Management</option>
-                      <option value="Security">Security</option>
+                      <option value="">Chọn bộ phận</option>
+                      {departments.map(dept => (
+                        <option key={dept.idBp} value={dept.idBp}>
+                          {dept.tenBp}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Lương (VNĐ)
-                    </label>
-                    <input
-                      type="number"
-                      value={staffForm.luong}
-                      onChange={(e) => setStaffForm(prev => ({ ...prev, luong: e.target.value }))}
-                      className="input"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Ngày vào làm
-                    </label>
-                    <input
-                      type="date"
-                      value={staffForm.ngayVaoLam}
-                      onChange={(e) => setStaffForm(prev => ({ ...prev, ngayVaoLam: e.target.value }))}
-                      className="input"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Trạng thái
+                      Nhóm quyền
                     </label>
                     <select
-                      value={staffForm.trangThai}
-                      onChange={(e) => setStaffForm(prev => ({ ...prev, trangThai: e.target.value }))}
+                      value={staffForm.idNq}
+                      onChange={(e) => setStaffForm(prev => ({ ...prev, idNq: e.target.value }))}
                       className="input"
                       required
                     >
-                      <option value="active">Hoạt động</option>
-                      <option value="inactive">Nghỉ việc</option>
-                      <option value="suspended">Tạm nghỉ</option>
+                      <option value="">Chọn nhóm quyền</option>
+                      {roles.map(role => (
+                        <option key={role.idNq} value={role.idNq}>
+                          {role.tenNq}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -817,23 +827,19 @@ const StaffManagement = () => {
                     <p className="mt-1 text-sm text-gray-900">{selectedStaff.phongBan}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Lương</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedStaff.luong.toLocaleString('vi-VN')} VNĐ</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Ngày vào làm</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedStaff.ngayVaoLam}</p>
+                    <label className="block text-sm font-medium text-gray-700">Ngày sinh</label>
+                    <p className="mt-1 text-sm text-gray-900">{selectedStaff.ngaySinh || 'Chưa cập nhật'}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Vai trò</label>
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(selectedStaff.role)}`}>
-                      {getRoleText(selectedStaff.role)}
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(selectedStaff.tenBp)}`}>
+                      {getRoleText(selectedStaff.tenBp)}
                     </span>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Trạng thái</label>
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedStaff.trangThai)}`}>
-                      {getStatusText(selectedStaff.trangThai)}
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800`}>
+                      Hoạt động
                     </span>
                   </div>
                 </div>

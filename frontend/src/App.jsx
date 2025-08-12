@@ -41,8 +41,9 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import RoomManagement from './pages/admin/RoomManagement'
 import StaffManagement from './pages/admin/StaffManagement'
 import ServiceManagement from './pages/admin/ServiceManagement'
-import AmenityManagement from './pages/admin/AmenityManagement'
+import AmenitiesManagement from './pages/admin/AmenitiesManagement'
 import RoomPriceManagement from './pages/admin/RoomPriceManagement'
+import SurchargeManagement from './pages/admin/SurchargeManagement'
 import ReportsPage from './pages/admin/ReportsPage'
 
 // Layout components
@@ -108,8 +109,9 @@ function App() {
             <Route path="rooms" element={<RoomManagement />} />
             <Route path="staff" element={<StaffManagement />} />
             <Route path="services" element={<ServiceManagement />} />
-            <Route path="amenities" element={<AmenityManagement />} />
+            <Route path="amenities" element={<AmenitiesManagement />} />
             <Route path="room-prices" element={<RoomPriceManagement />} />
+            <Route path="surcharges" element={<SurchargeManagement />} />
             <Route path="reports" element={<ReportsPage />} />
           </Route>
 

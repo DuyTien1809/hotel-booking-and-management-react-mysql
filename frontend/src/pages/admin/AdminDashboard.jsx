@@ -13,9 +13,11 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
-  UserCheck
+  UserCheck,
+  Plus
 } from 'lucide-react'
 import { api } from '../../services/api'
+import { dashboardService } from '../../services/dashboardService'
 
 const AdminDashboard = () => {
   const { user } = useAuth()
@@ -44,8 +46,8 @@ const AdminDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       // Gọi API thực tế để lấy thống kê dashboard
-      const response = await api.get('/api/dashboard/admin/stats')
-      const statsData = response.data.stats || {}
+      const response = await dashboardService.getAdminStats()
+      const statsData = response.stats || {}
 
       setStats(statsData)
 
@@ -134,9 +136,14 @@ const AdminDashboard = () => {
               <Building className="w-6 h-6 text-blue-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Tỷ lệ lấp đầy</p>
+              <p className="text-sm font-medium text-gray-600">Tỷ lệ phòng đang được thuê</p>
               <p className="text-2xl font-bold text-gray-900">{stats.occupancyRate}%</p>
-              <p className="text-xs text-gray-500">{stats.occupiedRooms}/{stats.totalRooms} phòng</p>
+              <p className="text-xs text-gray-500">
+                {(stats.occupiedRooms || 0) + (stats.reservedRooms || 0)}/{stats.totalRooms} phòng
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                Bao gồm phòng có khách + đã đặt
+              </p>
             </div>
           </div>
         </div>
@@ -248,6 +255,48 @@ const AdminDashboard = () => {
         </div>
       </div>
 
+      {/* Room Status Details */}
+      <div className="card">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Chi tiết trạng thái phòng</h3>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="text-center p-4 bg-green-50 rounded-lg">
+            <div className="text-2xl font-bold text-green-600">{stats.availableRooms || 0}</div>
+            <div className="text-sm text-green-700">Trống</div>
+            <div className="text-xs text-green-600 mt-1">
+              {stats.totalRooms > 0 ? ((stats.availableRooms || 0) / stats.totalRooms * 100).toFixed(1) : 0}%
+            </div>
+          </div>
+          <div className="text-center p-4 bg-blue-50 rounded-lg">
+            <div className="text-2xl font-bold text-blue-600">{stats.occupiedRooms || 0}</div>
+            <div className="text-sm text-blue-700">Đã có khách</div>
+            <div className="text-xs text-blue-600 mt-1">
+              {stats.totalRooms > 0 ? ((stats.occupiedRooms || 0) / stats.totalRooms * 100).toFixed(1) : 0}%
+            </div>
+          </div>
+          <div className="text-center p-4 bg-yellow-50 rounded-lg">
+            <div className="text-2xl font-bold text-yellow-600">{stats.cleaningRooms || 0}</div>
+            <div className="text-sm text-yellow-700">Đang dọn dẹp</div>
+            <div className="text-xs text-yellow-600 mt-1">
+              {stats.totalRooms > 0 ? ((stats.cleaningRooms || 0) / stats.totalRooms * 100).toFixed(1) : 0}%
+            </div>
+          </div>
+          <div className="text-center p-4 bg-red-50 rounded-lg">
+            <div className="text-2xl font-bold text-red-600">{stats.maintenanceRooms || 0}</div>
+            <div className="text-sm text-red-700">Đang bảo trì</div>
+            <div className="text-xs text-red-600 mt-1">
+              {stats.totalRooms > 0 ? ((stats.maintenanceRooms || 0) / stats.totalRooms * 100).toFixed(1) : 0}%
+            </div>
+          </div>
+          <div className="text-center p-4 bg-purple-50 rounded-lg">
+            <div className="text-2xl font-bold text-purple-600">{stats.reservedRooms || 0}</div>
+            <div className="text-sm text-purple-700">Đã đặt</div>
+            <div className="text-xs text-purple-600 mt-1">
+              {stats.totalRooms > 0 ? ((stats.reservedRooms || 0) / stats.totalRooms * 100).toFixed(1) : 0}%
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
         <Link to="/admin/rooms" className="card hover:shadow-lg transition-shadow">
@@ -300,13 +349,13 @@ const AdminDashboard = () => {
           </div>
         </Link>
 
-        <Link to="/staff/reservations" className="card hover:shadow-lg transition-shadow">
+        <Link to="/admin/surcharges" className="card hover:shadow-lg transition-shadow">
           <div className="text-center">
             <div className="p-4 bg-orange-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <Calendar className="w-8 h-8 text-orange-600" />
+              <Plus className="w-8 h-8 text-orange-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Đặt phòng</h3>
-            <p className="text-gray-600 text-sm">Xem đặt phòng</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Quản lý phụ thu</h3>
+            <p className="text-gray-600 text-sm">Phụ thu dịch vụ</p>
           </div>
         </Link>
       </div>

@@ -15,7 +15,8 @@ import {
 } from 'lucide-react'
 import Pagination from '../../components/common/Pagination'
 import toast from 'react-hot-toast'
-import { api } from '../../services/api'
+import { dichVuService } from '../../services/dichVuService'
+import { formatCurrency } from '../../utils/formatters'
 
 const ServiceManagement = () => {
   const [services, setServices] = useState([])
@@ -51,13 +52,14 @@ const ServiceManagement = () => {
     try {
       setLoading(true)
       // Gọi API để lấy danh sách dịch vụ
-      const response = await api.get('/api/dich-vu')
-      const serviceData = response.data.dichVuList || []
+      const response = await dichVuService.getAllDichVu()
+      const serviceData = response.dichVuList || []
 
       setServices(serviceData)
       setFilteredServices(serviceData)
     } catch (error) {
       console.error('Error fetching services:', error)
+      toast.error('Lỗi khi tải danh sách dịch vụ')
     } finally {
       setLoading(false)
     }
@@ -413,8 +415,8 @@ const ServiceManagement = () => {
         {filteredServices.length > 0 ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {currentServices.map((service) => (
-                <div key={service.id} className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+              {currentServices.map((service, index) => (
+                <div key={service.idDv || service.id || index} className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
                   <img
                     src={service.hinhAnh}
                     alt={service.tenDichVu}
@@ -445,18 +447,18 @@ const ServiceManagement = () => {
                       <div className="flex justify-between">
                         <span>Giá:</span>
                         <span className="font-semibold text-gray-900">
-                          {service.gia.toLocaleString('vi-VN')} VNĐ
+                          {formatCurrency(service.gia)}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span>Thời gian:</span>
-                        <span>{service.thoiGianThucHien} {service.donVi}</span>
+                        <span>{service.thoiGianThucHien || 'N/A'} {service.donVi || ''}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span>Đánh giá:</span>
                         <div className="flex items-center">
                           <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                          <span className="ml-1">{service.danhGia}</span>
+                          <span className="ml-1">{service.danhGia || '0'}</span>
                         </div>
                       </div>
                       <div className="flex justify-between">
@@ -703,7 +705,7 @@ const ServiceManagement = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Giá</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedService.gia.toLocaleString('vi-VN')} VNĐ</p>
+                    <p className="mt-1 text-sm text-gray-900">{formatCurrency(selectedService.gia)}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Thời gian</label>

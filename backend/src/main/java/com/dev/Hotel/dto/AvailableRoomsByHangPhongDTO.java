@@ -32,6 +32,9 @@ public class AvailableRoomsByHangPhongDTO {
     // Khuyến mãi
     private List<KhuyenMaiDTO> danhSachKhuyenMai;
 
+    // Price segments for detailed breakdown
+    private List<Object> priceSegments;
+
     // Constructor cho stored procedure result
     public AvailableRoomsByHangPhongDTO(Integer idHangPhong, String tenKieuPhong,
             String tenLoaiPhong, Integer tongSoPhong,

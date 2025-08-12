@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Users, MapPin, Plus, Minus } from 'lucide-react';
+import { formatPrice, formatPriceSegments } from '../../utils/priceUtils.js';
 
 const BookingConfirmation = ({ room, bookingData, setBookingData, searchDates, onNext, onClose }) => {
   const [checkIn, setCheckIn] = useState(searchDates?.checkIn || null);
@@ -16,12 +17,7 @@ const BookingConfirmation = ({ room, bookingData, setBookingData, searchDates, o
     }
   }, [checkIn, checkOut]);
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(price);
-  };
+  // formatPrice now imported from utils
 
   const calculateNights = (checkInDate, checkOutDate) => {
     if (checkInDate && checkOutDate) {
@@ -122,7 +118,33 @@ const BookingConfirmation = ({ room, bookingData, setBookingData, searchDates, o
             </div>
           </div>
           <div className="text-right">
-            {room.averagePrice ? (
+            {room.priceSegments && room.priceSegments.length > 0 ? (
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">Chi tiết giá</h4>
+                <div className="space-y-1 mb-3">
+                  {formatPriceSegments(room.priceSegments).map((segment, index) => (
+                    <div key={index} className="flex justify-between text-sm">
+                      <span className="text-gray-600">
+                        {segment.formattedDateRange} ({segment.nightsText})
+                      </span>
+                      <span className="font-medium text-blue-600">
+                        {segment.formattedPrice}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                {room.totalPrice && (
+                  <div className="border-t pt-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold text-gray-700">Tổng:</span>
+                      <span className="text-xl font-bold text-blue-600">
+                        {formatPrice(room.totalPrice)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : room.averagePrice ? (
               <div>
                 <div className="text-2xl font-bold text-blue-600">
                   {formatPrice(room.averagePrice)}

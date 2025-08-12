@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Search, Calendar, Users, Star, Wifi, Car, Coffee, Dumbbell, MapPin, Phone, Mail, Award, Shield, Clock } from 'lucide-react'
+import { Search, Calendar, Users, Wifi, Car, Coffee, Dumbbell, MapPin, Phone, Mail, Award, Shield, Clock } from 'lucide-react'
 import RoomSearch from '../../components/common/RoomSearch'
 import RoomSearchResult from '../../components/common/RoomSearchResult'
 import { api } from '../../services/api'
 import { roomService } from '../../services/roomService'
+import { hangPhongService } from '../../services/hangPhongService'
 
 const HomePage = () => {
   const [roomSearchResults, setRoomSearchResults] = useState([])
@@ -33,28 +34,66 @@ const HomePage = () => {
 
   const fetchFeaturedRooms = async () => {
     try {
-      // Gọi API để lấy phòng nổi bật hoặc lấy một số phòng mẫu
-      const response = await roomService.getAllRooms()
-      if (response.statusCode === 200 && response.phongList) {
-        // Lấy 6 phòng đầu tiên làm phòng nổi bật
-        const featured = response.phongList.slice(0, 6).map(room => ({
-          id: room.soPhong,
-          name: `Phòng ${room.soPhong}`,
-          type: room.tenKp || 'Standard',
-          category: room.tenLp || 'Single',
-          price: room.giaPhong || 500000,
-          rating: 4.5,
+      // Gọi API để lấy TẤT CẢ hạng phòng với giá hiện tại
+      const response = await hangPhongService.getAllHangPhongWithPrices()
+      if (response.statusCode === 200 && response.hotHangPhongList) {
+        // Map dữ liệu hạng phòng thành format hiển thị
+        const featured = response.hotHangPhongList.map(hangPhong => ({
+          id: hangPhong.idHangPhong,
+          name: `${hangPhong.tenKp} - ${hangPhong.tenLp}`,
+          type: hangPhong.tenKp || 'Standard',
+          category: hangPhong.tenLp || 'Single',
+          price: hangPhong.giaHienTai || 1000000,
+
           image: '/api/placeholder/400/300',
-          amenities: ['Wifi miễn phí', 'Điều hòa', 'TV', 'Minibar'],
-          description: room.moTaKp || 'Phòng thoải mái với đầy đủ tiện nghi'
+          amenities: ['WiFi miễn phí', 'Điều hòa', 'TV màn hình phẳng', 'Minibar'],
+          description: hangPhong.moTa || `Hạng phòng ${hangPhong.tenKp} - ${hangPhong.tenLp}`,
+          soLuotThue: hangPhong.soLuotThue || 0
         }))
         setFeaturedRooms(featured)
       } else {
         // Fallback data nếu API không có dữ liệu
-        setFeaturedRooms([])
+        setFeaturedRooms([
+          {
+            id: 1,
+            name: 'Standard - Single',
+            type: 'Standard',
+            category: 'Single',
+            price: 1100000,
+
+            image: '/api/placeholder/400/300',
+            amenities: ['WiFi miễn phí', 'Điều hòa', 'TV', 'Minibar'],
+            description: 'Hạng phòng được yêu thích nhất',
+            soLuotThue: 15
+          },
+          {
+            id: 2,
+            name: 'Standard - Double',
+            type: 'Standard',
+            category: 'Double',
+            price: 1300000,
+
+            image: '/api/placeholder/400/300',
+            amenities: ['WiFi miễn phí', 'Điều hòa', 'TV', 'Minibar'],
+            description: 'Hạng phòng được yêu thích nhất',
+            soLuotThue: 12
+          },
+          {
+            id: 3,
+            name: 'Superior - Double',
+            type: 'Superior',
+            category: 'Double',
+            price: 1500000,
+
+            image: '/api/placeholder/400/300',
+            amenities: ['WiFi miễn phí', 'Điều hòa', 'TV', 'Minibar'],
+            description: 'Hạng phòng được yêu thích nhất',
+            soLuotThue: 10
+          }
+        ])
       }
     } catch (error) {
-      console.error('Error fetching featured rooms:', error)
+      console.error('Error fetching hot hang phong:', error)
       // Fallback to empty array if API fails
       setFeaturedRooms([])
     }
@@ -68,9 +107,18 @@ const HomePage = () => {
 
   const fetchServices = async () => {
     try {
-      // Gọi API để lấy danh sách dịch vụ nổi bật
-      const response = await api.get('/api/dich-vu/featured')
-      setServices(response.data.services || [])
+      // Gọi API để lấy danh sách dịch vụ
+      const response = await api.get('/api/services/dich-vu')
+      const dichVuList = response.data.dichVuList || []
+
+      // Convert to homepage format
+      const servicesData = dichVuList.slice(0, 6).map(dv => ({
+        icon: Wifi, // Default icon
+        title: dv.tenDv,
+        description: dv.moTa || 'Dịch vụ chất lượng cao'
+      }))
+
+      setServices(servicesData)
     } catch (error) {
       console.error('Error fetching services:', error)
       // Fallback to default services if API fails
@@ -151,7 +199,7 @@ const HomePage = () => {
       {roomSearchResults.length > 0 && (
         <section className="py-16 bg-gray-50">
           <div className="container">
-            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Kết quả tìm kiếm</h2>
+
             <RoomSearchResult searchResults={roomSearchResults} searchDates={searchDates} />
           </div>
         </section>
@@ -216,9 +264,9 @@ const HomePage = () => {
       <section className="py-20 bg-gray-50">
         <div className="container">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Phòng Nổi Bật</h2>
-            <p className="text-xl text-gray-600 mx-auto whitespace-nowrap">
-              Khám phá các loại phòng tuyệt vời với thiết kế hiện đại và tiện nghi đầy đủ
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Hạng Phòng Hot Trong Tháng</h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Top 3 hạng phòng được khách hàng yêu thích và đặt nhiều nhất trong tháng
             </p>
           </div>
 
@@ -231,12 +279,7 @@ const HomePage = () => {
                     alt={room.name}
                     className="w-full h-64 object-cover"
                   />
-                  <div className="absolute top-4 right-4 bg-white px-3 py-1 rounded-full shadow-md">
-                    <div className="flex items-center space-x-1">
-                      <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                      <span className="text-sm font-semibold">{room.rating}</span>
-                    </div>
-                  </div>
+
                 </div>
 
                 <div className="p-6">
@@ -348,7 +391,7 @@ const HomePage = () => {
                   </div>
                   <div>
                     <div className="font-semibold">Hotline</div>
-                    <div className="text-primary-100">1900 1999 (24/7)</div>
+                    <div className="text-primary-100">1900 1234 (24/7)</div>
                   </div>
                 </div>
 
@@ -368,7 +411,7 @@ const HomePage = () => {
                   </div>
                   <div>
                     <div className="font-semibold">Địa chỉ</div>
-                    <div className="text-primary-100">97 Man Thiện, Hiệp Phú, Thủ Đức, Hồ Chí Minh</div>
+                    <div className="text-primary-100">123 Đường ABC, Quận 1, TP.HCM</div>
                   </div>
                 </div>
               </div>
@@ -378,7 +421,7 @@ const HomePage = () => {
               <h3 className="text-2xl font-bold mb-6 text-center">Đặt Phòng Ngay</h3>
               <div className="space-y-4">
                 <button className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-4 rounded-xl transition-colors duration-200 btn-glow">
-                  Gọi Ngay: 1900 1999
+                  Gọi Ngay: 1900 1234
                 </button>
                 <button className="w-full bg-white bg-opacity-20 hover:bg-opacity-30 border-2 border-white text-white font-semibold py-4 rounded-xl transition-all duration-200 btn-glow">
                   Chat Trực Tuyến

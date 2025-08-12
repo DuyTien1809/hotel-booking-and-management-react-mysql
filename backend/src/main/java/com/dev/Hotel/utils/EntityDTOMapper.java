@@ -600,6 +600,35 @@ public class EntityDTOMapper {
         return phuThuList.stream().map(EntityDTOMapper::mapPhuThuToDTO).collect(Collectors.toList());
     }
 
+    // GiaPhuThu mapping
+    public static GiaPhuThuDTO mapGiaPhuThuToDTO(GiaPhuThu giaPhuThu) {
+        if (giaPhuThu == null)
+            return null;
+
+        GiaPhuThuDTO dto = new GiaPhuThuDTO();
+        if (giaPhuThu.getId() != null) {
+            dto.setIdPhuThu(giaPhuThu.getId().getIdPhuThu());
+            dto.setNgayApDung(giaPhuThu.getId().getNgayApDung());
+        }
+        dto.setGia(giaPhuThu.getGia());
+        dto.setIdNv(giaPhuThu.getIdNv());
+
+        // Additional info
+        if (giaPhuThu.getPhuThu() != null) {
+            dto.setTenPhuThu(giaPhuThu.getPhuThu().getTenPhuThu());
+        }
+
+        if (giaPhuThu.getNhanVien() != null) {
+            dto.setHoTenNhanVien(giaPhuThu.getNhanVien().getHo() + " " + giaPhuThu.getNhanVien().getTen());
+        }
+
+        return dto;
+    }
+
+    public static List<GiaPhuThuDTO> mapGiaPhuThuListToDTO(List<GiaPhuThu> giaPhuThuList) {
+        return giaPhuThuList.stream().map(EntityDTOMapper::mapGiaPhuThuToDTO).collect(Collectors.toList());
+    }
+
     // HangPhong mapping
     public static HangPhongDTO mapHangPhongToDTO(HangPhong hangPhong) {
         if (hangPhong == null)
@@ -855,6 +884,28 @@ public class EntityDTOMapper {
         }
         return giaHangPhongList.stream()
                 .map(EntityDTOMapper::mapGiaHangPhongToDTO)
+                .collect(Collectors.toList());
+    }
+
+    // TienNghi mapping
+    public static TienNghiDTO mapTienNghiToDTO(TienNghi tienNghi) {
+        if (tienNghi == null) {
+            return null;
+        }
+
+        TienNghiDTO dto = new TienNghiDTO();
+        dto.setIdTn(tienNghi.getIdTn());
+        dto.setTenTn(tienNghi.getTenTn());
+        dto.setIcon(tienNghi.getIcon());
+        return dto;
+    }
+
+    public static List<TienNghiDTO> mapTienNghiListToDTO(List<TienNghi> tienNghiList) {
+        if (tienNghiList == null) {
+            return null;
+        }
+        return tienNghiList.stream()
+                .map(EntityDTOMapper::mapTienNghiToDTO)
                 .collect(Collectors.toList());
     }
 

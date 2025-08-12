@@ -11,6 +11,26 @@ export const hangPhongService = {
     }
   },
 
+  // Get hot hang phong this month
+  async getHotHangPhongThisMonth() {
+    try {
+      const response = await api.get('/api/hang-phong/hot-this-month')
+      return response.data
+    } catch (error) {
+      throw error.response?.data || error.message
+    }
+  },
+
+  // Get all hang phong with current prices
+  async getAllHangPhongWithPrices() {
+    try {
+      const response = await api.get('/api/hang-phong/all-with-prices')
+      return response.data
+    } catch (error) {
+      throw error.response?.data || error.message
+    }
+  },
+
   // Get hang phong by ID
   async getHangPhongById(idHangPhong) {
     try {

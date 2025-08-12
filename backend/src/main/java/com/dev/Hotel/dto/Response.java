@@ -6,6 +6,8 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.util.List;
 import com.dev.Hotel.entity.TrangThai;
+import com.dev.Hotel.entity.BoPhan;
+import com.dev.Hotel.entity.NhomQuyen;
 
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -43,6 +45,7 @@ public class Response {
     private List<KieuPhongDTO> kieuPhongList;
     private List<LoaiPhongDTO> loaiPhongList;
     private List<GiaHangPhongDTO> giaHangPhongList;
+    private List<GiaPhuThuDTO> giaPhuThuList;
 
     // Single entities
     private KieuPhongDTO kieuPhong;
@@ -53,6 +56,13 @@ public class Response {
     private PhuThuDTO phuThu;
     private List<DichVuDTO> dichVuList;
     private List<PhuThuDTO> phuThuList;
+
+    // Amenity DTOs
+    private TienNghiDTO tienNghi;
+    private List<TienNghiDTO> tienNghiList;
+
+    // Hot Hang Phong DTOs
+    private List<HotHangPhongDTO> hotHangPhongList;
 
     // Service and surcharge usage DTOs
     private CtDichVuDTO ctDichVu;
@@ -73,6 +83,7 @@ public class Response {
     // Room pricing data
     private BigDecimal roomPrice;
     private BigDecimal minDeposit;
+    private List<Object> priceSegments;
 
     // Invoice data
     private HoaDonDTO hoaDon;
@@ -92,6 +103,12 @@ public class Response {
 
     // Statistics
     private List<Object[]> statistics;
+
+    // BoPhan and NhomQuyen
+    private BoPhan boPhan;
+    private List<BoPhan> boPhanList;
+    private NhomQuyen nhomQuyen;
+    private List<NhomQuyen> nhomQuyenList;
 
     // Getters and Setters
     public int getStatusCode() {
@@ -351,6 +368,14 @@ public class Response {
         this.minDeposit = minDeposit;
     }
 
+    public List<Object> getPriceSegments() {
+        return priceSegments;
+    }
+
+    public void setPriceSegments(List<Object> priceSegments) {
+        this.priceSegments = priceSegments;
+    }
+
     // TrangThai fields
     private TrangThai trangThai;
     private List<TrangThai> trangThaiList;
@@ -412,5 +437,53 @@ public class Response {
 
     public void setData(Object data) {
         this.data = data;
+    }
+
+    public List<HotHangPhongDTO> getHotHangPhongList() {
+        return hotHangPhongList;
+    }
+
+    public void setHotHangPhongList(List<HotHangPhongDTO> hotHangPhongList) {
+        this.hotHangPhongList = hotHangPhongList;
+    }
+
+    public List<GiaPhuThuDTO> getGiaPhuThuList() {
+        return giaPhuThuList;
+    }
+
+    public void setGiaPhuThuList(List<GiaPhuThuDTO> giaPhuThuList) {
+        this.giaPhuThuList = giaPhuThuList;
+    }
+
+    public BoPhan getBoPhan() {
+        return boPhan;
+    }
+
+    public void setBoPhan(BoPhan boPhan) {
+        this.boPhan = boPhan;
+    }
+
+    public List<BoPhan> getBoPhanList() {
+        return boPhanList;
+    }
+
+    public void setBoPhanList(List<BoPhan> boPhanList) {
+        this.boPhanList = boPhanList;
+    }
+
+    public NhomQuyen getNhomQuyen() {
+        return nhomQuyen;
+    }
+
+    public void setNhomQuyen(NhomQuyen nhomQuyen) {
+        this.nhomQuyen = nhomQuyen;
+    }
+
+    public List<NhomQuyen> getNhomQuyenList() {
+        return nhomQuyenList;
+    }
+
+    public void setNhomQuyenList(List<NhomQuyen> nhomQuyenList) {
+        this.nhomQuyenList = nhomQuyenList;
     }
 }
