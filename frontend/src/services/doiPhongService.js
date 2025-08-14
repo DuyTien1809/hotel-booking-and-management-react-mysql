@@ -21,10 +21,20 @@ const doiPhongService = {
     }
   },
 
-  // Yêu cầu đổi phòng
+  // Yêu cầu đổi phòng (chỉ kiểm tra)
   requestRoomChange: async (requestData) => {
     try {
       const response = await api.post('/api/doi-phong/request', requestData)
+      return response.data
+    } catch (error) {
+      throw error.response?.data || error.message
+    }
+  },
+
+  // Thực hiện đổi phòng
+  changeRoom: async (requestData) => {
+    try {
+      const response = await api.post('/api/doi-phong/change', requestData)
       return response.data
     } catch (error) {
       throw error.response?.data || error.message

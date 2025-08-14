@@ -134,7 +134,9 @@ const WalkInCheckIn = () => {
     roomPrice: 0,
     minDeposit: 0,
     pricePerRoom: 0,
-    depositPerRoom: 0
+    depositPerRoom: 0,
+    numberOfNights: 0,
+    totalRoomPrice: 0
   })
   
   // Room selection (only for rental)
@@ -182,7 +184,7 @@ const WalkInCheckIn = () => {
     if (bookingData.idKp && bookingData.idLp && bookingData.soLuongPhongO) {
       fetchRoomPrice(bookingData.idKp, bookingData.idLp, bookingData.soLuongPhongO)
     }
-  }, [bookingData.idKp, bookingData.idLp, bookingData.soLuongPhongO])
+  }, [bookingData.idKp, bookingData.idLp, bookingData.soLuongPhongO, bookingData.ngayBdThue, bookingData.ngayDi])
 
   const handleCustomerDataChange = (field, value) => {
     setCustomerData(prev => ({
@@ -223,14 +225,24 @@ const WalkInCheckIn = () => {
     try {
       const response = await hangPhongService.getRoomPriceByKieuAndLoai(idKp, idLp)
       if (response.statusCode === 200) {
-        // Calculate total minimum deposit based on number of rooms
-        const totalMinDeposit = response.minDeposit * soLuongPhongO
+        // Calculate number of nights
+        const numberOfNights = bookingData.ngayBdThue && bookingData.ngayDi
+          ? Math.ceil((new Date(bookingData.ngayDi) - new Date(bookingData.ngayBdThue)) / (1000 * 60 * 60 * 24))
+          : 1
+
+        // Calculate total room price (price per room per night × number of nights × number of rooms)
+        const totalRoomPrice = response.roomPrice * numberOfNights * soLuongPhongO
+
+        // Calculate minimum deposit (20% of total room price)
+        const totalMinDeposit = Math.round(totalRoomPrice * 0.2)
 
         setRoomPricing({
           roomPrice: response.roomPrice,
           minDeposit: totalMinDeposit,
           pricePerRoom: response.roomPrice,
-          depositPerRoom: response.minDeposit
+          depositPerRoom: Math.round(response.roomPrice * numberOfNights * 0.2), // 20% of total price per room
+          numberOfNights: numberOfNights,
+          totalRoomPrice: totalRoomPrice
         })
 
         // Auto-fill minimum deposit if current deposit is less than minimum
@@ -346,9 +358,7 @@ const WalkInCheckIn = () => {
 
     // Validate minimum deposit
     if (roomPricing.minDeposit > 0 && parseFloat(bookingData.tienDatCoc) < roomPricing.minDeposit) {
-      const depositPerRoom = roomPricing.depositPerRoom || 0
-      const numRooms = bookingData.soLuongPhongO || 1
-      toast.error(`Tiền đặt cọc phải ít nhất ${roomPricing.minDeposit.toLocaleString('vi-VN')} VNĐ (${depositPerRoom.toLocaleString('vi-VN')} VNĐ/phòng × ${numRooms} phòng)`)
+      toast.error(`Tiền đặt cọc phải ít nhất ${roomPricing.minDeposit.toLocaleString('vi-VN')} VNĐ (20% của tổng tiền phòng)`)
       return false
     }
     return true
@@ -592,6 +602,14 @@ const WalkInCheckIn = () => {
       soLuongPhongO: 1,
       tienDatCoc: '',
       ghiChu: ''
+    })
+    setRoomPricing({
+      roomPrice: 0,
+      minDeposit: 0,
+      pricePerRoom: 0,
+      depositPerRoom: 0,
+      numberOfNights: 0,
+      totalRoomPrice: 0
     })
     setSelectedRoom(null)
     setSelectedRooms([])
@@ -858,7 +876,7 @@ const WalkInCheckIn = () => {
                     <option value="">Chọn kiểu phòng</option>
                     {roomTypes.map(type => (
                       <option key={type.idKp} value={type.idKp}>
-                        {type.tenKp} - {type.moTaKp}
+                        {type.tenKp} - {type.moTaKp} - {type.soLuongKhach} khách
                       </option>
                     ))}
                   </select>
@@ -928,14 +946,22 @@ const WalkInCheckIn = () => {
                   {roomPricing.pricePerRoom > 0 && (
                     <div className="text-sm text-gray-600 mt-1 space-y-1">
                       <p>Giá phòng: {roomPricing.pricePerRoom.toLocaleString('vi-VN')} VNĐ/đêm/phòng</p>
+                      {roomPricing.numberOfNights > 0 && (
+                        <p>Số đêm: {roomPricing.numberOfNights} đêm</p>
+                      )}
                       {bookingData.soLuongPhongO > 1 && (
                         <p>Tổng giá ({bookingData.soLuongPhongO} phòng): {(roomPricing.pricePerRoom * bookingData.soLuongPhongO).toLocaleString('vi-VN')} VNĐ/đêm</p>
                       )}
+                      {roomPricing.totalRoomPrice > 0 && (
+                        <p className="font-medium text-gray-800">
+                          Tổng tiền phòng: {roomPricing.totalRoomPrice.toLocaleString('vi-VN')} VNĐ
+                          {roomPricing.numberOfNights > 1 && bookingData.soLuongPhongO > 1 && (
+                            <span className="text-xs text-gray-500"> ({roomPricing.pricePerRoom.toLocaleString('vi-VN')} × {roomPricing.numberOfNights} đêm × {bookingData.soLuongPhongO} phòng)</span>
+                          )}
+                        </p>
+                      )}
                       <p className="text-blue-600 font-medium">
-                        Tiền cọc tối thiểu: {roomPricing.depositPerRoom.toLocaleString('vi-VN')} VNĐ/phòng
-                        {bookingData.soLuongPhongO > 1 && (
-                          <span> × {bookingData.soLuongPhongO} = {roomPricing.minDeposit.toLocaleString('vi-VN')} VNĐ</span>
-                        )}
+                        Tiền cọc tối thiểu (20%): {roomPricing.minDeposit.toLocaleString('vi-VN')} VNĐ
                       </p>
                     </div>
                   )}

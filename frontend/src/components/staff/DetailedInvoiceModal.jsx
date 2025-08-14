@@ -398,7 +398,7 @@ const DetailedInvoiceModal = ({
         </table>
         ` : ''}
 
-        ${rentalDetails && rentalDetails.services && rentalDetails.services.filter(service => service.ttThanhToan !== 'Đã thanh toán').length > 0 ? `
+        ${rentalDetails && rentalDetails.services && rentalDetails.services.length > 0 ? `
         <div class="section-title">Dịch vụ sử dụng</div>
         <table class="table">
           <thead>
@@ -412,7 +412,7 @@ const DetailedInvoiceModal = ({
             </tr>
           </thead>
           <tbody>
-            ${sortServices(rentalDetails.services.filter(service => service.ttThanhToan !== 'Đã thanh toán')).map(service => `
+            ${sortServices(rentalDetails.services).map(service => `
             <tr>
               <td class="text-left">${service.tenDichVu}</td>
               <td class="text-left">${service.tenPhong}</td>
@@ -426,7 +426,7 @@ const DetailedInvoiceModal = ({
         </table>
         ` : ''}
 
-        ${rentalDetails && rentalDetails.surcharges && rentalDetails.surcharges.filter(surcharge => surcharge.ttThanhToan !== 'Đã thanh toán').length > 0 ? `
+        ${rentalDetails && rentalDetails.surcharges && rentalDetails.surcharges.length > 0 ? `
         <div class="section-title">Phụ thu</div>
         <table class="table">
           <thead>
@@ -440,7 +440,7 @@ const DetailedInvoiceModal = ({
             </tr>
           </thead>
           <tbody>
-            ${sortSurcharges(rentalDetails.surcharges.filter(surcharge => surcharge.ttThanhToan !== 'Đã thanh toán')).map(surcharge => `
+            ${sortSurcharges(rentalDetails.surcharges).map(surcharge => `
             <tr>
               <td class="text-left">${surcharge.loaiPhuThu}</td>
               <td class="text-left">${surcharge.tenPhong}</td>
@@ -470,7 +470,7 @@ const DetailedInvoiceModal = ({
           </div>
           <div class="total-row total-final">
             <span class="total-label">TỔNG CỘNG:</span>
-            <span class="total-value">${formatCurrency(rentalDetails?.tongTien || bill.total)}</span>
+            <span class="total-value">${formatCurrency(bill.roomCharges + bill.serviceCharges + bill.surcharges)}</span>
           </div>
           <div class="total-row">
             <span class="total-label">Tiền đặt cọc:</span>
@@ -654,8 +654,8 @@ const DetailedInvoiceModal = ({
             </div>
           )}
 
-          {/* Services - chỉ hiển thị dịch vụ chưa thanh toán */}
-          {rentalDetails && rentalDetails.services && rentalDetails.services.filter(service => service.ttThanhToan !== 'Đã thanh toán').length > 0 && (
+          {/* Services - hiển thị tất cả dịch vụ trong hóa đơn */}
+          {rentalDetails && rentalDetails.services && rentalDetails.services.length > 0 && (
             <div className="bg-white border border-gray-200 rounded-lg mb-6">
               <h3 className="text-lg font-semibold p-4 border-b text-blue-600">Dịch vụ sử dụng</h3>
               <div className="overflow-x-auto">
@@ -671,7 +671,7 @@ const DetailedInvoiceModal = ({
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {sortServices(rentalDetails.services.filter(service => service.ttThanhToan !== 'Đã thanh toán')).map((service, index) => (
+                    {sortServices(rentalDetails.services).map((service, index) => (
                       <tr key={index} className="hover:bg-gray-50">
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{service.tenDichVu}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{service.tenPhong}</td>
@@ -687,8 +687,8 @@ const DetailedInvoiceModal = ({
             </div>
           )}
 
-          {/* Surcharges - chỉ hiển thị phụ thu chưa thanh toán */}
-          {rentalDetails && rentalDetails.surcharges && rentalDetails.surcharges.filter(surcharge => surcharge.ttThanhToan !== 'Đã thanh toán').length > 0 && (
+          {/* Surcharges - hiển thị tất cả phụ thu trong hóa đơn */}
+          {rentalDetails && rentalDetails.surcharges && rentalDetails.surcharges.length > 0 && (
             <div className="bg-white border border-gray-200 rounded-lg mb-6">
               <h3 className="text-lg font-semibold p-4 border-b text-blue-600">Phụ thu</h3>
               <div className="overflow-x-auto">
@@ -704,7 +704,7 @@ const DetailedInvoiceModal = ({
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {sortSurcharges(rentalDetails.surcharges.filter(surcharge => surcharge.ttThanhToan !== 'Đã thanh toán')).map((surcharge, index) => (
+                    {sortSurcharges(rentalDetails.surcharges).map((surcharge, index) => (
                       <tr key={index} className="hover:bg-gray-50">
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{surcharge.loaiPhuThu}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{surcharge.tenPhong}</td>
@@ -738,7 +738,7 @@ const DetailedInvoiceModal = ({
               </div>
               <div className="border-t pt-3 flex justify-between text-lg font-bold text-blue-600">
                 <span>TỔNG CỘNG:</span>
-                <span>{formatCurrency(rentalDetails?.tongTien || bill.total)}</span>
+                <span>{formatCurrency(bill.roomCharges + bill.serviceCharges + bill.surcharges)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span>Tiền đặt cọc:</span>
@@ -746,7 +746,7 @@ const DetailedInvoiceModal = ({
               </div>
               <div className="border-t pt-3 flex justify-between text-lg font-bold text-red-600">
                 <span>SỐ TIỀN PHẢI THANH TOÁN:</span>
-                <span>{formatCurrency(Math.max(0, (rentalDetails?.tongTien || bill.total) - (selectedGuest?.depositAmount || 0)))}</span>
+                <span>{formatCurrency(Math.max(0, (rentalDetails?.tongTien || bill.total) ))}</span>
               </div>
             </div>
 

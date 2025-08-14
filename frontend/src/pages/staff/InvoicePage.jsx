@@ -110,28 +110,31 @@ const InvoicePage = () => {
     try {
       setLoading(true)
 
-      // Get detailed invoice information
-      const invoiceResponse = await invoiceService.getInvoiceById(invoice.idHd)
-      if (invoiceResponse.statusCode !== 200) {
+      // CHỈ GỌI 1 API: Lấy chi tiết hóa đơn đầy đủ
+      const invoiceDetailsResponse = await invoiceService.getInvoiceDetails(invoice.idHd)
+      if (invoiceDetailsResponse.statusCode !== 200) {
         toast.error('Không thể tải chi tiết hóa đơn')
         return
       }
 
-      // Get detailed rental information for complete data
-      const rentalResponse = await rentalService.getRentalDetails(invoice.idPt)
-      if (rentalResponse.statusCode !== 200) {
-        toast.error('Không thể tải chi tiết phiếu thuê')
-        return
-      }
+      // Get invoice details (chỉ items đã thanh toán)
+      const invoiceDetails = invoiceDetailsResponse.hoaDonDetails
 
-      // Get rental details
-      const rentalDetails = rentalResponse.phieuThueDetails
-
-      // Combine invoice and rental details
+      // Sử dụng data từ API details (đã có đầy đủ thông tin)
       const combinedInvoice = {
-        ...invoiceResponse.hoaDon,
-        rentalDetails: rentalDetails,
-        depositAmount: rentalDetails?.soTienCoc || 0
+        idHd: invoiceDetails.idHd,
+        idPt: invoiceDetails.idPt,
+        ngayLap: invoiceDetails.ngayLap,
+        tongTien: invoiceDetails.tongTien,
+        trangThai: invoiceDetails.trangThai,
+        cccdKhachHang: invoiceDetails.cccdKhachHang,
+        hoTenKhachHang: invoiceDetails.hoTenKhachHang,
+        sdtKhachHang: invoiceDetails.sdtKhachHang,
+        emailKhachHang: invoiceDetails.emailKhachHang,
+        idNv: invoiceDetails.idNv,
+        hoTenNhanVien: invoiceDetails.hoTenNhanVien,
+        invoiceDetails: invoiceDetails,
+        depositAmount: 0 // Hóa đơn không cần hiển thị tiền cọc vì đã thanh toán
       }
 
       setSelectedInvoice(combinedInvoice)
@@ -153,6 +156,19 @@ const InvoicePage = () => {
 
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString('vi-VN')
+  }
+
+  // Helper functions để tính toán từ invoice details
+  const calculateRoomCharges = (rooms) => {
+    return rooms.reduce((total, room) => total + (room.thanhTien || 0), 0)
+  }
+
+  const calculateServiceCharges = (services) => {
+    return services.reduce((total, service) => total + (service.thanhTien || 0), 0)
+  }
+
+  const calculateSurcharges = (surcharges) => {
+    return surcharges.reduce((total, surcharge) => total + (surcharge.thanhTien || 0), 0)
   }
 
   const getStatusColor = (status) => {
@@ -386,26 +402,56 @@ const InvoicePage = () => {
             setSelectedInvoice(null)
           }}
           invoice={selectedInvoice}
-          rentalDetails={selectedInvoice.rentalDetails}
+          rentalDetails={{
+            // Chuyển đổi từ invoiceDetails sang format cũ để tương thích
+            rooms: selectedInvoice.invoiceDetails?.danhSachPhong?.map(room => ({
+              tenPhong: room.soPhong,
+              loaiPhong: room.tenLoaiPhong,
+              ngayDen: room.ngayDen,
+              ngayDi: room.ngayDi,
+              soNgay: room.soNgay,
+              donGia: room.donGia,
+              thanhTien: room.thanhTien
+            })) || [],
+            services: selectedInvoice.invoiceDetails?.danhSachDichVu?.map(service => ({
+              tenDichVu: service.tenDv,
+              tenPhong: service.soPhong,
+              donViTinh: service.donViTinh,
+              ngaySD: service.ngaySuDung,
+              gia: service.donGia,
+              soLuong: service.soLuong,
+              thanhTien: service.thanhTien
+            })) || [],
+            surcharges: selectedInvoice.invoiceDetails?.danhSachPhuThu?.map(surcharge => ({
+              loaiPhuThu: surcharge.loaiPhuThu,
+              tenPhong: surcharge.soPhong,
+              moTa: surcharge.moTa,
+              ngayPhatSinh: new Date().toISOString().split('T')[0], // Tạm thời dùng ngày hiện tại
+              donGia: surcharge.donGia,
+              soLuong: surcharge.soLuong,
+              thanhTien: surcharge.thanhTien
+            })) || [],
+            hoTenNhanVien: selectedInvoice.hoTenNhanVien
+          }}
           selectedGuest={{
-            customerName: selectedInvoice.hoTenKhachHang,
-            customerPhone: selectedInvoice.sdtKhachHang,
-            customerEmail: selectedInvoice.emailKhachHang,
-            cccd: selectedInvoice.cccdKhachHang,
+            customerName: selectedInvoice.invoiceDetails?.hoTenKhachHang || selectedInvoice.hoTenKhachHang,
+            customerPhone: selectedInvoice.invoiceDetails?.sdtKhachHang || selectedInvoice.sdtKhachHang,
+            customerEmail: selectedInvoice.invoiceDetails?.emailKhachHang || selectedInvoice.emailKhachHang,
+            cccd: selectedInvoice.invoiceDetails?.cccdKhachHang || selectedInvoice.cccdKhachHang,
             roomNumber: selectedInvoice.soPhong,
             roomType: selectedInvoice.loaiPhong,
-            maPhieuThue: selectedInvoice.maPhieuThue,
-            checkIn: selectedInvoice.ngayCheckIn || selectedInvoice.ngayDen,
-            employeeName: selectedInvoice.rentalDetails?.hoTenNhanVien,
+            maPhieuThue: selectedInvoice.invoiceDetails?.maPhieuThue || selectedInvoice.maPhieuThue,
+            checkIn: selectedInvoice.invoiceDetails?.ngayCheckIn || selectedInvoice.ngayCheckIn || selectedInvoice.ngayDen,
+            employeeName: selectedInvoice.invoiceDetails?.hoTenNhanVien || selectedInvoice.hoTenNhanVien,
             chiTietPhieuThue: selectedInvoice.chiTietPhieuThue || [],
-            depositAmount: selectedInvoice.depositAmount || 0
+            depositAmount: selectedInvoice.invoiceDetails?.soTienCoc || selectedInvoice.depositAmount || 0
           }}
           bill={{
-            roomCharges: selectedInvoice.rentalDetails?.tongTienPhong || selectedInvoice.tienPhong || 0,
-            serviceCharges: selectedInvoice.rentalDetails?.tongTienDichVu || selectedInvoice.tienDichVu || 0,
-            surcharges: selectedInvoice.rentalDetails?.tongTienPhuThu || selectedInvoice.tienPhuThu || 0,
+            roomCharges: calculateRoomCharges(selectedInvoice.invoiceDetails?.danhSachPhong || []),
+            serviceCharges: calculateServiceCharges(selectedInvoice.invoiceDetails?.danhSachDichVu || []),
+            surcharges: calculateSurcharges(selectedInvoice.invoiceDetails?.danhSachPhuThu || []),
             paidAmount: 0, // Không hiển thị khoản đã thanh toán
-            total: selectedInvoice.rentalDetails?.tongTien || selectedInvoice.tongTien || 0
+            total: selectedInvoice.invoiceDetails?.tongTien || selectedInvoice.tongTien || 0
           }}
           checkOutData={{
             actualCheckOut: selectedInvoice.ngayCheckOut || selectedInvoice.ngayDiThucTe,

@@ -27,7 +27,7 @@ public interface IPhieuThueService {
     Response checkInFromBookingWithMultipleRooms(com.dev.Hotel.dto.CheckInMultipleRoomsRequest request);
     Response checkInWalkIn(CheckInWalkInRequest request);
     Response checkOut(Integer idPt);
-    Response checkOutWithDate(Integer idPt, LocalDate actualCheckOutDate);
+    // checkOutWithDate đã được xóa - sử dụng HoaDonService.createInvoiceFromCheckout thay thế
     Response extendStay(Integer idPt, LocalDate newCheckOut);
     
     // Search and filter
@@ -36,6 +36,7 @@ public interface IPhieuThueService {
     Response getTodayCheckIns();
     Response getTodayCheckOuts();
     Response getActiveRentalsWithoutInvoice();
+    Response getActiveRentalsWithOccupiedRoomsOnly();
     
     // Reports
     Response getOccupancyReport(LocalDate date);

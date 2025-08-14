@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
 import {
-  Search,
   Plus,
   Edit,
   Trash2,
@@ -24,8 +23,8 @@ const RoomManagement = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [roomsPerPage] = useState(12)
   const [filters, setFilters] = useState({
-    searchTerm: '',
-    roomType: '',
+    kieuPhong: '',
+    loaiPhong: '',
     status: '',
     floor: ''
   })
@@ -128,21 +127,22 @@ const RoomManagement = () => {
   const applyFilters = () => {
     let filtered = rooms
 
-    if (filters.searchTerm) {
-      filtered = filtered.filter(room =>
-        room.soPhong.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        (room.idHangPhong && `#${room.idHangPhong}`.toLowerCase().includes(filters.searchTerm.toLowerCase()))
-      )
+    // Lọc theo kiểu phòng
+    if (filters.kieuPhong) {
+      filtered = filtered.filter(room => room.tenKp === filters.kieuPhong)
     }
 
-    if (filters.roomType) {
-      filtered = filtered.filter(room => room.idHangPhong === filters.roomType)
+    // Lọc theo loại phòng
+    if (filters.loaiPhong) {
+      filtered = filtered.filter(room => room.tenLp === filters.loaiPhong)
     }
 
+    // Lọc theo trạng thái
     if (filters.status) {
-      filtered = filtered.filter(room => room.idTrangThai === filters.status)
+      filtered = filtered.filter(room => room.idTt === filters.status)
     }
 
+    // Lọc theo tầng
     if (filters.floor) {
       filtered = filtered.filter(room => room.tang.toString() === filters.floor)
     }
@@ -156,31 +156,6 @@ const RoomManagement = () => {
       ...prev,
       [key]: value
     }))
-  }
-
-  const handleAddRoom = async (e) => {
-    e.preventDefault()
-    try {
-      const roomData = {
-        soPhong: roomForm.soPhong,
-        tang: parseInt(roomForm.tang),
-        hangPhong: { idHangPhong: roomForm.hangPhong.idHp },
-        trangThai: { idTt: roomForm.trangThai.idTt }
-      }
-
-      const response = await roomService.createRoom(roomData)
-      if (response.statusCode === 200) {
-        toast.success('Thêm phòng thành công!')
-        setShowAddModal(false)
-        resetForm()
-        fetchRooms()
-      } else {
-        toast.error(response.message || 'Có lỗi xảy ra khi thêm phòng')
-      }
-    } catch (error) {
-      console.error('Error adding room:', error)
-      toast.error('Có lỗi xảy ra khi thêm phòng')
-    }
   }
 
   const handleEditRoom = async (e) => {
@@ -211,23 +186,6 @@ const RoomManagement = () => {
     } catch (error) {
       console.error('Error updating room:', error)
       toast.error('Có lỗi xảy ra khi cập nhật phòng')
-    }
-  }
-
-  const handleDeleteRoom = async (roomId) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa phòng này?')) {
-      try {
-        const response = await roomService.deleteRoom(roomId)
-        if (response.statusCode === 200) {
-          toast.success('Xóa phòng thành công!')
-          fetchRooms()
-        } else {
-          toast.error(response.message || 'Có lỗi xảy ra khi xóa phòng')
-        }
-      } catch (error) {
-        console.error('Error deleting room:', error)
-        toast.error('Có lỗi xảy ra khi xóa phòng')
-      }
     }
   }
 
@@ -317,13 +275,6 @@ const RoomManagement = () => {
           <h1 className="text-3xl font-bold text-gray-900">Quản lý phòng</h1>
           <p className="text-gray-600 mt-2">Quản lý thông tin phòng khách sạn</p>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="btn-primary"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Thêm phòng
-        </button>
       </div>
 
       {/* Filters */}
@@ -336,33 +287,35 @@ const RoomManagement = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tìm kiếm
+              Kiểu phòng
             </label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Tìm theo số phòng..."
-                value={filters.searchTerm}
-                onChange={(e) => handleFilterChange('searchTerm', e.target.value)}
-                className="input pl-10"
-              />
-            </div>
+            <select
+              value={filters.kieuPhong}
+              onChange={(e) => handleFilterChange('kieuPhong', e.target.value)}
+              className="input"
+            >
+              <option value="">Tất cả kiểu phòng</option>
+              {kieuPhongList.map(kieu => (
+                <option key={kieu.idKp} value={kieu.tenKp}>
+                  {kieu.tenKp}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Kiểu phòng
+              Loại phòng
             </label>
             <select
-              value={filters.roomType}
-              onChange={(e) => handleFilterChange('roomType', e.target.value)}
+              value={filters.loaiPhong}
+              onChange={(e) => handleFilterChange('loaiPhong', e.target.value)}
               className="input"
             >
-              <option value="">Tất cả kiểu phòng</option>
-              {roomTypes.map(type => (
-                <option key={type.idHp} value={type.idHp}>
-                  {type.tenHp}
+              <option value="">Tất cả loại phòng</option>
+              {loaiPhongList.map(loai => (
+                <option key={loai.idLp} value={loai.tenLp}>
+                  {loai.tenLp}
                 </option>
               ))}
             </select>
@@ -404,6 +357,21 @@ const RoomManagement = () => {
             </select>
           </div>
         </div>
+
+        {/* Clear Filters Button */}
+        <div className="flex justify-end mt-4">
+          <button
+            onClick={() => setFilters({
+              kieuPhong: '',
+              loaiPhong: '',
+              status: '',
+              floor: ''
+            })}
+            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            Xóa bộ lọc
+          </button>
+        </div>
       </div>
 
       {/* Room Grid */}
@@ -431,13 +399,6 @@ const RoomManagement = () => {
                   title="Chỉnh sửa"
                 >
                   <Edit className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleDeleteRoom(room.soPhong)}
-                  className="p-1 text-red-600 hover:bg-red-50 rounded"
-                  title="Xóa"
-                >
-                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -497,99 +458,6 @@ const RoomManagement = () => {
         />
       )}
 
-      {/* Add Room Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Thêm phòng mới</h2>
-
-            <form onSubmit={handleAddRoom} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Số phòng <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={roomForm.soPhong}
-                  onChange={(e) => setRoomForm({...roomForm, soPhong: e.target.value})}
-                  className="input"
-                  placeholder="Nhập số phòng"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tầng <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  value={roomForm.tang}
-                  onChange={(e) => setRoomForm({...roomForm, tang: e.target.value})}
-                  className="input"
-                  placeholder="Nhập tầng"
-                  min="1"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Kiểu phòng <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={roomForm.hangPhong.idHp}
-                  onChange={(e) => setRoomForm({...roomForm, hangPhong: { idHp: e.target.value }})}
-                  className="input"
-                  required
-                >
-                  <option value="">Chọn kiểu phòng</option>
-                  {roomTypes.map(type => (
-                    <option key={type.idHp} value={type.idHp}>
-                      {type.tenHp}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Trạng thái <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={roomForm.trangThai.idTt}
-                  onChange={(e) => setRoomForm({...roomForm, trangThai: { idTt: e.target.value }})}
-                  className="input"
-                  required
-                >
-                  <option value="">Chọn trạng thái</option>
-                  {roomStatuses.map(status => (
-                    <option key={status.id} value={status.id}>
-                      {status.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex justify-end space-x-4 pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAddModal(false)
-                    resetForm()
-                  }}
-                  className="btn-outline"
-                >
-                  Hủy
-                </button>
-                <button type="submit" className="btn-primary">
-                  Thêm phòng
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Edit Room Modal */}
       {showEditModal && selectedRoom && (

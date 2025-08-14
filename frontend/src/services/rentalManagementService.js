@@ -23,6 +23,17 @@ export const rentalManagementService = {
     }
   },
 
+  // Lấy danh sách phiếu thuê chỉ với phòng đang có khách (TT002)
+  getActiveRentalsWithOccupiedRoomsOnly: async () => {
+    try {
+      const response = await api.get('/api/phieu-thue/active-with-occupied-rooms-only')
+      return response.data
+    } catch (error) {
+      console.error('Error fetching active rentals with occupied rooms only:', error)
+      throw error
+    }
+  },
+
   // Lấy chi tiết phiếu thuê với danh sách phòng
   getRentalDetails: async (idPhieuThue) => {
     try {

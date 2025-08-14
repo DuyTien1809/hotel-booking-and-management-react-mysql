@@ -1,6 +1,7 @@
 package com.dev.Hotel.service.impl;
 
 import com.dev.Hotel.dto.CreateInvoiceRequest;
+import com.dev.Hotel.dto.HoaDonDetailsDTO;
 import com.dev.Hotel.dto.Response;
 import com.dev.Hotel.entity.*;
 import com.dev.Hotel.exception.OurException;
@@ -16,6 +17,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,6 +41,12 @@ public class HoaDonService implements IHoaDonService {
 
     @Autowired
     private CtPhuThuRepository ctPhuThuRepository;
+
+    @Autowired
+    private PhongRepository phongRepository;
+
+    @Autowired
+    private TrangThaiRepository trangThaiRepository;
 
     @Override
     public Response getAllHoaDon() {
@@ -125,7 +133,7 @@ public class HoaDonService implements IHoaDonService {
 
     @Override
     @Transactional
-    public Response createInvoiceFromCheckout(Integer idPt) {
+    public Response createInvoiceFromCheckout(Integer idPt, String actualCheckOut) {
         Response response = new Response();
         try {
             // Find PhieuThue
@@ -141,8 +149,28 @@ public class HoaDonService implements IHoaDonService {
                 return response;
             }
 
-            // Calculate total amount
+            // THỰC HIỆN CHECKOUT TRƯỚC KHI TẠO HÓA ĐƠN
+            LocalDate checkoutDate = actualCheckOut != null ?
+                LocalDate.parse(actualCheckOut) : LocalDate.now();
+            performCheckoutProcess(phieuThue, checkoutDate);
+
+            // Calculate total amount (phòng + dịch vụ + phụ thu)
             BigDecimal totalAmount = calculateTotalAmount(phieuThue);
+
+            // Trừ tiền đặt cọc để có số tiền phải trả thực tế
+            BigDecimal depositAmount = BigDecimal.ZERO;
+            if (phieuThue.getPhieuDat() != null && phieuThue.getPhieuDat().getSoTienCoc() != null) {
+                depositAmount = phieuThue.getPhieuDat().getSoTienCoc();
+            }
+
+            // TONG_TIEN = Tổng chi phí - Tiền đặt cọc (số tiền phải trả)
+            BigDecimal finalAmount = totalAmount.subtract(depositAmount);
+            finalAmount = finalAmount.max(BigDecimal.ZERO); // Không âm
+
+            System.out.println("Tính toán hóa đơn:");
+            System.out.println("- Tổng chi phí: " + totalAmount);
+            System.out.println("- Tiền đặt cọc: " + depositAmount);
+            System.out.println("- Số tiền phải trả: " + finalAmount);
 
             // Generate invoice ID
             String invoiceId = generateInvoiceId();
@@ -151,7 +179,7 @@ public class HoaDonService implements IHoaDonService {
             HoaDon hoaDon = new HoaDon();
             hoaDon.setIdHd(invoiceId);
             hoaDon.setNgayLap(LocalDate.now());
-            hoaDon.setTongTien(totalAmount);
+            hoaDon.setTongTien(finalAmount); // Sử dụng số tiền đã trừ cọc
             hoaDon.setTrangThai("Chưa thanh toán");
             hoaDon.setPhieuThue(phieuThue);
             hoaDon.setNhanVien(phieuThue.getNhanVien());
@@ -164,26 +192,36 @@ public class HoaDonService implements IHoaDonService {
                     + savedHoaDon.getIdHd());
 
             for (CtPhieuThue ctPhieuThue : ctPhieuThueList) {
-                ctPhieuThue.setIdHd(savedHoaDon.getIdHd());
-                CtPhieuThue updated = ctPhieuThueRepository.save(ctPhieuThue);
-                System.out.println(
-                        "Updated CtPhieuThue ID: " + updated.getIdCtPt() + " with invoice ID: " + updated.getIdHd());
+                // Chỉ cập nhật các phòng chưa thanh toán
+                if (!"Đã thanh toán".equals(ctPhieuThue.getTtThanhToan())) {
+                    ctPhieuThue.setIdHd(savedHoaDon.getIdHd());
+                    ctPhieuThue.setTtThanhToan("Đã thanh toán");
+                    CtPhieuThue updated = ctPhieuThueRepository.save(ctPhieuThue);
+                    System.out.println("Updated CtPhieuThue ID: " + updated.getIdCtPt() +
+                        " with invoice ID: " + updated.getIdHd() + " - Status: Đã thanh toán");
+                }
 
-                // Cập nhật ID hóa đơn vào tất cả CtDichVu của CtPhieuThue này
+                // Cập nhật ID hóa đơn vào tất cả CtDichVu chưa thanh toán của CtPhieuThue này
                 List<CtDichVu> ctDichVuList = ctDichVuRepository.findByCtPhieuThue(ctPhieuThue);
                 for (CtDichVu ctDichVu : ctDichVuList) {
                     if (!"Đã thanh toán".equals(ctDichVu.getTtThanhToan())) {
                         ctDichVu.setIdHd(savedHoaDon.getIdHd());
+                        ctDichVu.setTtThanhToan("Đã thanh toán");
                         ctDichVuRepository.save(ctDichVu);
+                        System.out.println("Updated CtDichVu: " + ctDichVu.getId().getIdDv() +
+                            " - Status: Đã thanh toán");
                     }
                 }
 
-                // Cập nhật ID hóa đơn vào tất cả CtPhuThu của CtPhieuThue này
+                // Cập nhật ID hóa đơn vào tất cả CtPhuThu chưa thanh toán của CtPhieuThue này
                 List<CtPhuThu> ctPhuThuList = ctPhuThuRepository.findByCtPhieuThue(ctPhieuThue);
                 for (CtPhuThu ctPhuThu : ctPhuThuList) {
                     if (!"Đã thanh toán".equals(ctPhuThu.getTtThanhToan())) {
                         ctPhuThu.setIdHd(savedHoaDon.getIdHd());
+                        ctPhuThu.setTtThanhToan("Đã thanh toán");
                         ctPhuThuRepository.save(ctPhuThu);
+                        System.out.println("Updated CtPhuThu: " + ctPhuThu.getId().getIdPhuThu() +
+                            " - Status: Đã thanh toán");
                     }
                 }
             }
@@ -202,17 +240,212 @@ public class HoaDonService implements IHoaDonService {
         return response;
     }
 
+    @Override
+    public Response getInvoiceDetails(String idHd) {
+        Response response = new Response();
+        try {
+            // Find HoaDon
+            HoaDon hoaDon = hoaDonRepository.findById(idHd)
+                    .orElseThrow(() -> new OurException("Không tìm thấy hóa đơn"));
+
+            // Get PhieuThue from HoaDon
+            PhieuThue phieuThue = hoaDon.getPhieuThue();
+
+            // Create invoice details DTO
+            HoaDonDetailsDTO invoiceDetails = new HoaDonDetailsDTO();
+            invoiceDetails.setIdHd(hoaDon.getIdHd());
+            invoiceDetails.setIdPt(phieuThue.getIdPt());
+            invoiceDetails.setNgayLap(hoaDon.getNgayLap());
+            invoiceDetails.setTongTien(hoaDon.getTongTien());
+            invoiceDetails.setTrangThai(hoaDon.getTrangThai());
+
+            // Customer info
+            if (phieuThue.getKhachHang() != null) {
+                invoiceDetails.setCccdKhachHang(phieuThue.getKhachHang().getCccd());
+                // Lấy cả họ và tên
+                String hoTenKhachHang = (phieuThue.getKhachHang().getHo() != null ? phieuThue.getKhachHang().getHo() + " " : "") +
+                                       (phieuThue.getKhachHang().getTen() != null ? phieuThue.getKhachHang().getTen() : "");
+                invoiceDetails.setHoTenKhachHang(hoTenKhachHang.trim());
+                invoiceDetails.setSdtKhachHang(phieuThue.getKhachHang().getSdt());
+                invoiceDetails.setEmailKhachHang(phieuThue.getKhachHang().getEmail());
+            }
+
+            // Employee info
+            if (hoaDon.getNhanVien() != null) {
+                invoiceDetails.setIdNv(hoaDon.getNhanVien().getIdNv());
+                // Lấy cả họ và tên nhân viên
+                String hoTenNhanVien = (hoaDon.getNhanVien().getHo() != null ? hoaDon.getNhanVien().getHo() + " " : "") +
+                                      (hoaDon.getNhanVien().getTen() != null ? hoaDon.getNhanVien().getTen() : "");
+                invoiceDetails.setHoTenNhanVien(hoTenNhanVien.trim());
+            }
+
+            // Booking info - tiền đặt cọc và mã phiếu thuê
+            if (phieuThue.getPhieuDat() != null) {
+                invoiceDetails.setSoTienCoc(phieuThue.getPhieuDat().getSoTienCoc());
+            }
+            // Tạo mã phiếu thuê từ ID
+            invoiceDetails.setMaPhieuThue("PT" + String.format("%06d", phieuThue.getIdPt()));
+
+            // Tìm ngày check-in sớm nhất từ ctPhieuThue
+            List<CtPhieuThue> allCtPhieuThue = ctPhieuThueRepository.findByPhieuThue(phieuThue);
+            LocalDate earliestCheckIn = allCtPhieuThue.stream()
+                    .filter(ct -> ct.getNgayDen() != null)
+                    .map(CtPhieuThue::getNgayDen)
+                    .min(LocalDate::compareTo)
+                    .orElse(null);
+            invoiceDetails.setNgayCheckIn(earliestCheckIn);
+
+            // Get PAID room details (có ID_HD và trạng thái "Đã thanh toán")
+            List<CtPhieuThue> paidRooms = ctPhieuThueRepository.findByPhieuThue(phieuThue)
+                    .stream()
+                    .filter(ct -> idHd.equals(ct.getIdHd()) && "Đã thanh toán".equals(ct.getTtThanhToan()))
+                    .toList();
+
+            List<HoaDonDetailsDTO.RoomDetailDTO> roomDetails = new ArrayList<>();
+            for (CtPhieuThue ctPhieuThue : paidRooms) {
+                HoaDonDetailsDTO.RoomDetailDTO roomDto = new HoaDonDetailsDTO.RoomDetailDTO();
+                roomDto.setIdCtPt(ctPhieuThue.getIdCtPt());
+                roomDto.setSoPhong(ctPhieuThue.getPhong().getSoPhong());
+                roomDto.setTenKieuPhong(ctPhieuThue.getPhong().getHangPhong().getKieuPhong().getTenKp());
+                roomDto.setTenLoaiPhong(ctPhieuThue.getPhong().getHangPhong().getLoaiPhong().getTenLp());
+                roomDto.setNgayDen(ctPhieuThue.getNgayDen());
+                roomDto.setNgayDi(ctPhieuThue.getNgayDi());
+                roomDto.setDonGia(ctPhieuThue.getDonGia());
+
+                // Calculate days and total
+                if (ctPhieuThue.getNgayDen() != null && ctPhieuThue.getNgayDi() != null) {
+                    long days = java.time.temporal.ChronoUnit.DAYS.between(
+                        ctPhieuThue.getNgayDen(), ctPhieuThue.getNgayDi());
+                    days = Math.max(1, days);
+                    roomDto.setSoNgay((int) days);
+                    roomDto.setThanhTien(ctPhieuThue.getDonGia().multiply(BigDecimal.valueOf(days)));
+                }
+
+                roomDetails.add(roomDto);
+            }
+            invoiceDetails.setDanhSachPhong(roomDetails);
+
+            // Get PAID service details (có ID_HD và trạng thái "Đã thanh toán")
+            List<CtDichVu> paidServices = new ArrayList<>();
+            for (CtPhieuThue ctPhieuThue : paidRooms) {
+                List<CtDichVu> services = ctDichVuRepository.findByCtPhieuThue(ctPhieuThue)
+                        .stream()
+                        .filter(dv -> idHd.equals(dv.getIdHd()) && "Đã thanh toán".equals(dv.getTtThanhToan()))
+                        .toList();
+                paidServices.addAll(services);
+            }
+
+            List<HoaDonDetailsDTO.ServiceDetailDTO> serviceDetails = new ArrayList<>();
+            for (CtDichVu ctDichVu : paidServices) {
+                HoaDonDetailsDTO.ServiceDetailDTO serviceDto = new HoaDonDetailsDTO.ServiceDetailDTO();
+                serviceDto.setIdDv(ctDichVu.getId().getIdDv());
+                serviceDto.setIdCtPt(ctDichVu.getId().getIdCtPt());
+                serviceDto.setTenDv(ctDichVu.getDichVu().getTenDv());
+                serviceDto.setDonViTinh(ctDichVu.getDichVu().getDonViTinh());
+                serviceDto.setNgaySuDung(ctDichVu.getNgaySuDung());
+                serviceDto.setDonGia(ctDichVu.getDonGia());
+                serviceDto.setSoLuong(ctDichVu.getSoLuong());
+                serviceDto.setThanhTien(ctDichVu.getDonGia().multiply(BigDecimal.valueOf(ctDichVu.getSoLuong())));
+
+                // Thêm thông tin phòng
+                serviceDto.setSoPhong(ctDichVu.getCtPhieuThue().getPhong().getSoPhong());
+                serviceDetails.add(serviceDto);
+            }
+            invoiceDetails.setDanhSachDichVu(serviceDetails);
+
+            // Get PAID surcharge details (có ID_HD và trạng thái "Đã thanh toán")
+            List<CtPhuThu> paidSurcharges = new ArrayList<>();
+            for (CtPhieuThue ctPhieuThue : paidRooms) {
+                List<CtPhuThu> surcharges = ctPhuThuRepository.findByCtPhieuThue(ctPhieuThue)
+                        .stream()
+                        .filter(pt -> idHd.equals(pt.getIdHd()) && "Đã thanh toán".equals(pt.getTtThanhToan()))
+                        .toList();
+                paidSurcharges.addAll(surcharges);
+            }
+
+            List<HoaDonDetailsDTO.SurchargeDetailDTO> surchargeDetails = new ArrayList<>();
+            for (CtPhuThu ctPhuThu : paidSurcharges) {
+                HoaDonDetailsDTO.SurchargeDetailDTO surchargeDto = new HoaDonDetailsDTO.SurchargeDetailDTO();
+                surchargeDto.setIdPhuThu(ctPhuThu.getId().getIdPhuThu());
+                surchargeDto.setIdCtPt(ctPhuThu.getId().getIdCtPt());
+                surchargeDto.setLoaiPhuThu(ctPhuThu.getPhuThu().getTenPhuThu());
+                surchargeDto.setMoTa(ctPhuThu.getPhuThu().getLyDo());
+                surchargeDto.setDonGia(ctPhuThu.getDonGia());
+                surchargeDto.setSoLuong(ctPhuThu.getSoLuong());
+                surchargeDto.setThanhTien(ctPhuThu.getDonGia().multiply(BigDecimal.valueOf(ctPhuThu.getSoLuong())));
+
+                // Thêm thông tin phòng
+                surchargeDto.setSoPhong(ctPhuThu.getCtPhieuThue().getPhong().getSoPhong());
+                surchargeDetails.add(surchargeDto);
+            }
+            invoiceDetails.setDanhSachPhuThu(surchargeDetails);
+
+            response.setStatusCode(200);
+            response.setMessage("Lấy chi tiết hóa đơn thành công");
+            response.setHoaDonDetails(invoiceDetails);
+
+        } catch (OurException e) {
+            response.setStatusCode(400);
+            response.setMessage(e.getMessage());
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi lấy chi tiết hóa đơn: " + e.getMessage());
+        }
+        return response;
+    }
+
+    /**
+     * Thực hiện quá trình checkout: chỉ cập nhật ngày checkout và trạng thái phòng
+     * KHÔNG đánh dấu "Đã thanh toán" ở đây (sẽ làm sau khi tạo hóa đơn)
+     */
+    private void performCheckoutProcess(PhieuThue phieuThue, LocalDate actualCheckOutDate) {
+        List<CtPhieuThue> ctPhieuThueList = ctPhieuThueRepository.findByPhieuThue(phieuThue);
+
+        for (CtPhieuThue ctPhieuThue : ctPhieuThueList) {
+            // Chỉ xử lý phòng chưa thanh toán
+            if (!"Đã thanh toán".equals(ctPhieuThue.getTtThanhToan())) {
+                // KHÔNG cập nhật ngayDi - giữ nguyên ngày đi ban đầu
+                // chỉ cập nhật trạng thái phòng về "Đang dọn dẹp"
+                Phong phong = ctPhieuThue.getPhong();
+                if (phong != null && phong.getTrangThai() != null) {
+                    // Tìm trạng thái "Đang dọn dẹp"
+                    Optional<TrangThai> trangThaiDonDep = trangThaiRepository.findByTenTrangThai("Đang dọn dẹp");
+                    if (trangThaiDonDep.isPresent()) {
+                        phong.setTrangThai(trangThaiDonDep.get());
+                        phongRepository.save(phong);
+                        System.out.println("Cập nhật phòng " + phong.getSoPhong() + " về trạng thái 'Đang dọn dẹp'");
+                    }
+                }
+
+                if (phong != null) {
+                    System.out.println("Checkout phòng " + phong.getSoPhong() +
+                        ": Giữ nguyên ngayDi = " + ctPhieuThue.getNgayDi() +
+                        ", Checkout thực tế = " + actualCheckOutDate);
+                }
+            }
+        }
+
+        System.out.println("Hoàn thành quá trình checkout cho PhieuThue ID: " + phieuThue.getIdPt());
+    }
+
     private BigDecimal calculateTotalAmount(PhieuThue phieuThue) {
         BigDecimal total = BigDecimal.ZERO;
 
-        // Add room charges
+        // Add room charges - CHỈ TÍNH PHÒNG CHƯA THANH TOÁN
         List<CtPhieuThue> ctPhieuThueList = ctPhieuThueRepository.findByPhieuThue(phieuThue);
         for (CtPhieuThue ctPhieuThue : ctPhieuThueList) {
-            if (ctPhieuThue.getDonGia() != null) {
-                // Calculate days with new logic: only count extra day if checkout after
-                // midnight
+            // CHỈ TÍNH PHÒNG CHƯA THANH TOÁN
+            if (!"Đã thanh toán".equals(ctPhieuThue.getTtThanhToan()) && ctPhieuThue.getDonGia() != null) {
+                // Tính tiền dựa trên số ngày đã đặt trước (ngayDen -> ngayDi trong CtPhieuThue)
                 LocalDate checkInDate = ctPhieuThue.getNgayDen();
-                LocalDate checkOutDate = ctPhieuThue.getNgayDi() != null ? ctPhieuThue.getNgayDi() : LocalDate.now();
+                LocalDate checkOutDate = ctPhieuThue.getNgayDi();
+
+                // Nếu chưa có ngayDi (chưa đặt trước ngày checkout), báo lỗi
+                if (checkOutDate == null) {
+                    throw new OurException("Không thể tính hóa đơn: Phòng " +
+                        ctPhieuThue.getPhong().getSoPhong() + " chưa có ngày checkout dự kiến. " +
+                        "Vui lòng cập nhật ngày checkout trong chi tiết phiếu thuê.");
+                }
 
                 long days = java.time.temporal.ChronoUnit.DAYS.between(checkInDate, checkOutDate);
                 days = Math.max(1, days); // At least 1 day
@@ -221,27 +454,32 @@ public class HoaDonService implements IHoaDonService {
             }
         }
 
-        // Add service charges - find by CtPhieuThue, chỉ tính các dịch vụ chưa thanh
-        // toán
+        // Add service charges - CHỈ TÍNH DỊCH VỤ CỦA PHÒNG CHƯA THANH TOÁN
         for (CtPhieuThue ctPhieuThue : ctPhieuThueList) {
-            List<CtDichVu> ctDichVuList = ctDichVuRepository.findByCtPhieuThue(ctPhieuThue);
-            for (CtDichVu ctDichVu : ctDichVuList) {
-                if (ctDichVu.getDonGia() != null && ctDichVu.getSoLuong() != null
-                        && !"Đã thanh toán".equals(ctDichVu.getTtThanhToan())) {
-                    total = total.add(ctDichVu.getDonGia().multiply(BigDecimal.valueOf(ctDichVu.getSoLuong())));
+            // Chỉ tính dịch vụ của phòng chưa thanh toán
+            if (!"Đã thanh toán".equals(ctPhieuThue.getTtThanhToan())) {
+                List<CtDichVu> ctDichVuList = ctDichVuRepository.findByCtPhieuThue(ctPhieuThue);
+                for (CtDichVu ctDichVu : ctDichVuList) {
+                    if (ctDichVu.getDonGia() != null && ctDichVu.getSoLuong() != null
+                            && !"Đã thanh toán".equals(ctDichVu.getTtThanhToan())) {
+                        total = total.add(ctDichVu.getDonGia().multiply(BigDecimal.valueOf(ctDichVu.getSoLuong())));
+                    }
                 }
             }
         }
 
-        // Add surcharges - find by CtPhieuThue, chỉ tính các phụ thu chưa thanh toán
+        // Add surcharges - CHỈ TÍNH PHỤ THU CỦA PHÒNG CHƯA THANH TOÁN
         for (CtPhieuThue ctPhieuThue : ctPhieuThueList) {
-            List<CtPhuThu> ctPhuThuList = ctPhuThuRepository.findByCtPhieuThue(ctPhieuThue);
-            for (CtPhuThu ctPhuThu : ctPhuThuList) {
-                if (ctPhuThu.getDonGia() != null && ctPhuThu.getSoLuong() != null
-                        && !"Đã thanh toán".equals(ctPhuThu.getTtThanhToan())) {
-                    total = total.add(ctPhuThu.getDonGia().multiply(BigDecimal.valueOf(ctPhuThu.getSoLuong())));
+            // Chỉ tính phụ thu của phòng chưa thanh toán
+            if (!"Đã thanh toán".equals(ctPhieuThue.getTtThanhToan())) {
+                List<CtPhuThu> ctPhuThuList = ctPhuThuRepository.findByCtPhieuThue(ctPhieuThue);
+                for (CtPhuThu ctPhuThu : ctPhuThuList) {
+                    if (ctPhuThu.getDonGia() != null && ctPhuThu.getSoLuong() != null
+                            && !"Đã thanh toán".equals(ctPhuThu.getTtThanhToan())) {
+                        total = total.add(ctPhuThu.getDonGia().multiply(BigDecimal.valueOf(ctPhuThu.getSoLuong())));
+                    }
                 }
-            }
+            } // Đóng block if cho phòng chưa thanh toán
         }
 
         return total;

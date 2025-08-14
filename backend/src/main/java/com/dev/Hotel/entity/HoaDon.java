@@ -21,11 +21,14 @@ public class HoaDon {
     
     @Column(name = "TRANG_THAI")
     private String trangThai;
-    
+
+    @Column(name = "SOTIENGIAM")
+    private BigDecimal soTienGiam;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_NV")
     private NhanVien nhanVien;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_PT")
     private PhieuThue phieuThue;

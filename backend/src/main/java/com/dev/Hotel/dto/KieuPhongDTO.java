@@ -7,13 +7,15 @@ public class KieuPhongDTO {
     private String idKp;
     private String tenKp;
     private String moTaKp;
+    private Integer soLuongKhach;
 
     public KieuPhongDTO() {}
 
-    public KieuPhongDTO(String idKp, String tenKp, String moTaKp) {
+    public KieuPhongDTO(String idKp, String tenKp, String moTaKp, Integer soLuongKhach) {
         this.idKp = idKp;
         this.tenKp = tenKp;
         this.moTaKp = moTaKp;
+        this.soLuongKhach = soLuongKhach;
     }
 
     public String getIdKp() {
@@ -38,5 +40,13 @@ public class KieuPhongDTO {
 
     public void setMoTaKp(String moTaKp) {
         this.moTaKp = moTaKp;
+    }
+
+    public Integer getSoLuongKhach() {
+        return soLuongKhach;
+    }
+
+    public void setSoLuongKhach(Integer soLuongKhach) {
+        this.soLuongKhach = soLuongKhach;
     }
 }

@@ -35,6 +35,13 @@ public class PhieuThueController {
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
+    @GetMapping("/active-with-occupied-rooms-only")
+    //@PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
+    public ResponseEntity<Response> getActiveRentalsWithOccupiedRoomsOnly() {
+        Response response = phieuThueService.getActiveRentalsWithOccupiedRoomsOnly();
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
     @GetMapping("/get-by-id/{idPt}")
     //@PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN') or hasAuthority('CUSTOMER')")
     public ResponseEntity<Response> getPhieuThueById(@PathVariable("idPt") Integer idPt) {
@@ -129,14 +136,7 @@ public class PhieuThueController {
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
-    @PutMapping("/checkout-with-date/{idPt}")
-    //@PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
-    public ResponseEntity<Response> checkOutWithDate(
-            @PathVariable("idPt") Integer idPt,
-            @RequestParam("actualCheckOut") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate actualCheckOut) {
-        Response response = phieuThueService.checkOutWithDate(idPt, actualCheckOut);
-        return ResponseEntity.status(response.getStatusCode()).body(response);
-    }
+    // API checkout-with-date đã được xóa - sử dụng create-from-checkout thay thế
 
     @PutMapping("/extend-stay/{idPt}")
     //@PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")

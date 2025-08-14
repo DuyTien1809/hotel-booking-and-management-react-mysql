@@ -16,6 +16,7 @@ import toast from 'react-hot-toast'
 import { rentalManagementService } from '../../services/rentalManagementService'
 import { formatDate, formatCurrency } from '../../utils/formatters'
 import RoomChangeModal from '../../components/staff/RoomChangeModal'
+import doiPhongService from '../../services/doiPhongService'
 
 const RentalManagement = () => {
   const [rentals, setRentals] = useState([])
@@ -35,8 +36,8 @@ const RentalManagement = () => {
   const fetchRentals = async () => {
     try {
       setLoading(true)
-      // Chỉ lấy những phiếu thuê chưa xuất hóa đơn (chưa check out)
-      const response = await rentalManagementService.getActiveRentalsWithoutInvoice()
+      // Chỉ lấy những phiếu thuê với phòng đang có khách (TT002)
+      const response = await rentalManagementService.getActiveRentalsWithOccupiedRoomsOnly()
 
       if (response.statusCode === 200) {
         setRentals(response.phieuThueList || [])
@@ -204,9 +205,31 @@ const RentalManagement = () => {
     }
   }
 
-  const handleRoomChange = (ctPhieuThue) => {
-    setSelectedCtPhieuThue(ctPhieuThue)
-    setShowRoomChangeModal(true)
+  const handleRoomChange = async (ctPhieuThue) => {
+    try {
+      // Kiểm tra điều kiện đổi phòng ngay từ đầu để hiển thị cảnh báo
+      const response = await doiPhongService.checkRoomChangeEligibility(ctPhieuThue.idCtPt)
+
+      if (response.statusCode === 200 && response.roomChangeEligibility) {
+        const eligibility = response.roomChangeEligibility
+
+        if (!eligibility.eligible) {
+          // Hiển thị cảnh báo nhưng vẫn cho phép mở modal để xem chi tiết
+          const reasons = eligibility.hanChe || []
+          const reasonText = reasons.length > 0 ? reasons.join(', ') : eligibility.reason || 'Không đủ điều kiện đổi phòng'
+          toast.error(`Cảnh báo: ${reasonText}`)
+        }
+
+        // Mở modal trong mọi trường hợp để người dùng xem chi tiết
+        setSelectedCtPhieuThue(ctPhieuThue)
+        setShowRoomChangeModal(true)
+      } else {
+        toast.error(response.message || 'Lỗi khi kiểm tra điều kiện đổi phòng')
+      }
+    } catch (error) {
+      console.error('Error checking room change eligibility:', error)
+      toast.error('Lỗi khi kiểm tra điều kiện đổi phòng')
+    }
   }
 
   const handleRoomChangeSuccess = () => {
@@ -382,7 +405,7 @@ const RentalCard = ({
           <div className="p-4">
             <h4 className="font-medium text-gray-900 mb-3 flex items-center">
               <MapPin className="w-4 h-4 mr-2" />
-              Danh sách phòng ({rental.chiTietPhieuThue?.length || 0} phòng)
+              Danh sách phòng ({rental.chiTietPhieuThue?.length || 0} phòng đang có khách)
             </h4>
 
             <div className="space-y-3">

@@ -19,4 +19,8 @@ public class BoPhan {
     @JsonIgnore
     @OneToMany(mappedBy = "boPhan", cascade = CascadeType.ALL)
     private List<NhanVien> danhSachNhanVien;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "boPhan", cascade = CascadeType.ALL)
+    private List<QuanLy> danhSachQuanLy;
 }
