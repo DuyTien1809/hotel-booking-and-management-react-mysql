@@ -14,4 +14,10 @@ public class KhuyenMaiDTO {
     private String moTaKm;
     private LocalDate ngayBatDau;
     private LocalDate ngayKetThuc;
+    private BigDecimal phanTramGiam;
+
+    // Additional fields for frontend
+    private Boolean selected = false;
+    private BigDecimal discountAmount; // Số tiền được giảm
+    private Integer minRooms; // Số phòng tối thiểu để áp dụng (cho khuyến mãi tổng hóa đơn)
 }

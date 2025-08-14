@@ -14,6 +14,7 @@ public class HoaDonDTO {
     private String idHd;
     private LocalDate ngayLap;
     private BigDecimal tongTien;
+    private BigDecimal soTienGiam; // Số tiền khuyến mãi
     private String trangThai;
     
     // PhieuThue info

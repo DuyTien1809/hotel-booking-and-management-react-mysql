@@ -12,13 +12,16 @@ import java.util.List;
 @Repository
 public interface KhuyenMaiRepository extends JpaRepository<KhuyenMai, String> {
 
-    @Query(value = "SELECT km.* FROM khuyenmai km JOIN ctkhuyenmai ct ON km.ID_KM = ct.ID_KM " +
-            "WHERE ct.ID_HANGPHONG = :idHangPhong " +
-            "AND km.NGAY_BAT_DAU <= :ngayHienTai AND km.NGAY_KET_THUC >= :ngayHienTai", nativeQuery = true)
+    @Query("SELECT DISTINCT km FROM KhuyenMai km " +
+           "JOIN FETCH km.chiTietKhuyenMai ct " +
+           "WHERE ct.idHangPhong = :idHangPhong " +
+           "AND km.ngayBatDau <= :ngayHienTai AND km.ngayKetThuc >= :ngayHienTai")
     List<KhuyenMai> findActiveByHangPhongId(@Param("idHangPhong") Integer idHangPhong,
             @Param("ngayHienTai") LocalDate ngayHienTai);
 
-    @Query("SELECT km FROM KhuyenMai km WHERE km.ngayBatDau <= :ngayHienTai AND km.ngayKetThuc >= :ngayHienTai")
+    @Query("SELECT DISTINCT km FROM KhuyenMai km " +
+           "LEFT JOIN FETCH km.chiTietKhuyenMai " +
+           "WHERE km.ngayBatDau <= :ngayHienTai AND km.ngayKetThuc >= :ngayHienTai")
     List<KhuyenMai> findActivePromotions(@Param("ngayHienTai") LocalDate ngayHienTai);
 
     // Method for finding active promotions by hang phong

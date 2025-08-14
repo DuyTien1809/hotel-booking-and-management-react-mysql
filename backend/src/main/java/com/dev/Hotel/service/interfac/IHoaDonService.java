@@ -15,6 +15,7 @@ public interface IHoaDonService {
     // Business logic
     Response getHoaDonByPhieuThue(Integer idPt);
     Response createInvoiceFromCheckout(Integer idPt, String actualCheckOut);
+    Response createInvoiceFromCheckoutWithPromotions(Integer idPt, String actualCheckOut, java.math.BigDecimal promotionDiscount);
     Response updateInvoiceStatus(String idHd, String trangThai);
 
     // Invoice details - chỉ hiển thị items đã thanh toán (có ID_HD)

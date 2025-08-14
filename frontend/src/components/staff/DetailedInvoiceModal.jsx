@@ -468,9 +468,15 @@ const DetailedInvoiceModal = ({
             <span class="total-label">Phụ thu:</span>
             <span class="total-value">${formatCurrency(rentalDetails?.tongTienPhuThu || bill.surcharges)}</span>
           </div>
+          ${invoice.invoiceDetails?.soTienGiam && invoice.invoiceDetails.soTienGiam > 0 ? `
+          <div class="total-row" style="color: #dc2626;">
+            <span class="total-label">Khuyến mãi:</span>
+            <span class="total-value">-${formatCurrency(invoice.invoiceDetails.soTienGiam)}</span>
+          </div>
+          ` : ''}
           <div class="total-row total-final">
             <span class="total-label">TỔNG CỘNG:</span>
-            <span class="total-value">${formatCurrency(bill.roomCharges + bill.serviceCharges + bill.surcharges)}</span>
+            <span class="total-value">${formatCurrency(bill.roomCharges + bill.serviceCharges + bill.surcharges - (invoice.invoiceDetails?.soTienGiam || 0))}</span>
           </div>
           <div class="total-row">
             <span class="total-label">Tiền đặt cọc:</span>
@@ -736,9 +742,18 @@ const DetailedInvoiceModal = ({
                 <span>Phụ thu:</span>
                 <span className="font-medium">{formatCurrency(rentalDetails?.tongTienPhuThu || bill.surcharges)}</span>
               </div>
+
+              {/* Hiển thị khuyến mãi nếu có */}
+              {invoice.invoiceDetails?.soTienGiam && invoice.invoiceDetails.soTienGiam > 0 && (
+                <div className="flex justify-between text-sm text-red-600">
+                  <span>Khuyến mãi:</span>
+                  <span className="font-medium">-{formatCurrency(invoice.invoiceDetails.soTienGiam)}</span>
+                </div>
+              )}
+
               <div className="border-t pt-3 flex justify-between text-lg font-bold text-blue-600">
                 <span>TỔNG CỘNG:</span>
-                <span>{formatCurrency(bill.roomCharges + bill.serviceCharges + bill.surcharges)}</span>
+                <span>{formatCurrency(bill.roomCharges + bill.serviceCharges + bill.surcharges - (invoice.invoiceDetails?.soTienGiam || 0))}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span>Tiền đặt cọc:</span>

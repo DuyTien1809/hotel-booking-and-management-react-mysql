@@ -684,6 +684,7 @@ public class EntityDTOMapper {
         dto.setIdHd(hoaDon.getIdHd());
         dto.setNgayLap(hoaDon.getNgayLap());
         dto.setTongTien(hoaDon.getTongTien());
+        dto.setSoTienGiam(hoaDon.getSoTienGiam());
         dto.setTrangThai(hoaDon.getTrangThai());
 
         // PhieuThue info
@@ -911,6 +912,45 @@ public class EntityDTOMapper {
         }
         return tienNghiList.stream()
                 .map(EntityDTOMapper::mapTienNghiToDTO)
+                .collect(Collectors.toList());
+    }
+
+    // KhuyenMai mapping
+    public static KhuyenMaiDTO mapKhuyenMaiToDTO(KhuyenMai khuyenMai) {
+        if (khuyenMai == null) {
+            return null;
+        }
+
+        KhuyenMaiDTO dto = new KhuyenMaiDTO();
+        dto.setIdKm(khuyenMai.getIdKm());
+        dto.setMoTaKm(khuyenMai.getMoTaKm());
+        dto.setNgayBatDau(khuyenMai.getNgayBatDau());
+        dto.setNgayKetThuc(khuyenMai.getNgayKetThuc());
+
+        // Lấy phần trăm giảm từ chi tiết khuyến mãi (nếu có)
+        try {
+            if (khuyenMai.getChiTietKhuyenMai() != null && !khuyenMai.getChiTietKhuyenMai().isEmpty()) {
+                // Lấy phần trăm giảm từ chi tiết đầu tiên
+                CtKhuyenMai ctKhuyenMai = khuyenMai.getChiTietKhuyenMai().get(0);
+                if (ctKhuyenMai != null && ctKhuyenMai.getPhanTramGiam() != null) {
+                    dto.setPhanTramGiam(ctKhuyenMai.getPhanTramGiam());
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error mapping KhuyenMai phanTramGiam: " + e.getMessage());
+            // Set default value if error
+            dto.setPhanTramGiam(java.math.BigDecimal.ZERO);
+        }
+
+        return dto;
+    }
+
+    public static List<KhuyenMaiDTO> mapKhuyenMaiListToDTO(List<KhuyenMai> khuyenMaiList) {
+        if (khuyenMaiList == null) {
+            return null;
+        }
+        return khuyenMaiList.stream()
+                .map(EntityDTOMapper::mapKhuyenMaiToDTO)
                 .collect(Collectors.toList());
     }
 

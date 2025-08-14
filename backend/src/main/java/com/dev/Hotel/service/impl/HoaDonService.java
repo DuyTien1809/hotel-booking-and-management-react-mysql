@@ -241,6 +241,118 @@ public class HoaDonService implements IHoaDonService {
     }
 
     @Override
+    @Transactional
+    public Response createInvoiceFromCheckoutWithPromotions(Integer idPt, String actualCheckOut, BigDecimal promotionDiscount) {
+        Response response = new Response();
+        try {
+            // Find PhieuThue
+            PhieuThue phieuThue = phieuThueRepository.findById(idPt)
+                    .orElseThrow(() -> new OurException("Không tìm thấy phiếu thuê"));
+
+            // Check if invoice already exists
+            Optional<HoaDon> existingInvoice = hoaDonRepository.findByPhieuThue(phieuThue);
+            if (existingInvoice.isPresent()) {
+                response.setStatusCode(200);
+                response.setMessage("Hóa đơn đã tồn tại");
+                response.setHoaDon(EntityDTOMapper.mapHoaDonToDTO(existingInvoice.get()));
+                return response;
+            }
+
+            // THỰC HIỆN CHECKOUT TRƯỚC KHI TẠO HÓA ĐƠN
+            LocalDate checkoutDate = actualCheckOut != null ?
+                LocalDate.parse(actualCheckOut) : LocalDate.now();
+            performCheckoutProcess(phieuThue, checkoutDate);
+
+            // Calculate total amount (phòng + dịch vụ + phụ thu)
+            BigDecimal totalAmount = calculateTotalAmount(phieuThue);
+
+            // Áp dụng khuyến mãi
+            BigDecimal discountAmount = promotionDiscount != null ? promotionDiscount : BigDecimal.ZERO;
+            BigDecimal amountAfterDiscount = totalAmount.subtract(discountAmount);
+
+            // Trừ tiền đặt cọc để có số tiền phải trả thực tế
+            BigDecimal depositAmount = BigDecimal.ZERO;
+            if (phieuThue.getPhieuDat() != null && phieuThue.getPhieuDat().getSoTienCoc() != null) {
+                depositAmount = phieuThue.getPhieuDat().getSoTienCoc();
+            }
+
+            // TONG_TIEN = Tổng chi phí - Khuyến mãi - Tiền đặt cọc (số tiền phải trả)
+            BigDecimal finalAmount = amountAfterDiscount.subtract(depositAmount);
+            finalAmount = finalAmount.max(BigDecimal.ZERO); // Không âm
+
+            System.out.println("Tính toán hóa đơn với khuyến mãi:");
+            System.out.println("- Tổng chi phí: " + totalAmount);
+            System.out.println("- Khuyến mãi: " + discountAmount);
+            System.out.println("- Sau khuyến mãi: " + amountAfterDiscount);
+            System.out.println("- Tiền đặt cọc: " + depositAmount);
+            System.out.println("- Số tiền phải trả: " + finalAmount);
+
+            // Generate invoice ID
+            String invoiceId = generateInvoiceId();
+
+            // Create HoaDon
+            HoaDon hoaDon = new HoaDon();
+            hoaDon.setIdHd(invoiceId);
+            hoaDon.setNgayLap(LocalDate.now());
+            hoaDon.setTongTien(finalAmount); // Sử dụng số tiền đã trừ cọc và khuyến mãi
+            hoaDon.setSoTienGiam(discountAmount); // Lưu số tiền khuyến mãi
+            hoaDon.setTrangThai("Chưa thanh toán");
+            hoaDon.setPhieuThue(phieuThue);
+            hoaDon.setNhanVien(phieuThue.getNhanVien());
+
+            HoaDon savedHoaDon = hoaDonRepository.save(hoaDon);
+
+            // Cập nhật ID hóa đơn vào tất cả CtPhieuThue (tương tự method gốc)
+            List<CtPhieuThue> ctPhieuThueList = ctPhieuThueRepository.findByPhieuThue(phieuThue);
+            for (CtPhieuThue ctPhieuThue : ctPhieuThueList) {
+                if (!"Đã thanh toán".equals(ctPhieuThue.getTtThanhToan())) {
+                    ctPhieuThue.setIdHd(savedHoaDon.getIdHd());
+                    ctPhieuThue.setTtThanhToan("Đã thanh toán");
+                    CtPhieuThue updated = ctPhieuThueRepository.save(ctPhieuThue);
+                    System.out.println("Updated CtPhieuThue ID: " + updated.getIdCtPt() +
+                        " with invoice ID: " + updated.getIdHd() + " - Status: Đã thanh toán");
+                }
+
+                // Cập nhật ID hóa đơn vào tất cả CtDichVu chưa thanh toán của CtPhieuThue này
+                List<CtDichVu> ctDichVuList = ctDichVuRepository.findByCtPhieuThue(ctPhieuThue);
+                for (CtDichVu ctDichVu : ctDichVuList) {
+                    if (!"Đã thanh toán".equals(ctDichVu.getTtThanhToan())) {
+                        ctDichVu.setIdHd(savedHoaDon.getIdHd());
+                        ctDichVu.setTtThanhToan("Đã thanh toán");
+                        ctDichVuRepository.save(ctDichVu);
+                        System.out.println("Updated CtDichVu: " + ctDichVu.getId().getIdDv() +
+                            " - Status: Đã thanh toán");
+                    }
+                }
+
+                // Cập nhật ID hóa đơn vào tất cả CtPhuThu chưa thanh toán của CtPhieuThue này
+                List<CtPhuThu> ctPhuThuList = ctPhuThuRepository.findByCtPhieuThue(ctPhieuThue);
+                for (CtPhuThu ctPhuThu : ctPhuThuList) {
+                    if (!"Đã thanh toán".equals(ctPhuThu.getTtThanhToan())) {
+                        ctPhuThu.setIdHd(savedHoaDon.getIdHd());
+                        ctPhuThu.setTtThanhToan("Đã thanh toán");
+                        ctPhuThuRepository.save(ctPhuThu);
+                        System.out.println("Updated CtPhuThu: " + ctPhuThu.getId().getIdPhuThu() +
+                            " - Status: Đã thanh toán");
+                    }
+                }
+            }
+
+            response.setStatusCode(200);
+            response.setMessage("Tạo hóa đơn từ checkout với khuyến mãi thành công");
+            response.setHoaDon(EntityDTOMapper.mapHoaDonToDTO(savedHoaDon));
+
+        } catch (OurException e) {
+            response.setStatusCode(400);
+            response.setMessage(e.getMessage());
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi tạo hóa đơn từ checkout với khuyến mãi: " + e.getMessage());
+        }
+        return response;
+    }
+
+    @Override
     public Response getInvoiceDetails(String idHd) {
         Response response = new Response();
         try {
@@ -257,6 +369,7 @@ public class HoaDonService implements IHoaDonService {
             invoiceDetails.setIdPt(phieuThue.getIdPt());
             invoiceDetails.setNgayLap(hoaDon.getNgayLap());
             invoiceDetails.setTongTien(hoaDon.getTongTien());
+            invoiceDetails.setSoTienGiam(hoaDon.getSoTienGiam()); // Thêm số tiền khuyến mãi
             invoiceDetails.setTrangThai(hoaDon.getTrangThai());
 
             // Customer info
