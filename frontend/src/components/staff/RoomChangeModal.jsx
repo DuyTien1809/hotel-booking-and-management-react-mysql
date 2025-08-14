@@ -303,35 +303,6 @@ const RoomChangeModal = ({ isOpen, onClose, ctPhieuThue, onSuccess }) => {
         {step === 3 && (
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Xác nhận đổi phòng</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Lý do đổi phòng
-                </label>
-                <textarea
-                  value={formData.lyDo}
-                  onChange={(e) => setFormData(prev => ({ ...prev, lyDo: e.target.value }))}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  rows="3"
-                  placeholder="Nhập lý do đổi phòng..."
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Ghi chú
-                </label>
-                <textarea
-                  value={formData.ghiChu}
-                  onChange={(e) => setFormData(prev => ({ ...prev, ghiChu: e.target.value }))}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  rows="3"
-                  placeholder="Ghi chú thêm..."
-                />
-              </div>
-            </div>
-
             <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
               <h4 className="font-medium mb-2">Tóm tắt đổi phòng:</h4>
               <p><strong>Từ phòng:</strong> {ctPhieuThue?.soPhong} → <strong>Sang phòng:</strong> {selectedRoom?.soPhong}</p>

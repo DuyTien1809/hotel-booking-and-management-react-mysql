@@ -19,6 +19,10 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import com.dev.Hotel.dto.PhieuThueDTO;
+import java.util.List;
 
 @Service
 public class PhieuThueService implements IPhieuThueService {
@@ -1003,6 +1007,42 @@ public class PhieuThueService implements IPhieuThueService {
         } catch (Exception e) {
             response.setStatusCode(500);
             response.setMessage("Lỗi khi lấy danh sách phiếu thuê chưa xuất hóa đơn: " + e.getMessage());
+        }
+        return response;
+    }
+
+    @Override
+    public Response getActiveRentalsWithOccupiedRoomsOnly() {
+        Response response = new Response();
+        try {
+            // Get all occupied rooms (TT002 status) without invoice
+            List<CtPhieuThue> occupiedRooms = ctPhieuThueRepository.findAllOccupiedRooms();
+
+            // Group by PhieuThue to create rental list with only occupied rooms
+            Map<Integer, List<CtPhieuThue>> groupedByPhieuThue = occupiedRooms.stream()
+                .collect(Collectors.groupingBy(ct -> ct.getPhieuThue().getIdPt()));
+
+            List<PhieuThueDTO> phieuThueDTOList = new ArrayList<>();
+
+            for (Map.Entry<Integer, List<CtPhieuThue>> entry : groupedByPhieuThue.entrySet()) {
+                List<CtPhieuThue> ctList = entry.getValue();
+                if (!ctList.isEmpty()) {
+                    PhieuThue phieuThue = ctList.get(0).getPhieuThue();
+                    PhieuThueDTO dto = EntityDTOMapper.mapPhieuThueToDTO(phieuThue);
+
+                    // Only include occupied rooms in chiTietPhieuThue
+                    dto.setChiTietPhieuThue(EntityDTOMapper.mapCtPhieuThueListToDTO(ctList));
+
+                    phieuThueDTOList.add(dto);
+                }
+            }
+
+            response.setStatusCode(200);
+            response.setMessage("Thành công");
+            response.setPhieuThueList(phieuThueDTOList);
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi lấy danh sách phiếu thuê với phòng đang có khách: " + e.getMessage());
         }
         return response;
     }

@@ -399,6 +399,7 @@ public class EntityDTOMapper {
         dto.setIdKp(kieuPhong.getIdKp());
         dto.setTenKp(kieuPhong.getTenKp());
         dto.setMoTaKp(kieuPhong.getMoTa());
+        dto.setSoLuongKhach(kieuPhong.getSoLuongKhach());
         return dto;
     }
 

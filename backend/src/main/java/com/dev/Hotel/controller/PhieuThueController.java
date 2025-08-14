@@ -35,6 +35,13 @@ public class PhieuThueController {
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
+    @GetMapping("/active-with-occupied-rooms-only")
+    //@PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
+    public ResponseEntity<Response> getActiveRentalsWithOccupiedRoomsOnly() {
+        Response response = phieuThueService.getActiveRentalsWithOccupiedRoomsOnly();
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
     @GetMapping("/get-by-id/{idPt}")
     //@PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN') or hasAuthority('CUSTOMER')")
     public ResponseEntity<Response> getPhieuThueById(@PathVariable("idPt") Integer idPt) {

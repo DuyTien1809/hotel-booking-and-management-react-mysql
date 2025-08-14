@@ -1,5 +1,6 @@
 com\dev\Hotel\entity\QuanLyId.class
 com\dev\Hotel\entity\CtKhachO.class
+com\dev\Hotel\dto\HoaDonDetailsDTO$RoomDetailDTO.class
 com\dev\Hotel\dto\RoomChangeFeeCalculationDTO.class
 com\dev\Hotel\entity\CtPhieuDatId.class
 com\dev\Hotel\dto\PhieuThueDetailsDTO$RoomDetailDTO.class
@@ -15,10 +16,12 @@ com\dev\Hotel\service\impl\PhongService.class
 com\dev\Hotel\service\impl\PriceService.class
 com\dev\Hotel\service\impl\RoomAvailabilityService.class
 com\dev\Hotel\controller\PhongController.class
+com\dev\Hotel\dto\HoaDonDetailsDTO.class
 com\dev\Hotel\repo\GiaHangPhongRepository.class
 com\dev\Hotel\repo\GiaPhuThuRepository.class
 com\dev\Hotel\dto\GiaPhuThuDTO.class
 com\dev\Hotel\entity\CtPhieuDat.class
+com\dev\Hotel\entity\CtTienNghiId.class
 com\dev\Hotel\controller\ReportController.class
 com\dev\Hotel\entity\Phong.class
 com\dev\Hotel\service\interfac\IPhongService.class
@@ -111,6 +114,7 @@ com\dev\Hotel\utils\EntityDTOMapper.class
 com\dev\Hotel\dto\CustomerRegisterRequest.class
 com\dev\Hotel\dto\PhieuThueDetailsDTO$ServiceDetailDTO.class
 com\dev\Hotel\repo\NhanVienRepository.class
+com\dev\Hotel\dto\HoaDonDetailsDTO$ServiceDetailDTO.class
 com\dev\Hotel\entity\CtDichVu.class
 com\dev\Hotel\controller\TrangThaiController.class
 com\dev\Hotel\dto\PhieuThueDTO.class
@@ -133,6 +137,7 @@ com\dev\Hotel\dto\CheckInWalkInRequest.class
 com\dev\Hotel\entity\CtDichVuId.class
 com\dev\Hotel\service\interfac\ICustomerService.class
 com\dev\Hotel\controller\PhieuDatController.class
+com\dev\Hotel\entity\CtTienNghi.class
 com\dev\Hotel\service\impl\PhuThuService.class
 com\dev\Hotel\service\interfac\IKhachHangService.class
 com\dev\Hotel\controller\ServiceController.class
@@ -146,6 +151,7 @@ com\dev\Hotel\repo\CtPhieuDatRepository.class
 com\dev\Hotel\dto\AvailableRoomsByHangPhongDTO.class
 com\dev\Hotel\repo\LoaiPhongRepository.class
 com\dev\Hotel\service\interfac\ILoaiPhongService.class
+com\dev\Hotel\dto\HoaDonDetailsDTO$SurchargeDetailDTO.class
 com\dev\Hotel\utils\JWTUtils.class
 com\dev\Hotel\entity\CtKhachO$CtKhachOId.class
 com\dev\Hotel\entity\TrangThai.class
@@ -187,5 +193,6 @@ com\dev\Hotel\service\impl\ServiceManagementService.class
 com\dev\Hotel\entity\PhuThu.class
 com\dev\Hotel\dto\CheckInWalkInRequest$NhanVienInfo.class
 com\dev\Hotel\security\SecurityConfig.class
+com\dev\Hotel\repo\GiaDichVuRepository.class
 com\dev\Hotel\repo\HoaDonRepository.class
 com\dev\Hotel\entity\GiaDichVuId.class

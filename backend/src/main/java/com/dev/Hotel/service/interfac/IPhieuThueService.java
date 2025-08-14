@@ -36,6 +36,7 @@ public interface IPhieuThueService {
     Response getTodayCheckIns();
     Response getTodayCheckOuts();
     Response getActiveRentalsWithoutInvoice();
+    Response getActiveRentalsWithOccupiedRoomsOnly();
     
     // Reports
     Response getOccupancyReport(LocalDate date);

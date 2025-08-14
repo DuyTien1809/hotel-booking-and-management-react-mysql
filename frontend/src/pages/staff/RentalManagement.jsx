@@ -36,8 +36,8 @@ const RentalManagement = () => {
   const fetchRentals = async () => {
     try {
       setLoading(true)
-      // Chỉ lấy những phiếu thuê chưa xuất hóa đơn (chưa check out)
-      const response = await rentalManagementService.getActiveRentalsWithoutInvoice()
+      // Chỉ lấy những phiếu thuê với phòng đang có khách (TT002)
+      const response = await rentalManagementService.getActiveRentalsWithOccupiedRoomsOnly()
 
       if (response.statusCode === 200) {
         setRentals(response.phieuThueList || [])
@@ -405,7 +405,7 @@ const RentalCard = ({
           <div className="p-4">
             <h4 className="font-medium text-gray-900 mb-3 flex items-center">
               <MapPin className="w-4 h-4 mr-2" />
-              Danh sách phòng ({rental.chiTietPhieuThue?.length || 0} phòng)
+              Danh sách phòng ({rental.chiTietPhieuThue?.length || 0} phòng đang có khách)
             </h4>
 
             <div className="space-y-3">

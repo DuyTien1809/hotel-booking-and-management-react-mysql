@@ -158,31 +158,6 @@ const RoomManagement = () => {
     }))
   }
 
-  const handleAddRoom = async (e) => {
-    e.preventDefault()
-    try {
-      const roomData = {
-        soPhong: roomForm.soPhong,
-        tang: parseInt(roomForm.tang),
-        hangPhong: { idHangPhong: roomForm.hangPhong.idHp },
-        trangThai: { idTt: roomForm.trangThai.idTt }
-      }
-
-      const response = await roomService.createRoom(roomData)
-      if (response.statusCode === 200) {
-        toast.success('Thêm phòng thành công!')
-        setShowAddModal(false)
-        resetForm()
-        fetchRooms()
-      } else {
-        toast.error(response.message || 'Có lỗi xảy ra khi thêm phòng')
-      }
-    } catch (error) {
-      console.error('Error adding room:', error)
-      toast.error('Có lỗi xảy ra khi thêm phòng')
-    }
-  }
-
   const handleEditRoom = async (e) => {
     e.preventDefault()
     try {
@@ -211,23 +186,6 @@ const RoomManagement = () => {
     } catch (error) {
       console.error('Error updating room:', error)
       toast.error('Có lỗi xảy ra khi cập nhật phòng')
-    }
-  }
-
-  const handleDeleteRoom = async (roomId) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa phòng này?')) {
-      try {
-        const response = await roomService.deleteRoom(roomId)
-        if (response.statusCode === 200) {
-          toast.success('Xóa phòng thành công!')
-          fetchRooms()
-        } else {
-          toast.error(response.message || 'Có lỗi xảy ra khi xóa phòng')
-        }
-      } catch (error) {
-        console.error('Error deleting room:', error)
-        toast.error('Có lỗi xảy ra khi xóa phòng')
-      }
     }
   }
 
@@ -317,13 +275,6 @@ const RoomManagement = () => {
           <h1 className="text-3xl font-bold text-gray-900">Quản lý phòng</h1>
           <p className="text-gray-600 mt-2">Quản lý thông tin phòng khách sạn</p>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="btn-primary"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Thêm phòng
-        </button>
       </div>
 
       {/* Filters */}
@@ -449,13 +400,6 @@ const RoomManagement = () => {
                 >
                   <Edit className="w-4 h-4" />
                 </button>
-                <button
-                  onClick={() => handleDeleteRoom(room.soPhong)}
-                  className="p-1 text-red-600 hover:bg-red-50 rounded"
-                  title="Xóa"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
               </div>
             </div>
 
@@ -514,98 +458,6 @@ const RoomManagement = () => {
         />
       )}
 
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Thêm phòng mới</h2>
-
-            <form onSubmit={handleAddRoom} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Số phòng <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={roomForm.soPhong}
-                  onChange={(e) => setRoomForm({...roomForm, soPhong: e.target.value})}
-                  className="input"
-                  placeholder="Nhập số phòng"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tầng <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  value={roomForm.tang}
-                  onChange={(e) => setRoomForm({...roomForm, tang: e.target.value})}
-                  className="input"
-                  placeholder="Nhập tầng"
-                  min="1"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Hạng phòng <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={roomForm.hangPhong.idHp}
-                  onChange={(e) => setRoomForm({...roomForm, hangPhong: { idHp: e.target.value }})}
-                  className="input"
-                  required
-                >
-                  <option value="">Chọn kiểu phòng</option>
-                  {roomTypes.map(type => (
-                    <option key={type.idHp} value={type.idHp}>
-                      {type.tenHp}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Trạng thái <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={roomForm.trangThai.idTt}
-                  onChange={(e) => setRoomForm({...roomForm, trangThai: { idTt: e.target.value }})}
-                  className="input"
-                  required
-                >
-                  <option value="">Chọn trạng thái</option>
-                  {roomStatuses.map(status => (
-                    <option key={status.id} value={status.id}>
-                      {status.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex justify-end space-x-4 pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAddModal(false)
-                    resetForm()
-                  }}
-                  className="btn-outline"
-                >
-                  Hủy
-                </button>
-                <button type="submit" className="btn-primary">
-                  Thêm phòng
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Edit Room Modal */}
       {showEditModal && selectedRoom && (
