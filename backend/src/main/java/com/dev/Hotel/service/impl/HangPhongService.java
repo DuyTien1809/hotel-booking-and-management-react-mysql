@@ -1,10 +1,13 @@
 package com.dev.Hotel.service.impl;
 
 import com.dev.Hotel.dto.Response;
+import com.dev.Hotel.dto.TienNghiDTO;
 import com.dev.Hotel.entity.HangPhong;
 import com.dev.Hotel.entity.GiaHangPhong;
+import com.dev.Hotel.entity.TienNghi;
 import com.dev.Hotel.repo.HangPhongRepository;
 import com.dev.Hotel.repo.GiaHangPhongRepository;
+import com.dev.Hotel.repo.TienNghiRepository;
 import com.dev.Hotel.service.interfac.IHangPhongService;
 import com.dev.Hotel.utils.EntityDTOMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +30,9 @@ public class HangPhongService implements IHangPhongService {
 
     @Autowired
     private GiaHangPhongRepository giaHangPhongRepository;
+
+    @Autowired
+    private TienNghiRepository tienNghiRepository;
 
     @Autowired
     private RoomPricingService roomPricingService;
@@ -438,6 +444,43 @@ public class HangPhongService implements IHangPhongService {
                 dto.setTenLp((String) row[3]);
                 dto.setSoLuotThue(((Number) row[4]).longValue());
                 dto.setGiaHienTai((BigDecimal) row[5]);
+
+                // Lấy hình ảnh đại diện và tiện nghi cho hạng phòng
+                Optional<HangPhong> hangPhongOpt = hangPhongRepository.findByIdWithImages(dto.getIdHangPhong());
+                if (hangPhongOpt.isPresent()) {
+                    HangPhong hangPhong = hangPhongOpt.get();
+
+                    // Lấy hình ảnh đại diện
+                    if (hangPhong.getDanhSachAnhHangPhong() != null && !hangPhong.getDanhSachAnhHangPhong().isEmpty()) {
+                        String urlAnhDaiDien = hangPhong.getDanhSachAnhHangPhong().get(0).getUrlAnh();
+                        dto.setUrlAnhDaiDien(urlAnhDaiDien);
+                    }
+
+                    // Lấy mô tả kiểu phòng
+                    if (hangPhong.getKieuPhong() != null && hangPhong.getKieuPhong().getMoTa() != null) {
+                        dto.setMoTaKieuPhong(hangPhong.getKieuPhong().getMoTa());
+                    }
+
+                    // Lấy tiện nghi
+                    try {
+                        List<TienNghi> tienNghiList = tienNghiRepository.findByHangPhong(hangPhong);
+                        if (!tienNghiList.isEmpty()) {
+                            List<TienNghiDTO> tienNghiDTOList = new ArrayList<>();
+                            for (TienNghi tn : tienNghiList) {
+                                TienNghiDTO tnDTO = new TienNghiDTO();
+                                tnDTO.setIdTn(tn.getIdTn());
+                                tnDTO.setTenTn(tn.getTenTn());
+                                tnDTO.setIcon(tn.getIcon());
+                                tienNghiDTOList.add(tnDTO);
+                            }
+                            dto.setDanhSachTienNghi(tienNghiDTOList);
+                        }
+                    } catch (Exception e) {
+                        System.out
+                                .println("Skipping amenities for room " + dto.getIdHangPhong() + ": " + e.getMessage());
+                        // Continue without amenities
+                    }
+                }
 
                 hotHangPhongList.add(dto);
             }

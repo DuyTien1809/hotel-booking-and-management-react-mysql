@@ -183,10 +183,12 @@ public class PhongController {
             @RequestParam("checkIn") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
             @RequestParam("checkOut") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut,
             @RequestParam(value = "minPrice", required = false) BigDecimal minPrice,
-            @RequestParam(value = "maxPrice", required = false) BigDecimal maxPrice) {
+            @RequestParam(value = "maxPrice", required = false) BigDecimal maxPrice,
+            @RequestParam(value = "idKp", required = false) String idKp,
+            @RequestParam(value = "idLp", required = false) String idLp) {
         // Sử dụng RoomAvailabilityService để có đầy đủ thông tin enrichment
         Response response = roomAvailabilityService.getAvailableRoomsByHangPhongAndPriceRange(checkIn, checkOut,
-                minPrice, maxPrice);
+                minPrice, maxPrice, idKp, idLp);
         System.out.println("Controller returning response with " +
                 (response.getPhongList() != null
                         ? response.getPhongList().size()

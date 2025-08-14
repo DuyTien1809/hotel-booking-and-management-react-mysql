@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Users, Eye } from 'lucide-react';
 import { getAmenityIcon } from '../../utils/amenityIcons.jsx';
 import AmenityIcon from './AmenityIcon.jsx';
 import BookingModal from '../booking/BookingModal';
 import { formatPrice, getDisplayPrice, formatPriceSegments } from '../../utils/priceUtils.js';
 
-const RoomSearchResult = ({ searchResults, searchDates }) => {
+const RoomSearchResult = ({ searchResults, searchDates, isPublic = false }) => {
+  const navigate = useNavigate();
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -13,8 +15,19 @@ const RoomSearchResult = ({ searchResults, searchDates }) => {
 
   // Handle book room
   const handleBookRoom = (room) => {
-    setSelectedRoom(room);
-    setShowBookingModal(true);
+    if (isPublic) {
+      // Save booking data and redirect to login
+      const bookingData = {
+        room: room,
+        searchDates: searchDates,
+        returnUrl: '/booking'
+      };
+      sessionStorage.setItem('pendingBooking', JSON.stringify(bookingData));
+      navigate('/login?redirect=booking');
+    } else {
+      setSelectedRoom(room);
+      setShowBookingModal(true);
+    }
   };
 
   // Handle view detail
@@ -135,15 +148,7 @@ const RoomSearchResult = ({ searchResults, searchDates }) => {
                 })()}
               </div>
 
-              {/* Tags loại phòng */}
-              <div className="flex gap-1 mb-3 flex-wrap">
-                <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-                  {room.tenKieuPhong}
-                </span>
-                <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                  {room.tenLoaiPhong}
-                </span>
-              </div>
+
 
               {/* Mô tả ngắn */}
               <p className="text-gray-600 text-xs mb-3 line-clamp-2">
@@ -363,12 +368,11 @@ const RoomSearchResult = ({ searchResults, searchDates }) => {
                     <button
                       onClick={() => {
                         setShowDetailModal(false);
-                        setSelectedRoom(detailRoom);
-                        setShowBookingModal(true);
+                        handleBookRoom(detailRoom);
                       }}
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition-colors text-lg shadow-lg"
                     >
-                      Đặt hạng phòng ngay
+                      {isPublic ? 'Đăng nhập để đặt phòng' : 'Đặt hạng phòng ngay'}
                     </button>
 
                     {/* Trust Signals */}

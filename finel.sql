@@ -12,8 +12,8 @@
 /*!50503 SET NAMES utf8 */
 ;
 /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */
-;
 /*!40103 SET TIME_ZONE='+00:00' */
+;
 ;
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */
 ;
@@ -50,10 +50,10 @@ LOCK TABLES `anh_hang_phong` WRITE;
 ;
 INSERT INTO `anh_hang_phong`
 VALUES ('AHP01', 'https://surl.li/dpgwis', 1),
-('AHP02', 'https://surli.cc/kbjjjt', 2),
-('AHP03', 'https://surl.li/mzigza', 3),
-('AHP04', 'https://surl.li/pfslrj', 4),
-('AHP05', 'https://surl.lu/plrgvv', 5);
+  ('AHP02', 'https://surli.cc/kbjjjt', 2),
+  ('AHP03', 'https://surl.li/mzigza', 3),
+  ('AHP04', 'https://surl.li/pfslrj', 4),
+  ('AHP05', 'https://surl.lu/plrgvv', 5);
 /*!40000 ALTER TABLE `anh_hang_phong` ENABLE KEYS */
 ;
 UNLOCK TABLES;
@@ -80,9 +80,9 @@ LOCK TABLES `bo_phan` WRITE;
 ;
 INSERT INTO `bo_phan`
 VALUES ('BP001', 'Quản lý'),
-('BP002', 'Lễ tân'),
-('BP003', 'Nhà hàng'),
-('BP004', 'Kế toán');
+  ('BP002', 'Lễ tân'),
+  ('BP003', 'Nhà hàng'),
+  ('BP004', 'Kế toán');
 /*!40000 ALTER TABLE `bo_phan` ENABLE KEYS */
 ;
 UNLOCK TABLES;
@@ -128,7 +128,7 @@ VALUES (
     'HD01',
     'Chưa thanh toán'
   ),
-(
+  (
     2,
     'DV02',
     '2025-07-31',
@@ -137,7 +137,7 @@ VALUES (
     'HD02',
     'Chưa thanh toán'
   ),
-(
+  (
     4,
     'DV04',
     '2025-07-30',
@@ -198,7 +198,7 @@ VALUES (
     '101',
     'HD01'
   ),
-(
+  (
     2,
     '2025-08-06',
     '15:00:00',
@@ -209,7 +209,7 @@ VALUES (
     '307',
     'HD02'
   ),
-(
+  (
     4,
     '2025-08-07',
     '16:00:00',
@@ -220,7 +220,7 @@ VALUES (
     '308',
     'HD04'
   ),
-(
+  (
     6,
     '2025-08-06',
     '15:00:00',
@@ -231,7 +231,7 @@ VALUES (
     '309',
     NULL
   ),
-(
+  (
     7,
     '2025-08-06',
     '15:00:00',
@@ -242,7 +242,7 @@ VALUES (
     '306',
     NULL
   ),
-(
+  (
     8,
     '2025-08-08',
     '15:30:00',
@@ -288,9 +288,30 @@ LOCK TABLES `ct_phu_thu` WRITE;
 /*!40000 ALTER TABLE `ct_phu_thu` DISABLE KEYS */
 ;
 INSERT INTO `ct_phu_thu`
-VALUES ('PT01', 1, 'HD01', 'Chưa thanh toán', 200000.00, 1),
-('PT02', 2, 'HD02', 'Chưa thanh toán', 300000.00, 1),
-('PT04', 4, 'HD04', 'Chưa thanh toán', 150000.00, 1);
+VALUES (
+    'PT01',
+    1,
+    'HD01',
+    'Chưa thanh toán',
+    200000.00,
+    1
+  ),
+  (
+    'PT02',
+    2,
+    'HD02',
+    'Chưa thanh toán',
+    300000.00,
+    1
+  ),
+  (
+    'PT04',
+    4,
+    'HD04',
+    'Chưa thanh toán',
+    150000.00,
+    1
+  );
 /*!40000 ALTER TABLE `ct_phu_thu` ENABLE KEYS */
 ;
 UNLOCK TABLES;
@@ -320,8 +341,8 @@ LOCK TABLES `ctkhacho` WRITE;
 ;
 INSERT INTO `ctkhacho`
 VALUES (1, '123456789001'),
-(2, '123456789002'),
-(4, '123456789004');
+  (2, '123456789002'),
+  (4, '123456789004');
 /*!40000 ALTER TABLE `ctkhacho` ENABLE KEYS */
 ;
 UNLOCK TABLES;
@@ -352,10 +373,10 @@ LOCK TABLES `ctkhuyenmai` WRITE;
 ;
 INSERT INTO `ctkhuyenmai`
 VALUES ('KM01', 1, 10.00),
-('KM02', 2, 15.00),
-('KM03', 3, 20.00),
-('KM04', 4, 25.00),
-('KM05', 5, 30.00);
+  ('KM02', 2, 15.00),
+  ('KM03', 3, 20.00),
+  ('KM04', 4, 25.00),
+  ('KM05', 5, 30.00);
 /*!40000 ALTER TABLE `ctkhuyenmai` ENABLE KEYS */
 ;
 UNLOCK TABLES;
@@ -387,12 +408,12 @@ LOCK TABLES `ctphieudat` WRITE;
 ;
 INSERT INTO `ctphieudat`
 VALUES (1, 1, 1, 1000000.00),
-(3, 3, 2, 2000000.00),
-(3, 4, 1, 3000000.00),
-(5, 3, 1, 3000000.00),
-(9, 1, 2, 2000000.00),
-(10, 3, 2, 4400000.00),
-(11, 3, 2, 4400000.00);
+  (3, 3, 2, 2000000.00),
+  (3, 4, 1, 3000000.00),
+  (5, 3, 1, 3000000.00),
+  (9, 1, 2, 2000000.00),
+  (10, 3, 2, 4400000.00),
+  (11, 3, 2, 4400000.00);
 /*!40000 ALTER TABLE `ctphieudat` ENABLE KEYS */
 ;
 UNLOCK TABLES;
@@ -423,32 +444,32 @@ LOCK TABLES `cttiennghi` WRITE;
 ;
 INSERT INTO `cttiennghi`
 VALUES ('TN06', 1, 1),
-('TN07', 2, 1),
-('TN07', 4, 1),
-('TN08', 3, 1),
-('TN08', 5, 1),
-('TN09', 2, 1),
-('TN09', 4, 1),
-('TN10', 3, 1),
-('TN11', 3, 1),
-('TN11', 4, 1),
-('TN12', 3, 1),
-('TN13', 3, 1),
-('TN13', 4, 1),
-('TN13', 5, 1),
-('TN14', 3, 1),
-('TN14', 5, 1),
-('TN15', 2, 1),
-('TN15', 4, 1),
-('TN16', 2, 1),
-('TN16', 4, 1),
-('TN17', 3, 1),
-('TN17', 5, 1),
-('TN18', 5, 1),
-('TN19', 5, 1),
-('TN20', 5, 1),
-('TN22', 5, 1),
-('TN23', 1, 1);
+  ('TN07', 2, 1),
+  ('TN07', 4, 1),
+  ('TN08', 3, 1),
+  ('TN08', 5, 1),
+  ('TN09', 2, 1),
+  ('TN09', 4, 1),
+  ('TN10', 3, 1),
+  ('TN11', 3, 1),
+  ('TN11', 4, 1),
+  ('TN12', 3, 1),
+  ('TN13', 3, 1),
+  ('TN13', 4, 1),
+  ('TN13', 5, 1),
+  ('TN14', 3, 1),
+  ('TN14', 5, 1),
+  ('TN15', 2, 1),
+  ('TN15', 4, 1),
+  ('TN16', 2, 1),
+  ('TN16', 4, 1),
+  ('TN17', 3, 1),
+  ('TN17', 5, 1),
+  ('TN18', 5, 1),
+  ('TN19', 5, 1),
+  ('TN20', 5, 1),
+  ('TN22', 5, 1),
+  ('TN23', 1, 1);
 /*!40000 ALTER TABLE `cttiennghi` ENABLE KEYS */
 ;
 UNLOCK TABLES;
@@ -477,10 +498,15 @@ LOCK TABLES `dich_vu` WRITE;
 ;
 INSERT INTO `dich_vu`
 VALUES ('DV01', 'Minibar', 'Drinks and snacks', 'Lần'),
-('DV02', 'Giặt ủi', 'Laundry service', 'Kg'),
-('DV03', 'Ẩm thực', 'Restaurant meal', 'Bữa'),
-('DV04', 'Điện thoại', 'Phone call service', 'Phút'),
-('DV05', 'Gửi fax', 'Fax service', 'Trang');
+  ('DV02', 'Giặt ủi', 'Laundry service', 'Kg'),
+  ('DV03', 'Ẩm thực', 'Restaurant meal', 'Bữa'),
+  (
+    'DV04',
+    'Điện thoại',
+    'Phone call service',
+    'Phút'
+  ),
+  ('DV05', 'Gửi fax', 'Fax service', 'Trang');
 /*!40000 ALTER TABLE `dich_vu` ENABLE KEYS */
 ;
 UNLOCK TABLES;
@@ -512,8 +538,8 @@ LOCK TABLES `doiphong` WRITE;
 ;
 INSERT INTO `doiphong`
 VALUES (1, '102', '2025-07-31', '2025-08-01'),
-(2, '203', '2025-08-01', '2025-08-02'),
-(4, '405', '2025-07-31', '2025-08-01');
+  (2, '203', '2025-08-01', '2025-08-02'),
+  (4, '405', '2025-07-31', '2025-08-01');
 /*!40000 ALTER TABLE `doiphong` ENABLE KEYS */
 ;
 UNLOCK TABLES;
@@ -547,10 +573,10 @@ LOCK TABLES `gia_dich_vu` WRITE;
 ;
 INSERT INTO `gia_dich_vu`
 VALUES ('DV01', '2025-07-30', 200000.00, 'NV01'),
-('DV02', '2025-07-30', 150000.00, 'NV01'),
-('DV03', '2025-07-30', 500000.00, 'NV01'),
-('DV04', '2025-07-30', 10000.00, 'NV01'),
-('DV05', '2025-07-30', 50000.00, 'NV01');
+  ('DV02', '2025-07-30', 150000.00, 'NV01'),
+  ('DV03', '2025-07-30', 500000.00, 'NV01'),
+  ('DV04', '2025-07-30', 10000.00, 'NV01'),
+  ('DV05', '2025-07-30', 50000.00, 'NV01');
 /*!40000 ALTER TABLE `gia_dich_vu` ENABLE KEYS */
 ;
 UNLOCK TABLES;
@@ -583,14 +609,62 @@ LOCK TABLES `gia_hang_phong` WRITE;
 /*!40000 ALTER TABLE `gia_hang_phong` DISABLE KEYS */
 ;
 INSERT INTO `gia_hang_phong`
-VALUES (1, '2025-07-30', 1000000.00, '2025-07-29', 'NV01'),
-(1, '2025-08-12', 1100000.00, '2025-08-10', 'NV01'),
-(2, '2025-07-30', 1500000.00, '2025-07-29', 'NV01'),
-(3, '2025-07-30', 2000000.00, '2025-07-29', 'NV01'),
-(3, '2025-08-01', 2200000.00, '2025-07-31', 'NV01'),
-(4, '2025-07-30', 2500000.00, '2025-07-29', 'NV01'),
-(4, '2025-08-02', 2700000.00, '2025-08-02', 'NV01'),
-(5, '2025-07-30', 3000000.00, '2025-07-29', 'NV01');
+VALUES (
+    1,
+    '2025-07-30',
+    1000000.00,
+    '2025-07-29',
+    'NV01'
+  ),
+  (
+    1,
+    '2025-08-12',
+    1100000.00,
+    '2025-08-10',
+    'NV01'
+  ),
+  (
+    2,
+    '2025-07-30',
+    1500000.00,
+    '2025-07-29',
+    'NV01'
+  ),
+  (
+    3,
+    '2025-07-30',
+    2000000.00,
+    '2025-07-29',
+    'NV01'
+  ),
+  (
+    3,
+    '2025-08-01',
+    2200000.00,
+    '2025-07-31',
+    'NV01'
+  ),
+  (
+    4,
+    '2025-07-30',
+    2500000.00,
+    '2025-07-29',
+    'NV01'
+  ),
+  (
+    4,
+    '2025-08-02',
+    2700000.00,
+    '2025-08-02',
+    'NV01'
+  ),
+  (
+    5,
+    '2025-07-30',
+    3000000.00,
+    '2025-07-29',
+    'NV01'
+  );
 /*!40000 ALTER TABLE `gia_hang_phong` ENABLE KEYS */
 ;
 UNLOCK TABLES;
@@ -624,10 +698,10 @@ LOCK TABLES `giaphuthu` WRITE;
 ;
 INSERT INTO `giaphuthu`
 VALUES ('PT01', '2025-07-30', 200000.00, 'NV01'),
-('PT02', '2025-07-30', 300000.00, 'NV01'),
-('PT03', '2025-07-30', 500000.00, 'NV01'),
-('PT04', '2025-07-30', 150000.00, 'NV01'),
-('PT05', '2025-07-30', 100000.00, 'NV01');
+  ('PT02', '2025-07-30', 300000.00, 'NV01'),
+  ('PT03', '2025-07-30', 500000.00, 'NV01'),
+  ('PT04', '2025-07-30', 150000.00, 'NV01'),
+  ('PT05', '2025-07-30', 100000.00, 'NV01');
 /*!40000 ALTER TABLE `giaphuthu` ENABLE KEYS */
 ;
 UNLOCK TABLES;
@@ -661,10 +735,10 @@ LOCK TABLES `hang_phong` WRITE;
 ;
 INSERT INTO `hang_phong`
 VALUES (1, 'KP01', 'LP01'),
-(2, 'KP02', 'LP02'),
-(3, 'KP03', 'LP03'),
-(4, 'KP04', 'LP04'),
-(5, 'KP05', 'LP05');
+  (2, 'KP02', 'LP02'),
+  (3, 'KP03', 'LP03'),
+  (4, 'KP04', 'LP04'),
+  (5, 'KP05', 'LP05');
 /*!40000 ALTER TABLE `hang_phong` ENABLE KEYS */
 ;
 UNLOCK TABLES;
@@ -708,7 +782,7 @@ VALUES (
     'NV01',
     1
   ),
-(
+  (
     'HD02',
     '2025-07-31',
     1800000.00,
@@ -716,7 +790,7 @@ VALUES (
     'NV01',
     2
   ),
-(
+  (
     'HD03',
     '2025-07-30',
     2500000.00,
@@ -724,7 +798,7 @@ VALUES (
     'NV01',
     NULL
   ),
-(
+  (
     'HD04',
     '2025-07-30',
     2650000.00,
@@ -732,7 +806,7 @@ VALUES (
     'NV01',
     4
   ),
-(
+  (
     'HD05',
     '2025-08-02',
     3100000.00,
@@ -781,7 +855,7 @@ VALUES (
     'MST001',
     '$2a$10$CxznmpAHm5ujXsLa.a3NHOM7spGDhXfM6s9lHoNpwHsAsC.ZGdlEC'
   ),
-(
+  (
     '123456789002',
     'Tran',
     'Lan',
@@ -791,7 +865,7 @@ VALUES (
     'MST002',
     'kh456'
   ),
-(
+  (
     '123456789003',
     'Le',
     'Minh',
@@ -801,7 +875,7 @@ VALUES (
     'MST003',
     'kh789'
   ),
-(
+  (
     '123456789004',
     'Pham',
     'Ngoc',
@@ -811,7 +885,7 @@ VALUES (
     'MST004',
     'kh101'
   ),
-(
+  (
     '123456789005',
     'Ho',
     'Quynh',
@@ -854,20 +928,30 @@ VALUES (
     '2025-07-01',
     '2025-08-31'
   ),
-(
+  (
     'KM02',
     'Family Package 15%',
     '2025-07-15',
     '2025-08-15'
   ),
-('KM03', 'VIP Offer 20%', '2025-07-30', '2025-08-30'),
-(
+  (
+    'KM03',
+    'VIP Offer 20%',
+    '2025-07-30',
+    '2025-08-30'
+  ),
+  (
     'KM04',
     'Early Bird 25%',
     '2025-07-01',
     '2025-07-31'
   ),
-('KM05', 'Long Stay 30%', '2025-08-01', '2025-08-31');
+  (
+    'KM05',
+    'Long Stay 30%',
+    '2025-08-01',
+    '2025-08-31'
+  );
 /*!40000 ALTER TABLE `khuyenmai` ENABLE KEYS */
 ;
 UNLOCK TABLES;
@@ -896,15 +980,15 @@ LOCK TABLES `kieu_phong` WRITE;
 ;
 INSERT INTO `kieu_phong`
 VALUES ('KP01', 'Single', 'One single bed', 1),
-('KP02', 'Double', 'One double bed', 2),
-('KP03', 'Twin', 'Two single beds', 2),
-(
+  ('KP02', 'Double', 'One double bed', 2),
+  ('KP03', 'Twin', 'Two single beds', 2),
+  (
     'KP04',
     'Family',
     'One double and one single bed',
     3
   ),
-('KP05', 'Suite', 'Luxury suite with king bed', 4);
+  ('KP05', 'Suite', 'Luxury suite with king bed', 4);
 /*!40000 ALTER TABLE `kieu_phong` ENABLE KEYS */
 ;
 UNLOCK TABLES;
@@ -932,10 +1016,18 @@ LOCK TABLES `loai_phong` WRITE;
 ;
 INSERT INTO `loai_phong`
 VALUES ('LP01', 'Standard', 'Basic amenities'),
-('LP02', 'Superior', 'Enhanced amenities with view'),
-('LP03', 'VIP', 'Premium amenities and services'),
-('LP04', 'Deluxe', 'Spacious with luxury features'),
-(
+  (
+    'LP02',
+    'Superior',
+    'Enhanced amenities with view'
+  ),
+  ('LP03', 'VIP', 'Premium amenities and services'),
+  (
+    'LP04',
+    'Deluxe',
+    'Spacious with luxury features'
+  ),
+  (
     'LP05',
     'Executive',
     'Business-oriented with workspace'
@@ -997,7 +1089,7 @@ VALUES (
     'BP001',
     'NQ02'
   ),
-(
+  (
     'NV02',
     'Tran',
     'Binh',
@@ -1012,7 +1104,7 @@ VALUES (
     'BP002',
     'NQ03'
   ),
-(
+  (
     'NV03',
     'Le',
     'Cuc',
@@ -1027,7 +1119,7 @@ VALUES (
     'BP003',
     'NQ04'
   ),
-(
+  (
     'NV04',
     'Pham',
     'Dung',
@@ -1068,10 +1160,10 @@ LOCK TABLES `nhom_quyen` WRITE;
 ;
 INSERT INTO `nhom_quyen`
 VALUES ('NQ01', 'Admin'),
-('NQ02', 'Receptionist'),
-('NQ03', 'Housekeeping'),
-('NQ04', 'Restaurant'),
-('NQ05', 'Accounting');
+  ('NQ02', 'Receptionist'),
+  ('NQ03', 'Housekeeping'),
+  ('NQ04', 'Restaurant'),
+  ('NQ05', 'Accounting');
 /*!40000 ALTER TABLE `nhom_quyen` ENABLE KEYS */
 ;
 UNLOCK TABLES;
@@ -1119,7 +1211,7 @@ VALUES (
     '123456789001',
     'NV01'
   ),
-(
+  (
     3,
     '2025-07-30',
     '2025-08-13',
@@ -1129,7 +1221,7 @@ VALUES (
     '123456789003',
     'NV01'
   ),
-(
+  (
     5,
     '2025-07-31',
     '2025-08-14',
@@ -1139,7 +1231,7 @@ VALUES (
     '123456789005',
     'NV01'
   ),
-(
+  (
     9,
     '2025-08-02',
     '2025-08-07',
@@ -1149,7 +1241,7 @@ VALUES (
     '123456789001',
     NULL
   ),
-(
+  (
     10,
     '2025-08-02',
     '2025-08-07',
@@ -1159,7 +1251,7 @@ VALUES (
     '123456789001',
     NULL
   ),
-(
+  (
     11,
     '2025-08-02',
     '2025-08-07',
@@ -1207,11 +1299,11 @@ LOCK TABLES `phieuthue` WRITE;
 ;
 INSERT INTO `phieuthue`
 VALUES (1, '2025-07-30', 'NV01', '123456789001', 1),
-(2, '2025-07-30', 'NV01', '123456789002', NULL),
-(4, '2025-07-31', 'NV01', '123456789004', NULL),
-(6, '2025-07-30', 'NV01', '123456789002', NULL),
-(7, '2025-07-30', 'NV01', '123456789002', NULL),
-(8, '2025-08-01', 'NV01', '123456789003', NULL);
+  (2, '2025-07-30', 'NV01', '123456789002', NULL),
+  (4, '2025-07-31', 'NV01', '123456789004', NULL),
+  (6, '2025-07-30', 'NV01', '123456789002', NULL),
+  (7, '2025-07-30', 'NV01', '123456789002', NULL),
+  (8, '2025-08-01', 'NV01', '123456789003', NULL);
 /*!40000 ALTER TABLE `phieuthue` ENABLE KEYS */
 ;
 UNLOCK TABLES;
@@ -1246,23 +1338,23 @@ LOCK TABLES `phong` WRITE;
 ;
 INSERT INTO `phong`
 VALUES ('101', 1, 1, 'TT001'),
-('102', 1, 1, 'TT001'),
-('202', 2, 2, 'TT004'),
-('203', 2, 2, 'TT001'),
-('301', 3, 3, 'TT001'),
-('302', 3, 3, 'TT001'),
-('303', 3, 3, 'TT001'),
-('304', 3, 3, 'TT001'),
-('305', 3, 3, 'TT001'),
-('306', 3, 3, 'TT001'),
-('307', 3, 3, 'TT001'),
-('308', 3, 3, 'TT001'),
-('309', 3, 3, 'TT001'),
-('310', 3, 3, 'TT001'),
-('404', 4, 4, 'TT001'),
-('405', 4, 4, 'TT001'),
-('505', 5, 5, 'TT005'),
-('506', 5, 5, 'TT001');
+  ('102', 1, 1, 'TT001'),
+  ('202', 2, 2, 'TT004'),
+  ('203', 2, 2, 'TT001'),
+  ('301', 3, 3, 'TT001'),
+  ('302', 3, 3, 'TT001'),
+  ('303', 3, 3, 'TT001'),
+  ('304', 3, 3, 'TT001'),
+  ('305', 3, 3, 'TT001'),
+  ('306', 3, 3, 'TT001'),
+  ('307', 3, 3, 'TT001'),
+  ('308', 3, 3, 'TT001'),
+  ('309', 3, 3, 'TT001'),
+  ('310', 3, 3, 'TT001'),
+  ('404', 4, 4, 'TT001'),
+  ('405', 4, 4, 'TT001'),
+  ('505', 5, 5, 'TT005'),
+  ('506', 5, 5, 'TT001');
 /*!40000 ALTER TABLE `phong` ENABLE KEYS */
 ;
 UNLOCK TABLES;
@@ -1289,11 +1381,23 @@ LOCK TABLES `phu_thu` WRITE;
 /*!40000 ALTER TABLE `phu_thu` DISABLE KEYS */
 ;
 INSERT INTO `phu_thu`
-VALUES ('PT01', 'Late Check-out', 'Check-out after 12:00'),
-('PT02', 'Extra Guest', 'Additional guest in room'),
-('PT03', 'Room Damage', 'Damage to room property'),
-('PT04', 'Early Check-in', 'Check-in before 14:00'),
-(
+VALUES (
+    'PT01',
+    'Late Check-out',
+    'Check-out after 12:00'
+  ),
+  (
+    'PT02',
+    'Extra Guest',
+    'Additional guest in room'
+  ),
+  ('PT03', 'Room Damage', 'Damage to room property'),
+  (
+    'PT04',
+    'Early Check-in',
+    'Check-in before 14:00'
+  ),
+  (
     'PT05',
     'Special Request',
     'Custom service request'
@@ -1328,9 +1432,9 @@ LOCK TABLES `quan_ly` WRITE;
 ;
 INSERT INTO `quan_ly`
 VALUES ('BP001', '2025-02-01', 'NV01'),
-('BP002', '2025-03-01', 'NV02'),
-('BP003', '2025-04-01', 'NV03'),
-('BP004', '2025-05-01', 'NV04');
+  ('BP002', '2025-03-01', 'NV02'),
+  ('BP003', '2025-04-01', 'NV03'),
+  ('BP004', '2025-05-01', 'NV04');
 /*!40000 ALTER TABLE `quan_ly` ENABLE KEYS */
 ;
 UNLOCK TABLES;
@@ -1364,121 +1468,121 @@ VALUES (
     _binary '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 20h.01\"/><path d=\"M2 8.82a15 15 0 0 1 20 0\"/><path d=\"M5 12.859a10 10 0 0 1 14 0\"/><path d=\"M8.5 16.429a5 5 0 0 1 7 0\"/></svg>',
     'High-speed internet'
   ),
-(
+  (
     'TN02',
     'TV',
     _binary '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"20\" height=\"15\" x=\"2\" y=\"7\" rx=\"2\" ry=\"2\"/><polyline points=\"17,2 12,7 7,2\"/></svg>',
     'Smart TV with streaming'
   ),
-(
+  (
     'TN03',
     'Air Conditioner',
     _binary '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2\"/><path d=\"M9.6 4.6A2 2 0 1 1 11 8H2\"/><path d=\"M12.6 19.4A2 2 0 1 0 14 16H2\"/></svg>',
     'Climate control'
   ),
-(
+  (
     'TN04',
     'Mini Fridge',
     _binary '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 6a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6Z\"/><path d=\"M5 10h14\"/><path d=\"M15 7v6\"/></svg>',
     'Mini fridge with drinks'
   ),
-(
+  (
     'TN06',
     'TV 32 inch',
     _binary '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"20\" height=\"15\" x=\"2\" y=\"7\" rx=\"2\" ry=\"2\"/><polyline points=\"17,2 12,7 7,2\"/></svg>',
     'TV 32 inch'
   ),
-(
+  (
     'TN07',
     'TV 42 inch',
     _binary '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"20\" height=\"15\" x=\"2\" y=\"7\" rx=\"2\" ry=\"2\"/><polyline points=\"17,2 12,7 7,2\"/></svg>',
     'TV 42 inch'
   ),
-(
+  (
     'TN08',
     'TV 50 inch',
     _binary '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"20\" height=\"15\" x=\"2\" y=\"7\" rx=\"2\" ry=\"2\"/><polyline points=\"17,2 12,7 7,2\"/></svg>',
     'TV 50 inch'
   ),
-(
+  (
     'TN09',
     'Sofa đơn',
     _binary '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v3\"/><path d=\"M2 11v5a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z\"/><path d=\"M4 18v2\"/><path d=\"M20 18v2\"/><path d=\"M12 4v9\"/></svg>',
     'Single sofa'
   ),
-(
+  (
     'TN10',
     'Sofa đôi',
     _binary '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v3\"/><path d=\"M2 11v5a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z\"/><path d=\"M4 18v2\"/><path d=\"M20 18v2\"/><path d=\"M8 4v9\"/><path d=\"M16 4v9\"/></svg>',
     'Double sofa'
   ),
-(
+  (
     'TN11',
     'Bồn tắm nằm',
     _binary '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 12h20\"/><path d=\"M2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6\"/><path d=\"M4 8V6a2 2 0 0 1 2-2h2\"/><path d=\"M4 22v-2\"/><path d=\"M20 22v-2\"/></svg>',
     'Bathtub'
   ),
-(
+  (
     'TN12',
     'Vòi sen tách biệt',
     _binary '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 4h16v16H4z\"/><path d=\"M8 8v8\"/><path d=\"M12 8v8\"/><path d=\"M16 8v8\"/><circle cx=\"8\" cy=\"12\" r=\"1\"/><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"16\" cy=\"12\" r=\"1\"/></svg>',
     'Separate shower'
   ),
-(
+  (
     'TN13',
     'Ban công riêng',
     _binary '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z\"/><path d=\"M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2\"/><path d=\"M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2\"/><path d=\"M10 6h4\"/><path d=\"M10 10h4\"/><path d=\"M10 14h4\"/><path d=\"M10 18h4\"/></svg>',
     'Private balcony'
   ),
-(
+  (
     'TN14',
     'Máy pha cà phê',
     _binary '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M10 2v20\"/><path d=\"M14 2v20\"/><path d=\"M5 8h14\"/><path d=\"M19 8v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8\"/><path d=\"M22 8h-3\"/></svg>',
     'Coffee machine'
   ),
-(
+  (
     'TN15',
     'Bộ ấm trà/cafe',
     _binary '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 8h1a4 4 0 1 1 0 8h-1\"/><path d=\"M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z\"/><line x1=\"6\" x2=\"6\" y1=\"2\" y2=\"4\"/><line x1=\"10\" x2=\"10\" y1=\"2\" y2=\"4\"/><line x1=\"14\" x2=\"14\" y1=\"2\" y2=\"4\"/></svg>',
     'Kettle & tea/coffee set'
   ),
-(
+  (
     'TN16',
     'View thành phố/hồ bơi',
     _binary '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z\"/><path d=\"M17 18h1\"/><path d=\"M12 18h1\"/><path d=\"M7 18h1\"/></svg>',
     'City/Pool view'
   ),
-(
+  (
     'TN17',
     'Phòng khách riêng',
     _binary '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8\"/><path d=\"M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/></svg>',
     'Separate living room'
   ),
-(
+  (
     'TN18',
     'Bồn tắm jacuzzi',
     _binary '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1\"/><path d=\"M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1\"/><path d=\"M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1\"/></svg>',
     'Jacuzzi'
   ),
-(
+  (
     'TN19',
     'Quầy bar mini',
     _binary '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 6a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6Z\"/><path d=\"M5 10h14\"/><path d=\"M15 7v6\"/><circle cx=\"12\" cy=\"16\" r=\"2\"/></svg>',
     'Mini bar'
   ),
-(
+  (
     'TN20',
     'Loa Bluetooth',
     _binary '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"11 5,6 9,2 9,2 15,6 15,11 19,11 5\"/><path d=\"M15.54 8.46a5 5 0 0 1 0 7.07\"/><path d=\"M19.07 4.93a10 10 0 0 1 0 14.14\"/></svg>',
     'Bluetooth speaker'
   ),
-(
+  (
     'TN22',
     'Phòng ăn riêng',
     _binary '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 12h18l-2 9H5l-2-9Z\"/><path d=\"M3 5h18\"/><path d=\"M3 8h18\"/></svg>',
     'Private dining room'
   ),
-(
+  (
     'TN23',
     'Bàn làm việc nhỏ',
     _binary '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 20h9\"/><path d=\"M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z\"/><path d=\"M15 5l3 3\"/></svg>',
@@ -1510,10 +1614,10 @@ LOCK TABLES `trangthai` WRITE;
 ;
 INSERT INTO `trangthai`
 VALUES ('TT001', 'Trống'),
-('TT002', 'Đã có khách'),
-('TT003', 'Đang dọn dẹp'),
-('TT004', 'Đang bảo trì'),
-('TT005', 'Đã đặt');
+  ('TT002', 'Đã có khách'),
+  ('TT003', 'Đang dọn dẹp'),
+  ('TT004', 'Đang bảo trì'),
+  ('TT005', 'Đã đặt');
 /*!40000 ALTER TABLE `trangthai` ENABLE KEYS */
 ;
 UNLOCK TABLES;

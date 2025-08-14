@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -20,7 +20,7 @@ input[type="number"] {
 @layer base {
   body {
     @apply bg-gray-50 text-gray-900;
-    font-family: 'Inter', sans-serif;
+    font-family: "Inter", sans-serif;
   }
 }
 
@@ -56,6 +56,7 @@ input[type="number"] {
 
   .react-datepicker__input-container input {
     width: 100% !important;
+    min-width: 180px !important;
     padding: 12px !important;
     border: 1px solid #d1d5db !important;
     border-radius: 8px !important;
@@ -64,22 +65,41 @@ input[type="number"] {
     box-sizing: border-box !important;
     background-color: white !important;
     color: #374151 !important;
-    font-family: 'Inter', sans-serif !important;
+    font-family: "Inter", sans-serif !important;
+  }
+
+  .react-datepicker__input-container input::placeholder {
+    color: #9ca3af !important;
+    opacity: 1 !important;
   }
 
   .react-datepicker__input-container input:focus {
     outline: none !important;
-    border-color: #3B82F6 !important;
+    border-color: #3b82f6 !important;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
   }
 
   .react-datepicker {
     z-index: 9999 !important;
-    font-family: 'Inter', sans-serif !important;
+    font-family: "Inter", sans-serif !important;
+  }
+
+  /* Responsive styles for mobile */
+  @media (max-width: 768px) {
+    .react-datepicker__input-container input {
+      min-width: 100% !important;
+      font-size: 16px !important;
+    }
+
+    /* Ensure all date inputs have proper sizing on mobile */
+    input[type="date"] {
+      min-width: 100% !important;
+      font-size: 16px !important;
+    }
   }
 
   .react-datepicker__header {
-    background-color: #3B82F6 !important;
+    background-color: #3b82f6 !important;
     border-bottom: none !important;
   }
 
@@ -92,11 +112,11 @@ input[type="number"] {
   }
 
   .react-datepicker__day--selected {
-    background-color: #3B82F6 !important;
+    background-color: #3b82f6 !important;
   }
 
   .react-datepicker__day:hover {
-    background-color: #EBF4FF !important;
+    background-color: #ebf4ff !important;
   }
 
   /* Line clamp utilities */
@@ -212,7 +232,7 @@ html {
 }
 
 .btn-glow::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;

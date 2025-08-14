@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import RoomSearch from '../../components/common/RoomSearch'
 import RoomSearchResult from '../../components/common/RoomSearchResult'
@@ -8,44 +8,83 @@ import { Search, MapPin } from 'lucide-react'
 
 const BookingPage = () => {
   const navigate = useNavigate()
+  const resultsRef = useRef(null)
   const [rooms, setRooms] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [roomsPerPage] = useState(6)
+  const [hasSearched, setHasSearched] = useState(false)
   const [searchDates, setSearchDates] = useState({
     checkIn: null,
     checkOut: null
   })
 
+  // Load saved search results when component mounts
   useEffect(() => {
-    fetchAvailableRooms()
-  }, [])
-
-  const fetchAvailableRooms = async () => {
-    try {
-      setLoading(true)
-      const response = await roomService.getAvailableRooms()
-      if (response.statusCode === 200) {
-        setRooms(response.phongList || [])
+    const savedSearchData = sessionStorage.getItem('bookingSearchData')
+    if (savedSearchData) {
+      try {
+        const parsedData = JSON.parse(savedSearchData)
+        setRooms(parsedData.rooms || [])
+        setHasSearched(parsedData.hasSearched || false)
+        setSearchDates(parsedData.searchDates || { checkIn: null, checkOut: null })
+        setCurrentPage(parsedData.currentPage || 1)
+      } catch (error) {
+        console.error('Error loading saved search data:', error)
       }
-    } catch (error) {
-      console.error('Error fetching rooms:', error)
-    } finally {
-      setLoading(false)
     }
-  }
+
+    // Check for pending booking from public page
+    const pendingBooking = sessionStorage.getItem('pendingBooking')
+    if (pendingBooking) {
+      try {
+        const bookingData = JSON.parse(pendingBooking)
+        // Set the search results and dates from pending booking
+        if (bookingData.room && bookingData.searchDates) {
+          setRooms([bookingData.room])
+          setHasSearched(true)
+          setSearchDates(bookingData.searchDates)
+          setCurrentPage(1)
+        }
+        // Clear the pending booking data
+        sessionStorage.removeItem('pendingBooking')
+      } catch (error) {
+        console.error('Error loading pending booking:', error)
+      }
+    }
+  }, [])
 
   const handleSearchResult = (searchResults, searchData) => {
     setRooms(searchResults)
     setCurrentPage(1)
+    setHasSearched(true)
 
     // Lưu thông tin ngày tìm kiếm
-    if (searchData) {
-      setSearchDates({
-        checkIn: searchData.startDate,
-        checkOut: searchData.endDate
-      })
+    const newSearchDates = searchData ? {
+      checkIn: searchData.startDate,
+      checkOut: searchData.endDate
+    } : { checkIn: null, checkOut: null }
+
+    setSearchDates(newSearchDates)
+
+    // Save search data to sessionStorage
+    const searchDataToSave = {
+      rooms: searchResults,
+      hasSearched: true,
+      searchDates: newSearchDates,
+      currentPage: 1
     }
+    sessionStorage.setItem('bookingSearchData', JSON.stringify(searchDataToSave))
+
+    // Scroll xuống kết quả tìm kiếm sau một khoảng thời gian ngắn
+    setTimeout(() => {
+      if (resultsRef.current) {
+        resultsRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        })
+      }
+    }, 100)
   }
 
 
@@ -55,7 +94,21 @@ const BookingPage = () => {
   const indexOfFirstRoom = indexOfLastRoom - roomsPerPage
   const currentRooms = rooms.slice(indexOfFirstRoom, indexOfLastRoom)
 
-  const paginate = (pageNumber) => setCurrentPage(pageNumber)
+  const paginate = (pageNumber) => {
+    setCurrentPage(pageNumber)
+
+    // Update saved search data with new page
+    const savedSearchData = sessionStorage.getItem('bookingSearchData')
+    if (savedSearchData) {
+      try {
+        const parsedData = JSON.parse(savedSearchData)
+        parsedData.currentPage = pageNumber
+        sessionStorage.setItem('bookingSearchData', JSON.stringify(parsedData))
+      } catch (error) {
+        console.error('Error updating page in saved search data:', error)
+      }
+    }
+  }
 
   if (loading) {
     return (
@@ -90,36 +143,41 @@ const BookingPage = () => {
 
 
       {/* Results */}
-      <div className="card">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">
-            Kết quả ({rooms.length} phòng)
-          </h2>
-          <div className="text-sm text-gray-500">
-            Hiển thị {currentRooms.length} trong tổng số {rooms.length} phòng
-          </div>
-        </div>
-
-        {rooms.length > 0 ? (
-          <>
-            <RoomSearchResult searchResults={currentRooms} searchDates={searchDates} />
-            <Pagination
-              itemsPerPage={roomsPerPage}
-              totalItems={rooms.length}
-              currentPage={currentPage}
-              paginate={paginate}
-            />
-          </>
+      <div className="card" ref={resultsRef}>
+        {hasSearched ? (
+          rooms.length > 0 ? (
+            <>
+              <RoomSearchResult searchResults={currentRooms} searchDates={searchDates} />
+              <Pagination
+                itemsPerPage={roomsPerPage}
+                totalItems={rooms.length}
+                currentPage={currentPage}
+                paginate={paginate}
+              />
+            </>
+          ) : (
+            <div className="text-center py-12">
+              <div className="text-gray-400 mb-4">
+                <Search className="w-16 h-16 mx-auto" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Không tìm thấy phòng nào
+              </h3>
+              <p className="text-gray-500">
+                Thử thay đổi tiêu chí tìm kiếm
+              </p>
+            </div>
+          )
         ) : (
           <div className="text-center py-12">
             <div className="text-gray-400 mb-4">
               <Search className="w-16 h-16 mx-auto" />
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Không tìm thấy phòng nào
+              Tìm kiếm phòng lý tưởng
             </h3>
             <p className="text-gray-500">
-              Thử thay đổi tiêu chí tìm kiếm
+              Vui lòng nhập thông tin tìm kiếm và bấm "Tìm phòng"
             </p>
           </div>
         )}

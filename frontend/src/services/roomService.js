@@ -64,11 +64,13 @@ export const roomService = {
   },
 
   // Search rooms by price range and date
-  async searchRoomsByPriceRange(checkIn, checkOut, minPrice, maxPrice) {
+  async searchRoomsByPriceRange(checkIn, checkOut, minPrice, maxPrice, idKp, idLp) {
     try {
       const params = { checkIn, checkOut }
       if (minPrice !== null && minPrice !== undefined) params.minPrice = minPrice
       if (maxPrice !== null && maxPrice !== undefined) params.maxPrice = maxPrice
+      if (idKp && idKp !== '') params.idKp = idKp
+      if (idLp && idLp !== '') params.idLp = idLp
 
       const response = await api.get('/api/phong/search-by-price', { params })
       return response.data

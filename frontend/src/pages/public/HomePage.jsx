@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState, useEffect, useRef } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { Search, Calendar, Users, Wifi, Car, Coffee, Dumbbell, MapPin, Phone, Mail, Award, Shield, Clock } from 'lucide-react'
 import RoomSearch from '../../components/common/RoomSearch'
 import RoomSearchResult from '../../components/common/RoomSearchResult'
@@ -8,22 +8,76 @@ import { roomService } from '../../services/roomService'
 import { hangPhongService } from '../../services/hangPhongService'
 
 const HomePage = () => {
+  const navigate = useNavigate()
+  const searchResultsRef = useRef(null)
+  const searchSectionRef = useRef(null)
   const [roomSearchResults, setRoomSearchResults] = useState([])
   const [searchDates, setSearchDates] = useState({
     checkIn: null,
     checkOut: null
   })
+  const [prefilledRoomData, setPrefilledRoomData] = useState(null)
+  const [showGuidance, setShowGuidance] = useState(false)
+
+  // Load saved search results when component mounts
+  useEffect(() => {
+    const savedSearchData = sessionStorage.getItem('homeSearchData')
+    if (savedSearchData) {
+      try {
+        const parsedData = JSON.parse(savedSearchData)
+        setRoomSearchResults(parsedData.results || [])
+        setSearchDates(parsedData.searchDates || { checkIn: null, checkOut: null })
+      } catch (error) {
+        console.error('Error loading saved search data:', error)
+      }
+    }
+  }, [])
 
   const handleSearchResult = (results, searchData) => {
     setRoomSearchResults(results)
 
     // Lưu thông tin ngày tìm kiếm
-    if (searchData) {
-      setSearchDates({
-        checkIn: searchData.startDate,
-        checkOut: searchData.endDate
-      })
+    const newSearchDates = searchData ? {
+      checkIn: searchData.startDate,
+      checkOut: searchData.endDate
+    } : { checkIn: null, checkOut: null }
+
+    setSearchDates(newSearchDates)
+
+    // Save search data to sessionStorage
+    const searchDataToSave = {
+      results: results,
+      searchDates: newSearchDates
     }
+    sessionStorage.setItem('homeSearchData', JSON.stringify(searchDataToSave))
+
+    // Scroll xuống kết quả tìm kiếm sau một khoảng thời gian ngắn
+    setTimeout(() => {
+      if (searchResultsRef.current && results.length > 0) {
+        searchResultsRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        })
+      }
+    }, 100)
+  }
+
+  // Handle featured room booking - navigate to public booking page
+  const handleFeaturedRoomBooking = (room) => {
+    console.log('🚀 handleFeaturedRoomBooking called with room:', room)
+
+    // Save prefilled data to sessionStorage for the booking page
+    const prefilledData = {
+      kieuPhong: room.type,
+      loaiPhong: room.category
+    }
+    sessionStorage.setItem('bookingPrefilledData', JSON.stringify(prefilledData))
+
+    console.log('📦 Saved prefilled data:', prefilledData)
+    console.log('🔄 Navigating to /booking...')
+
+    // Navigate to public booking page
+    navigate('/booking')
   }
 
   const [featuredRooms, setFeaturedRooms] = useState([])
@@ -34,8 +88,10 @@ const HomePage = () => {
 
   const fetchFeaturedRooms = async () => {
     try {
-      // Gọi API để lấy TẤT CẢ hạng phòng với giá hiện tại
-      const response = await hangPhongService.getAllHangPhongWithPrices()
+      console.log('🔄 Fetching featured rooms...')
+      // Gọi API để lấy TOP 3 hạng phòng hot nhất trong tháng từ stored procedure
+      const response = await hangPhongService.getHotHangPhongThisMonth()
+      console.log('📡 API response:', response)
       if (response.statusCode === 200 && response.hotHangPhongList) {
         // Map dữ liệu hạng phòng thành format hiển thị
         const featured = response.hotHangPhongList.map(hangPhong => ({
@@ -44,14 +100,15 @@ const HomePage = () => {
           type: hangPhong.tenKp || 'Standard',
           category: hangPhong.tenLp || 'Single',
           price: hangPhong.giaHienTai || 1000000,
-
-          image: '/api/placeholder/400/300',
-          amenities: ['WiFi miễn phí', 'Điều hòa', 'TV màn hình phẳng', 'Minibar'],
-          description: hangPhong.moTa || `Hạng phòng ${hangPhong.tenKp} - ${hangPhong.tenLp}`,
+          image: hangPhong.urlAnhDaiDien || '/api/placeholder/400/300',
+          amenities: hangPhong.danhSachTienNghi || [], // Lấy tiện nghi từ API
+          description: hangPhong.moTaKieuPhong || '', // Mô tả kiểu phòng từ API
           soLuotThue: hangPhong.soLuotThue || 0
         }))
+        console.log('✅ Featured rooms from API:', featured)
         setFeaturedRooms(featured)
       } else {
+        console.log('⚠️ No API data, using fallback')
         // Fallback data nếu API không có dữ liệu
         setFeaturedRooms([
           {
@@ -63,7 +120,7 @@ const HomePage = () => {
 
             image: '/api/placeholder/400/300',
             amenities: ['WiFi miễn phí', 'Điều hòa', 'TV', 'Minibar'],
-            description: 'Hạng phòng được yêu thích nhất',
+            description: 'Phòng Standard với tiện nghi hiện đại và dịch vụ chất lượng cao',
             soLuotThue: 15
           },
           {
@@ -72,10 +129,9 @@ const HomePage = () => {
             type: 'Standard',
             category: 'Double',
             price: 1300000,
-
             image: '/api/placeholder/400/300',
             amenities: ['WiFi miễn phí', 'Điều hòa', 'TV', 'Minibar'],
-            description: 'Hạng phòng được yêu thích nhất',
+            description: 'Phòng Standard với tiện nghi hiện đại và dịch vụ chất lượng cao',
             soLuotThue: 12
           },
           {
@@ -84,16 +140,16 @@ const HomePage = () => {
             type: 'Superior',
             category: 'Double',
             price: 1500000,
-
             image: '/api/placeholder/400/300',
             amenities: ['WiFi miễn phí', 'Điều hòa', 'TV', 'Minibar'],
-            description: 'Hạng phòng được yêu thích nhất',
+            description: 'Phòng Superior với tiện nghi hiện đại và dịch vụ chất lượng cao',
             soLuotThue: 10
           }
         ])
+        console.log('📋 Using fallback featured rooms')
       }
     } catch (error) {
-      console.error('Error fetching hot hang phong:', error)
+      console.error('❌ Error fetching hot hang phong:', error)
       // Fallback to empty array if API fails
       setFeaturedRooms([])
     }
@@ -175,12 +231,39 @@ const HomePage = () => {
               và dịch vụ chất lượng cao hòa quyện cùng thiết kế hiện đại
             </p>
 
+            {/* Guidance Banner */}
+            {showGuidance && (
+              <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl p-6 shadow-2xl max-w-7xl mx-auto mb-6 animate-fadeInUp relative">
+                <button
+                  onClick={() => setShowGuidance(false)}
+                  className="absolute top-4 right-4 text-white hover:text-gray-200 text-xl font-bold"
+                >
+                  ×
+                </button>
+                <div className="flex items-center space-x-4">
+                  <div className="bg-white bg-opacity-20 rounded-full p-3">
+                    <Calendar className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-bold mb-1">🎯 Đã tự động điền thông tin phòng!</h4>
+                    <p className="text-blue-100">
+                      Vui lòng chọn <strong>ngày nhận phòng</strong> và <strong>ngày trả phòng</strong> để tiếp tục tìm kiếm phòng phù hợp.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Search Form */}
-            <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-7xl mx-auto animate-fadeInUp" style={{animationDelay: '0.4s'}}>
+            <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-7xl mx-auto animate-fadeInUp" style={{animationDelay: '0.4s'}} ref={searchSectionRef}>
               <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">
                 Tìm Kiếm Phòng Lý Tưởng
               </h3>
-              <RoomSearch handleSearchResult={handleSearchResult} />
+              <RoomSearch
+                handleSearchResult={handleSearchResult}
+                prefilledData={prefilledRoomData}
+                onDataUsed={() => setPrefilledRoomData(null)}
+              />
             </div>
 
 
@@ -197,9 +280,8 @@ const HomePage = () => {
 
       {/* Search Results */}
       {roomSearchResults.length > 0 && (
-        <section className="py-16 bg-gray-50">
+        <section className="py-16 bg-gray-50" ref={searchResultsRef}>
           <div className="container">
-
             <RoomSearchResult searchResults={roomSearchResults} searchDates={searchDates} />
           </div>
         </section>
@@ -270,59 +352,75 @@ const HomePage = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {featuredRooms.map((room, index) => (
-              <div key={room.id} className="bg-white rounded-2xl overflow-hidden shadow-lg card-hover animate-fadeInUp" style={{animationDelay: `${0.1 * index}s`}}>
+              <div key={room.id} className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 hover:shadow-xl transition-shadow duration-300 animate-fadeInUp" style={{animationDelay: `${0.1 * index}s`}}>
+                {/* Hình ảnh */}
                 <div className="relative">
                   <img
                     src={room.image}
                     alt={room.name}
-                    className="w-full h-64 object-cover"
+                    className="w-full h-56 object-cover"
                   />
-
+                  {/* Hot Badge */}
+                  <div className="absolute top-4 right-4 bg-gradient-to-r from-red-500 to-orange-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+                    🔥 HOT
+                  </div>
                 </div>
 
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-3">
-                    <h3 className="text-xl font-bold text-gray-900">{room.name}</h3>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-primary-600">
-                        {room.price?.toLocaleString('vi-VN')}₫
-                      </div>
-                      <div className="text-sm text-gray-500">/đêm</div>
+                {/* Nội dung card */}
+                <div className="p-4">
+                  {/* Tên hạng phòng */}
+                  <h3 className="text-lg font-bold text-gray-800 mb-2 line-clamp-2">
+                    {room.name}
+                  </h3>
+
+                  {/* Giá */}
+                  <div className="text-right mb-3">
+                    <div className="text-xl font-bold text-blue-600">
+                      {room.price?.toLocaleString('vi-VN')} ₫
                     </div>
+                    <div className="text-xs text-gray-500">/đêm</div>
                   </div>
 
+                  {/* Lượt thuê/đặt */}
                   <div className="flex items-center space-x-2 mb-3">
-                    <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
-                      {room.type}
-                    </span>
-                    <span className="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full">
-                      {room.category}
+                    <span className="px-3 py-1 bg-red-100 text-red-800 text-sm rounded-full font-semibold">
+                      🔥 {room.soLuotThue} lượt thuê/đặt
                     </span>
                   </div>
 
-                  <p className="text-gray-600 mb-4 text-sm leading-relaxed">
-                    {room.description}
-                  </p>
+                  {/* Mô tả kiểu phòng */}
+                  {room.description && (
+                    <p className="text-gray-600 text-xs mb-3 line-clamp-2">
+                      {room.description}
+                    </p>
+                  )}
 
-                  <div className="flex flex-wrap gap-2 mb-6">
-                    {room.amenities.map((amenity, index) => (
-                      <span
-                        key={index}
-                        className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-md"
-                      >
-                        {amenity}
-                      </span>
-                    ))}
-                  </div>
+                  {/* Tiện nghi */}
+                  {room.amenities && room.amenities.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-3">
+                      {room.amenities.slice(0, 3).map((amenity, idx) => (
+                        <span key={idx} className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded border">
+                          {amenity.tenTn}
+                        </span>
+                      ))}
+                      {room.amenities.length > 3 && (
+                        <span className="text-xs text-gray-500">+{room.amenities.length - 3}</span>
+                      )}
+                    </div>
+                  )}
 
-                  <Link
-                    to={`/rooms/${room.id}`}
-                    className="block w-full bg-primary-600 hover:bg-primary-700 text-white text-center py-3 rounded-xl font-semibold transition-colors duration-200 btn-glow"
+                  {/* Nút action */}
+                  <button
+                    onClick={() => {
+                      console.log('🔘 Button clicked for room:', room)
+                      handleFeaturedRoomBooking(room)
+                    }}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-3 rounded-lg transition-colors duration-200 text-sm"
                   >
                     Xem Chi Tiết & Đặt Phòng
-                  </Link>
+                  </button>
                 </div>
               </div>
             ))}

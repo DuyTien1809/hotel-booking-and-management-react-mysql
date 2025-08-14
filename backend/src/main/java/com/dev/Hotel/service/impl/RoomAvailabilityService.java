@@ -298,6 +298,16 @@ public class RoomAvailabilityService implements IRoomAvailabilityService {
                     // Continue without promotions
                 }
 
+                // Set current price
+                try {
+                    BigDecimal currentPrice = roomPricingService.getCurrentPrice(idHangPhong);
+                    dto.setGiaHienTai(currentPrice);
+                    System.out.println("Set current price: " + currentPrice);
+                } catch (Exception e) {
+                    System.out.println("Could not get current price for room " + idHangPhong + ": " + e.getMessage());
+                    // Continue without price
+                }
+
                 System.out.println("Enrichment completed for room " + idHangPhong);
             } else {
                 System.out.println("HangPhong not found for ID: " + idHangPhong);
@@ -331,5 +341,163 @@ public class RoomAvailabilityService implements IRoomAvailabilityService {
         }
         System.err.println("Unexpected type for integer conversion: " + value.getClass().getName() + " = " + value);
         return null;
+    }
+
+    /**
+     * Safely converts Object to BigDecimal, handling various numeric types
+     */
+    private BigDecimal convertToBigDecimal(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof BigDecimal) {
+            return (BigDecimal) value;
+        }
+        if (value instanceof String) {
+            try {
+                return new BigDecimal((String) value);
+            } catch (NumberFormatException e) {
+                System.err.println("Cannot convert string to BigDecimal: " + value);
+                return null;
+            }
+        }
+        if (value instanceof Number) {
+            return BigDecimal.valueOf(((Number) value).doubleValue());
+        }
+        System.err.println("Unexpected type for BigDecimal conversion: " + value.getClass().getName() + " = " + value);
+        return null;
+    }
+
+    @Override
+    public Response getAvailableRoomsByHangPhongAndPriceRange(LocalDate checkIn, LocalDate checkOut,
+            BigDecimal minPrice, BigDecimal maxPrice, String idKp, String idLp) {
+        Response response = new Response();
+        try {
+            // Gọi stored procedure
+            StoredProcedureQuery query = entityManager.createStoredProcedureQuery("GetAvailableRoomsByHangPhong");
+            query.registerStoredProcedureParameter("p_ngay_den", LocalDate.class, ParameterMode.IN);
+            query.registerStoredProcedureParameter("p_ngay_di", LocalDate.class, ParameterMode.IN);
+
+            query.setParameter("p_ngay_den", checkIn);
+            query.setParameter("p_ngay_di", checkOut);
+
+            System.out.println("=== CALLING STORED PROCEDURE WITH FILTERS ===");
+            System.out.println("p_ngay_den: " + checkIn);
+            System.out.println("p_ngay_di: " + checkOut);
+            System.out.println("idKp filter: " + idKp);
+            System.out.println("idLp filter: " + idLp);
+            System.out.println("Price range: " + minPrice + " - " + maxPrice);
+            System.out.println("==============================================");
+
+            query.execute();
+
+            @SuppressWarnings("unchecked")
+            List<Object[]> results = query.getResultList();
+            System.out.println("Stored procedure returned " + results.size() + " results");
+
+            List<AvailableRoomsByHangPhongDTO> availableRooms = new ArrayList<>();
+
+            for (Object[] result : results) {
+                try {
+                    if (result.length >= 5) {
+                        // Correct mapping based on stored procedure result order:
+                        // [0] = ID_HANG_PHONG (Integer)
+                        // [1] = TEN_KIEU_PHONG (String)
+                        // [2] = TEN_LOAI_PHONG (String)
+                        // [3] = TONG_SO_PHONG (Long)
+                        // [4] = SO_PHONG_TRONG (Long)
+                        Integer idHangPhong = convertToInteger(result[0]);
+                        String tenKieuPhong = (String) result[1];
+                        String tenLoaiPhong = (String) result[2];
+                        Integer tongSoPhong = convertToInteger(result[3]);
+                        Integer soPhongTrong = convertToInteger(result[4]);
+
+                        System.out.println("Processing room: ID=" + idHangPhong +
+                                ", KieuPhong=" + tenKieuPhong +
+                                ", LoaiPhong=" + tenLoaiPhong +
+                                ", Available=" + soPhongTrong +
+                                ", Total=" + tongSoPhong);
+
+                        if (soPhongTrong > 0) {
+                            // Apply filters BEFORE creating DTO
+                            boolean passKieuPhongFilter = (idKp == null || idKp.isEmpty() ||
+                                    (tenKieuPhong != null && tenKieuPhong.equalsIgnoreCase(idKp)));
+
+                            boolean passLoaiPhongFilter = (idLp == null || idLp.isEmpty() ||
+                                    (tenLoaiPhong != null && tenLoaiPhong.equalsIgnoreCase(idLp)));
+
+                            System.out.println("Applying filters for room " + idHangPhong + ":");
+                            System.out.println(
+                                    "  - Filter idKp: '" + idKp + "', Room tenKieuPhong: '" + tenKieuPhong + "'");
+                            System.out.println(
+                                    "  - Filter idLp: '" + idLp + "', Room tenLoaiPhong: '" + tenLoaiPhong + "'");
+                            System.out.println("  - KieuPhong filter pass: " + passKieuPhongFilter);
+                            System.out.println("  - LoaiPhong filter pass: " + passLoaiPhongFilter);
+
+                            if (passKieuPhongFilter && passLoaiPhongFilter) {
+                                AvailableRoomsByHangPhongDTO dto = new AvailableRoomsByHangPhongDTO();
+                                dto.setIdHangPhong(idHangPhong);
+                                dto.setSoPhongTrong(soPhongTrong);
+                                dto.setTongSoPhong(tongSoPhong);
+
+                                // Set thông tin từ stored procedure
+                                dto.setTenKieuPhong(tenKieuPhong);
+                                dto.setTenLoaiPhong(tenLoaiPhong);
+
+                                // Enrich additional details and apply price filter
+                                enrichRoomDetails(dto, idHangPhong);
+
+                                boolean passPriceFilter = true;
+                                System.out.println("Price filter debug:");
+                                System.out.println("  - dto.getGiaHienTai(): " + dto.getGiaHienTai());
+                                System.out.println("  - minPrice: " + minPrice);
+                                System.out.println("  - maxPrice: " + maxPrice);
+
+                                if (dto.getGiaHienTai() != null && minPrice != null && maxPrice != null) {
+                                    BigDecimal giaHienTaiValue = dto.getGiaHienTai();
+                                    passPriceFilter = giaHienTaiValue.compareTo(minPrice) >= 0 &&
+                                            giaHienTaiValue.compareTo(maxPrice) <= 0;
+                                    System.out.println("  - Price comparison: " + giaHienTaiValue + " >= " + minPrice
+                                            + " && " + giaHienTaiValue + " <= " + maxPrice + " = " + passPriceFilter);
+                                } else if (minPrice != null || maxPrice != null) {
+                                    passPriceFilter = false; // Has price filter but room has no price
+                                    System.out.println("  - Room has no price but price filter is applied");
+                                } else {
+                                    System.out.println("  - No price filter applied");
+                                }
+
+                                System.out.println("Price filter pass: " + passPriceFilter);
+
+                                if (passPriceFilter) {
+                                    availableRooms.add(dto);
+                                    System.out.println("Successfully added room " + idHangPhong + " to results");
+                                } else {
+                                    System.out.println("Room " + idHangPhong + " filtered out by price");
+                                }
+                            } else {
+                                System.out.println("Room " + idHangPhong + " filtered out by room type/category");
+                            }
+                        }
+                    }
+                } catch (Exception rowException) {
+                    System.err.println("Error processing row: " + rowException.getMessage());
+                    rowException.printStackTrace();
+                }
+            }
+
+            System.out.println("About to set response with " + availableRooms.size() + " rooms");
+
+            response.setStatusCode(200);
+            response.setMessage("Thành công");
+            response.setAvailableRoomsByHangPhongList(availableRooms);
+
+            System.out.println("Final response size: " + availableRooms.size());
+
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi tìm kiếm phòng: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return response;
     }
 }

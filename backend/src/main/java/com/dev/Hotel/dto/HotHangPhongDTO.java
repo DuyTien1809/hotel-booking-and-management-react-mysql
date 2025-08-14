@@ -1,6 +1,7 @@
 package com.dev.Hotel.dto;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public class HotHangPhongDTO {
     private Integer idHangPhong;
@@ -9,11 +10,16 @@ public class HotHangPhongDTO {
     private String tenLp;
     private Long soLuotThue;
     private BigDecimal giaHienTai;
+    private String urlAnhDaiDien;
+    private List<TienNghiDTO> danhSachTienNghi;
+    private String moTaKieuPhong; // Mô tả kiểu phòng (One double and one single bed)
 
     // Constructors
-    public HotHangPhongDTO() {}
+    public HotHangPhongDTO() {
+    }
 
-    public HotHangPhongDTO(Integer idHangPhong, String moTa, String tenKp, String tenLp, Long soLuotThue, BigDecimal giaHienTai) {
+    public HotHangPhongDTO(Integer idHangPhong, String moTa, String tenKp, String tenLp, Long soLuotThue,
+            BigDecimal giaHienTai) {
         this.idHangPhong = idHangPhong;
         this.moTa = moTa;
         this.tenKp = tenKp;
@@ -69,6 +75,30 @@ public class HotHangPhongDTO {
 
     public void setGiaHienTai(BigDecimal giaHienTai) {
         this.giaHienTai = giaHienTai;
+    }
+
+    public String getUrlAnhDaiDien() {
+        return urlAnhDaiDien;
+    }
+
+    public void setUrlAnhDaiDien(String urlAnhDaiDien) {
+        this.urlAnhDaiDien = urlAnhDaiDien;
+    }
+
+    public List<TienNghiDTO> getDanhSachTienNghi() {
+        return danhSachTienNghi;
+    }
+
+    public void setDanhSachTienNghi(List<TienNghiDTO> danhSachTienNghi) {
+        this.danhSachTienNghi = danhSachTienNghi;
+    }
+
+    public String getMoTaKieuPhong() {
+        return moTaKieuPhong;
+    }
+
+    public void setMoTaKieuPhong(String moTaKieuPhong) {
+        this.moTaKieuPhong = moTaKieuPhong;
     }
 
     @Override

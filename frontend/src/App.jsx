@@ -9,6 +9,7 @@ import ProtectedRoute from './components/common/ProtectedRoute'
 import HomePage from './pages/public/HomePage'
 import RoomListPage from './pages/public/RoomListPage'
 import RoomDetailPage from './pages/public/RoomDetailPage'
+import PublicBookingPage from './pages/public/PublicBookingPage'
 import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
 import ForgotPassword from './pages/auth/ForgotPassword'
@@ -62,6 +63,7 @@ function App() {
             <Route index element={<HomePage />} />
             <Route path="rooms" element={<RoomListPage />} />
             <Route path="rooms/:id" element={<RoomDetailPage />} />
+            <Route path="booking" element={<PublicBookingPage />} />
             <Route path="login" element={<LoginPage />} />
             <Route path="register" element={<RegisterPage />} />
             <Route path="forgot-password" element={<ForgotPassword />} />

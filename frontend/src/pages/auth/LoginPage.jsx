@@ -15,8 +15,10 @@ const LoginPage = () => {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  
+
   const from = location.state?.from?.pathname || '/'
+  const searchParams = new URLSearchParams(location.search)
+  const redirectParam = searchParams.get('redirect')
 
   const handleChange = (e) => {
     setFormData({
@@ -39,11 +41,19 @@ const LoginPage = () => {
       
       if (result.success) {
         toast.success('Đăng nhập thành công!')
-        
+
+        // Check for pending booking from public booking page
+        const pendingBooking = sessionStorage.getItem('pendingBooking')
+        if (pendingBooking && redirectParam === 'booking') {
+          // Redirect to customer booking page to complete the booking
+          navigate('/customer/booking', { replace: true })
+          return
+        }
+
         // Redirect based on user role
         const user = result.user
         let redirectPath = from
-        
+
         if (from === '/') {
           switch (user.role) {
             case 'ADMIN':
@@ -59,7 +69,7 @@ const LoginPage = () => {
               redirectPath = '/'
           }
         }
-        
+
         navigate(redirectPath, { replace: true })
       } else {
         toast.error(result.message || 'Đăng nhập thất bại')
