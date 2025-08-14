@@ -22,6 +22,7 @@ public interface IDoiPhongService {
     
     // Room change management
     Response requestRoomChange(DoiPhongRequest request);
+    Response changeRoom(DoiPhongRequest request);
     Response approveRoomChange(Integer idCtPt, String soPhongMoi);
     Response cancelRoomChange(Integer idCtPt, String soPhongMoi, String reason);
     Response completeRoomChange(Integer idCtPt, String soPhongMoi);
@@ -40,4 +41,7 @@ public interface IDoiPhongService {
     // Search and filter
     Response searchDoiPhong(String keyword);
     Response filterDoiPhong(LocalDate startDate, LocalDate endDate, String cccd);
+
+    // Debug
+    Response debugCtPhieuThue(Integer idCtPt);
 }

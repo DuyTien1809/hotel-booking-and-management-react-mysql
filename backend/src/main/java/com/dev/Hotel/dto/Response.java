@@ -88,6 +88,7 @@ public class Response {
     // Invoice data
     private HoaDonDTO hoaDon;
     private List<HoaDonDTO> hoaDonList;
+    private HoaDonDetailsDTO hoaDonDetails;
 
     // Detailed rental info
     private PhieuThueDetailsDTO phieuThueDetails;
@@ -410,6 +411,14 @@ public class Response {
 
     public void setHoaDonList(List<HoaDonDTO> hoaDonList) {
         this.hoaDonList = hoaDonList;
+    }
+
+    public HoaDonDetailsDTO getHoaDonDetails() {
+        return hoaDonDetails;
+    }
+
+    public void setHoaDonDetails(HoaDonDetailsDTO hoaDonDetails) {
+        this.hoaDonDetails = hoaDonDetails;
     }
 
     public PhieuThueDetailsDTO getPhieuThueDetails() {

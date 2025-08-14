@@ -62,9 +62,11 @@ const CheckOutPage = () => {
       const transformedData = guestData
         .filter(rental => !invoicedRentalIds.has(rental.idPt)) // Loại bỏ khách đã có hóa đơn
         .map(rental => {
-          // Get room information from chiTietPhieuThue
+          // Get room information from chiTietPhieuThue - CHỈ PHÒNG CHƯA THANH TOÁN
           const roomInfo = rental.chiTietPhieuThue && rental.chiTietPhieuThue.length > 0
-            ? rental.chiTietPhieuThue.map(ct => ({
+            ? rental.chiTietPhieuThue
+                .filter(ct => ct.ttThanhToan !== 'Đã thanh toán')
+                .map(ct => ({
                 soPhong: ct.soPhong,
                 tenKieuPhong: ct.tenKieuPhong,
                 tenLoaiPhong: ct.tenLoaiPhong,
@@ -115,7 +117,8 @@ const CheckOutPage = () => {
             employeeId: rental.idNv,
             employeeName: rental.hoTenNhanVien,
             chiTietPhieuThue: rental.chiTietPhieuThue || [],
-            roomInfo: roomInfo
+            roomInfo: roomInfo,
+            depositAmount: rental.soTienCoc || 0 // Thêm tiền đặt cọc từ API
           }
         })
 
@@ -235,14 +238,16 @@ const CheckOutPage = () => {
 
     if (guest.chiTietPhieuThue && guest.chiTietPhieuThue.length > 0) {
       guest.chiTietPhieuThue.forEach(ct => {
-        // Room charges - tính theo số ngày với logic mới: chỉ tính thêm ngày khi qua 12h đêm
-        if (ct.donGia && ct.ngayDen) {
+        // CHỈ TÍNH PHÒNG CHƯA THANH TOÁN
+        if (ct.ttThanhToan !== 'Đã thanh toán' && ct.donGia && ct.ngayDen) {
           const checkInDate = new Date(ct.ngayDen)
           checkInDate.setHours(0, 0, 0, 0) // Set to start of day
 
-          // Sử dụng ngày checkout thực tế từ checkOutData, nếu không có thì dùng ngày hiện tại
-          const actualCheckOutDate = checkOutData.actualCheckOut ?
-            new Date(checkOutData.actualCheckOut) : new Date()
+          // Sử dụng ngày checkout đã đặt trước từ CtPhieuThue.ngayDi
+          // Nếu chưa có thì fallback về checkOutData hoặc ngày hiện tại
+          const actualCheckOutDate = ct.ngayDi ?
+            new Date(ct.ngayDi) :
+            (checkOutData.actualCheckOut ? new Date(checkOutData.actualCheckOut) : new Date())
 
           // Tính số ngày: chỉ tính thêm ngày khi checkout qua ngày mới (sau 00:00)
           const checkOutDateOnly = new Date(actualCheckOutDate)
@@ -305,12 +310,16 @@ const CheckOutPage = () => {
 
       // Chỉ cập nhật thông tin bổ sung, không ghi đè bill đã tính toán
       if (details && selectedGuest) {
+        // Debug log
+        console.log('API details:', details)
+        console.log('soTienCoc from API:', details.soTienCoc)
+
         // Update selected guest with additional info, bao gồm tiền đặt cọc từ API
         setSelectedGuest(prev => ({
           ...prev,
           customerEmail: details.emailKhachHang || prev.customerEmail,
           roomCount: details.rooms ? details.rooms.length : (prev.chiTietPhieuThue?.length || 1),
-          depositAmount: details.soTienCoc || 0 // Lấy từ API details
+          depositAmount: details.soTienCoc || prev.depositAmount || 0 // Lấy từ API hoặc giữ nguyên
         }))
       }
     } catch (error) {
@@ -346,42 +355,37 @@ const CheckOutPage = () => {
     try {
       setLoading(true)
 
-      // Call API to perform check-out with actual checkout date
+      // CHỈ GỌI 1 API: Tạo hóa đơn từ checkout (bao gồm cả checkout process)
       const actualCheckOutDate = checkOutData.actualCheckOut ?
         new Date(checkOutData.actualCheckOut).toISOString().split('T')[0] :
         new Date().toISOString().split('T')[0]
 
-      const response = await rentalService.checkOutWithDate(selectedGuest.id, actualCheckOutDate)
+      const invoiceResult = await handleCreateInvoiceFromCheckout(selectedGuest.id, actualCheckOutDate)
 
-      if (response.statusCode === 200) {
+      if (invoiceResult && invoiceResult.idHd) {
         toast.success(`Check-out thành công cho ${selectedGuest.customerName}!`)
 
-        // Create invoice after successful checkout
-        const invoiceResult = await handleCreateInvoice(selectedGuest.id)
-
         // Update invoice status to "Đã thanh toán" after successful checkout
-        if (invoiceResult && invoiceResult.idHd) {
-          try {
-            await invoiceService.updateInvoiceStatus(invoiceResult.idHd, INVOICE_STATUS.PAID)
-            toast.success('Trạng thái hóa đơn đã được cập nhật!')
+        try {
+          await invoiceService.updateInvoiceStatus(invoiceResult.idHd, INVOICE_STATUS.PAID)
+          toast.success('Trạng thái hóa đơn đã được cập nhật!')
 
-            // Cập nhật trạng thái phiếu đặt nếu có
-            if (selectedGuest.bookingId) {
-              try {
-                await bookingService.updateBookingStatus(selectedGuest.bookingId, 'Đã hoàn thành')
-              } catch (error) {
-                console.error('Error updating booking status:', error)
-                // Không hiển thị lỗi vì đây không phải lỗi nghiêm trọng
-              }
+          // Cập nhật trạng thái phiếu đặt nếu có
+          if (selectedGuest.bookingId) {
+            try {
+              await bookingService.updateBookingStatus(selectedGuest.bookingId, 'Đã hoàn thành')
+            } catch (error) {
+              console.error('Error updating booking status:', error)
+              // Không hiển thị lỗi vì đây không phải lỗi nghiêm trọng
             }
-
-            // Chuyển hướng đến trang hóa đơn và highlight hóa đơn vừa tạo
-            navigate(`/staff/invoices?highlight=${invoiceResult.idHd}`)
-            return // Không cần thực hiện các bước tiếp theo vì đã chuyển trang
-          } catch (error) {
-            console.error('Error updating invoice status:', error)
-            toast.error('Không thể cập nhật trạng thái hóa đơn')
           }
+
+          // Chuyển hướng đến trang hóa đơn và highlight hóa đơn vừa tạo
+          navigate(`/staff/invoices?highlight=${invoiceResult.idHd}`)
+          return // Không cần thực hiện các bước tiếp theo vì đã chuyển trang
+        } catch (error) {
+          console.error('Error updating invoice status:', error)
+          toast.error('Không thể cập nhật trạng thái hóa đơn')
         }
 
         // Update guest status - remove from checked-in list
@@ -406,7 +410,7 @@ const CheckOutPage = () => {
         // Refresh the list
         fetchCheckedInGuests()
       } else {
-        toast.error(response.message || 'Có lỗi xảy ra khi check-out')
+        toast.error('Không thể tạo hóa đơn từ checkout')
       }
     } catch (error) {
       toast.error('Có lỗi xảy ra khi check-out')
@@ -430,6 +434,26 @@ const CheckOutPage = () => {
       }
     } catch (error) {
       console.error('Error creating invoice:', error)
+      toast.error('Có lỗi xảy ra khi tạo hóa đơn')
+      return null
+    }
+  }
+
+  // API MỚI: Tạo hóa đơn từ checkout (bao gồm cả checkout process)
+  const handleCreateInvoiceFromCheckout = async (rentalId, actualCheckOutDate) => {
+    try {
+      const response = await invoiceService.createInvoiceFromCheckoutWithDate(rentalId, actualCheckOutDate)
+      if (response.statusCode === 200) {
+        setInvoice(response.hoaDon)
+        toast.success('Hóa đơn đã được tạo thành công!')
+        setShowInvoice(true)
+        return response.hoaDon // Trả về thông tin hóa đơn
+      } else {
+        toast.error('Không thể tạo hóa đơn: ' + response.message)
+        return null
+      }
+    } catch (error) {
+      console.error('Error creating invoice from checkout:', error)
       toast.error('Có lỗi xảy ra khi tạo hóa đơn')
       return null
     }
@@ -497,20 +521,27 @@ const CheckOutPage = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {selectedGuest.chiTietPhieuThue && selectedGuest.chiTietPhieuThue.map((ct, index) => (
+                    {/* CHỈ HIỂN THỊ PHÒNG CHƯA THANH TOÁN */}
+                    {selectedGuest.chiTietPhieuThue && selectedGuest.chiTietPhieuThue
+                      .filter(ct => ct.ttThanhToan !== 'Đã thanh toán')
+                      .map((ct, index) => (
                       <tr key={index} className="hover:bg-gray-50">
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{ct.soPhong}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{ct.tenKieuPhong} {ct.tenLoaiPhong}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{new Date(ct.ngayDen).toLocaleDateString('vi-VN')}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{new Date().toLocaleDateString('vi-VN')}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                          {ct.ngayDi ? new Date(ct.ngayDi).toLocaleDateString('vi-VN') : 'Chưa xác định'}
+                        </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                           {(() => {
                             if (ct.ngayDen) {
                               const checkInDate = new Date(ct.ngayDen)
                               checkInDate.setHours(0, 0, 0, 0)
 
-                              const actualCheckOut = checkOutData.actualCheckOut ?
-                                new Date(checkOutData.actualCheckOut) : new Date()
+                              // Sử dụng ngày checkout đã đặt trước từ CtPhieuThue.ngayDi
+                              const actualCheckOut = ct.ngayDi ?
+                                new Date(ct.ngayDi) :
+                                (checkOutData.actualCheckOut ? new Date(checkOutData.actualCheckOut) : new Date())
                               const checkOutDateOnly = new Date(actualCheckOut)
                               checkOutDateOnly.setHours(0, 0, 0, 0)
 
@@ -527,8 +558,10 @@ const CheckOutPage = () => {
                               const checkInDate = new Date(ct.ngayDen)
                               checkInDate.setHours(0, 0, 0, 0)
 
-                              const actualCheckOut = checkOutData.actualCheckOut ?
-                                new Date(checkOutData.actualCheckOut) : new Date()
+                              // Sử dụng ngày checkout đã đặt trước từ CtPhieuThue.ngayDi
+                              const actualCheckOut = ct.ngayDi ?
+                                new Date(ct.ngayDi) :
+                                (checkOutData.actualCheckOut ? new Date(checkOutData.actualCheckOut) : new Date())
                               const checkOutDateOnly = new Date(actualCheckOut)
                               checkOutDateOnly.setHours(0, 0, 0, 0)
 
@@ -625,12 +658,15 @@ const CheckOutPage = () => {
                     let totalRoomCharges = 0
                     if (selectedGuest.chiTietPhieuThue) {
                       selectedGuest.chiTietPhieuThue.forEach(ct => {
-                        if (ct.donGia && ct.ngayDen) {
+                        // CHỈ TÍNH PHÒNG CHƯA THANH TOÁN
+                        if (ct.ttThanhToan !== 'Đã thanh toán' && ct.donGia && ct.ngayDen) {
                           const checkInDate = new Date(ct.ngayDen)
                           checkInDate.setHours(0, 0, 0, 0)
 
-                          const actualCheckOut = checkOutData.actualCheckOut ?
-                            new Date(checkOutData.actualCheckOut) : new Date()
+                          // Sử dụng ngày checkout đã đặt trước từ CtPhieuThue.ngayDi
+                          const actualCheckOut = ct.ngayDi ?
+                            new Date(ct.ngayDi) :
+                            (checkOutData.actualCheckOut ? new Date(checkOutData.actualCheckOut) : new Date())
                           const checkOutDateOnly = new Date(actualCheckOut)
                           checkOutDateOnly.setHours(0, 0, 0, 0)
 
@@ -658,12 +694,15 @@ const CheckOutPage = () => {
                     let totalRoomCharges = 0
                     if (selectedGuest.chiTietPhieuThue) {
                       selectedGuest.chiTietPhieuThue.forEach(ct => {
-                        if (ct.donGia && ct.ngayDen) {
+                        // CHỈ TÍNH PHÒNG CHƯA THANH TOÁN
+                        if (ct.ttThanhToan !== 'Đã thanh toán' && ct.donGia && ct.ngayDen) {
                           const checkInDate = new Date(ct.ngayDen)
                           checkInDate.setHours(0, 0, 0, 0)
 
-                          const actualCheckOut = checkOutData.actualCheckOut ?
-                            new Date(checkOutData.actualCheckOut) : new Date()
+                          // Sử dụng ngày checkout đã đặt trước từ CtPhieuThue.ngayDi
+                          const actualCheckOut = ct.ngayDi ?
+                            new Date(ct.ngayDi) :
+                            (checkOutData.actualCheckOut ? new Date(checkOutData.actualCheckOut) : new Date())
                           const checkOutDateOnly = new Date(actualCheckOut)
                           checkOutDateOnly.setHours(0, 0, 0, 0)
 
@@ -870,15 +909,16 @@ const CheckOutPage = () => {
               {/* Room Information */}
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h3 className="font-semibold text-gray-900 mb-3">Phòng đã sử dụng</h3>
-                {selectedGuest.chiTietPhieuThue && selectedGuest.chiTietPhieuThue.length > 0 ? (
+                {selectedGuest.chiTietPhieuThue && selectedGuest.chiTietPhieuThue.filter(ct => ct.ttThanhToan !== 'Đã thanh toán').length > 0 ? (
                   <div className="space-y-2">
-                    {sortRoomDetails(selectedGuest.chiTietPhieuThue).map((ct, index) => (
+                    {/* CHỈ HIỂN THỊ PHÒNG CHƯA THANH TOÁN */}
+                    {sortRoomDetails(selectedGuest.chiTietPhieuThue.filter(ct => ct.ttThanhToan !== 'Đã thanh toán')).map((ct, index) => (
                       <div key={index} className="flex justify-between items-center bg-white p-3 rounded border">
                         <div className="text-sm">
                           <span className="font-medium">Phòng {ct.soPhong}</span>
                           <span className="text-gray-600"> - {ct.tenKieuPhong} {ct.tenLoaiPhong}</span>
                           <div className="text-xs text-gray-500 mt-1">
-                            Tầng {ct.tang} | {ct.ngayDen} - {new Date().toLocaleDateString('vi-VN')}
+                            Tầng {ct.tang} | {ct.ngayDen} - {ct.ngayDi ? new Date(ct.ngayDi).toLocaleDateString('vi-VN') : 'Chưa xác định'}
                           </div>
                           <div className="text-xs text-gray-500">
                             Đơn giá: {ct.donGia?.toLocaleString('vi-VN')} VNĐ/đêm
@@ -889,8 +929,10 @@ const CheckOutPage = () => {
                                 const checkInDate = new Date(ct.ngayDen)
                                 checkInDate.setHours(0, 0, 0, 0)
 
-                                const actualCheckOut = checkOutData.actualCheckOut ?
-                                  new Date(checkOutData.actualCheckOut) : new Date()
+                                // Sử dụng ngày checkout đã đặt trước từ CtPhieuThue.ngayDi
+                                const actualCheckOut = ct.ngayDi ?
+                                  new Date(ct.ngayDi) :
+                                  (checkOutData.actualCheckOut ? new Date(checkOutData.actualCheckOut) : new Date())
                                 const checkOutDateOnly = new Date(actualCheckOut)
                                 checkOutDateOnly.setHours(0, 0, 0, 0)
 
@@ -908,8 +950,10 @@ const CheckOutPage = () => {
                                 const checkInDate = new Date(ct.ngayDen)
                                 checkInDate.setHours(0, 0, 0, 0)
 
-                                const actualCheckOut = checkOutData.actualCheckOut ?
-                                  new Date(checkOutData.actualCheckOut) : new Date()
+                                // Sử dụng ngày checkout đã đặt trước từ CtPhieuThue.ngayDi
+                                const actualCheckOut = ct.ngayDi ?
+                                  new Date(ct.ngayDi) :
+                                  (checkOutData.actualCheckOut ? new Date(checkOutData.actualCheckOut) : new Date())
                                 const checkOutDateOnly = new Date(actualCheckOut)
                                 checkOutDateOnly.setHours(0, 0, 0, 0)
 
@@ -940,13 +984,16 @@ const CheckOutPage = () => {
               </div>
 
               {/* Services and Surcharges Details - Show when unpaid data is available */}
-              {selectedGuest.chiTietPhieuThue && selectedGuest.chiTietPhieuThue.some(ct =>
-                (ct.danhSachDichVu && ct.danhSachDichVu.some(dv => dv.ttThanhToan !== 'Đã thanh toán')) ||
-                (ct.danhSachPhuThu && ct.danhSachPhuThu.some(pt => pt.ttThanhToan !== 'Đã thanh toán'))
-              ) && (
+              {selectedGuest.chiTietPhieuThue && selectedGuest.chiTietPhieuThue
+                .filter(ct => ct.ttThanhToan !== 'Đã thanh toán') // Chỉ xét phòng chưa thanh toán
+                .some(ct =>
+                  (ct.danhSachDichVu && ct.danhSachDichVu.some(dv => dv.ttThanhToan !== 'Đã thanh toán')) ||
+                  (ct.danhSachPhuThu && ct.danhSachPhuThu.some(pt => pt.ttThanhToan !== 'Đã thanh toán'))
+                ) && (
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="font-semibold text-gray-900 mb-3">Chi tiết dịch vụ & phụ thu</h3>
-                  {sortRoomDetails(selectedGuest.chiTietPhieuThue).map((ct, ctIndex) => (
+                  {/* CHỈ HIỂN THỊ CHI TIẾT CỦA PHÒNG CHƯA THANH TOÁN */}
+                  {sortRoomDetails(selectedGuest.chiTietPhieuThue.filter(ct => ct.ttThanhToan !== 'Đã thanh toán')).map((ct, ctIndex) => (
                     <div key={ctIndex} className="mb-4">
                       {/* Services - chỉ hiển thị dịch vụ chưa thanh toán */}
                       {ct.danhSachDichVu && ct.danhSachDichVu.filter(dv => dv.ttThanhToan !== 'Đã thanh toán').length > 0 && (

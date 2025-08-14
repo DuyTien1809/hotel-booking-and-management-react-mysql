@@ -23,4 +23,7 @@ public class DichVu {
     
     @OneToMany(mappedBy = "dichVu", cascade = CascadeType.ALL)
     private List<GiaDichVu> danhSachGia;
+
+    @OneToMany(mappedBy = "dichVu", cascade = CascadeType.ALL)
+    private List<CtDichVu> chiTietDichVu;
 }

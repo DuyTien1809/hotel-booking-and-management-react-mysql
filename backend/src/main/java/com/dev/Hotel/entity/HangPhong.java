@@ -42,6 +42,15 @@ public class HangPhong {
     @OneToMany(mappedBy = "hangPhong", cascade = CascadeType.ALL)
     private List<CtPhieuDat> chiTietPhieuDat;
 
+    @OneToMany(mappedBy = "hangPhong", cascade = CascadeType.ALL)
+    private List<CtTienNghi> chiTietTienNghi;
+
+    @OneToMany(mappedBy = "hangPhong", cascade = CascadeType.ALL)
+    private List<CtKhuyenMai> chiTietKhuyenMai;
+
+    @OneToMany(mappedBy = "hangPhong", cascade = CascadeType.ALL)
+    private List<GiaHangPhong> danhSachGia;
+
     // Manual getters and setters
     public Integer getIdHangPhong() {
         return idHangPhong;

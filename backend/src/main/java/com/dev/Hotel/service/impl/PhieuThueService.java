@@ -596,59 +596,14 @@ public class PhieuThueService implements IPhieuThueService {
 
     @Override
     public Response checkOut(Integer idPt) {
-        return checkOutWithDate(idPt, LocalDate.now());
-    }
-
-    @Override
-    public Response checkOutWithDate(Integer idPt, LocalDate actualCheckOutDate) {
+        // Method này đã deprecated - sử dụng HoaDonService.createInvoiceFromCheckout thay thế
         Response response = new Response();
-        try {
-            PhieuThue phieuThue = phieuThueRepository.findById(idPt)
-                    .orElseThrow(() -> new OurException("Phiếu thuê không tồn tại"));
-
-            // Update payment status for all CtPhieuThue to "Đã thanh toán"
-            List<CtPhieuThue> ctPhieuThueList = ctPhieuThueRepository.findByPhieuThue(phieuThue);
-            for (CtPhieuThue ctPhieuThue : ctPhieuThueList) {
-                // Update check-out date to actual checkout date và payment status
-                ctPhieuThue.setNgayDi(actualCheckOutDate);
-                ctPhieuThue.setTtThanhToan("Đã thanh toán");
-                ctPhieuThueRepository.save(ctPhieuThue);
-
-                // Update all services payment status for this room
-                List<CtDichVu> ctDichVuList = ctDichVuRepository.findByCtPhieuThue(ctPhieuThue);
-                for (CtDichVu ctDichVu : ctDichVuList) {
-                    ctDichVu.setTtThanhToan("Đã thanh toán");
-                    ctDichVuRepository.save(ctDichVu);
-                }
-
-                // Update all surcharges payment status for this room
-                List<CtPhuThu> ctPhuThuList = ctPhuThuRepository.findByCtPhieuThue(ctPhieuThue);
-                for (CtPhuThu ctPhuThu : ctPhuThuList) {
-                    ctPhuThu.setTtThanhToan("Đã thanh toán");
-                    ctPhuThuRepository.save(ctPhuThu);
-                }
-
-                // Update room status to "Đang dọn dẹp" (cleaning)
-                if (ctPhieuThue.getPhong() != null) {
-                    ctPhieuThue.getPhong().setTrangThai(trangThaiRepository.findById("TT003").orElse(null)); // Đang dọn
-                                                                                                             // dẹp
-                    phongRepository.save(ctPhieuThue.getPhong());
-                }
-            }
-
-            response.setStatusCode(200);
-            response.setMessage("Check-out thành công");
-            response.setPhieuThue(EntityDTOMapper.mapPhieuThueToDTO(phieuThue));
-
-        } catch (OurException e) {
-            response.setStatusCode(404);
-            response.setMessage(e.getMessage());
-        } catch (Exception e) {
-            response.setStatusCode(500);
-            response.setMessage("Lỗi khi check-out: " + e.getMessage());
-        }
+        response.setStatusCode(400);
+        response.setMessage("API này đã được thay thế bởi /api/hoa-don/create-from-checkout/{idPt}");
         return response;
     }
+
+    // Method checkOutWithDate đã được xóa - sử dụng HoaDonService.createInvoiceFromCheckout thay thế
 
     @Override
     public Response extendStay(Integer idPt, LocalDate newCheckOut) {

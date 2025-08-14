@@ -3,6 +3,7 @@ package com.dev.Hotel.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.Data;
+import java.util.List;
 
 @Data
 @Entity
@@ -27,6 +28,9 @@ public class KieuPhong {
     @Max(value = 20, message = "Số lượng khách ở không được quá 20")
     @Column(name = "SO_LUONG_KHACH")
     private Integer soLuongKhach;
+
+    @OneToMany(mappedBy = "kieuPhong", cascade = CascadeType.ALL)
+    private List<HangPhong> danhSachHangPhong;
 
     // Manual getters and setters
     public String getIdKp() {

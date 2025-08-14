@@ -3,6 +3,7 @@ package com.dev.Hotel.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -27,6 +28,7 @@ public class PhieuThueDTO {
     
     // Phieu dat info
     private Integer idPd;
+    private BigDecimal soTienCoc;
     
     // Chi tiet phieu thue
     private List<CtPhieuThueDTO> chiTietPhieuThue;

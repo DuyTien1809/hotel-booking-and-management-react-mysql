@@ -16,6 +16,7 @@ import toast from 'react-hot-toast'
 import { rentalManagementService } from '../../services/rentalManagementService'
 import { formatDate, formatCurrency } from '../../utils/formatters'
 import RoomChangeModal from '../../components/staff/RoomChangeModal'
+import doiPhongService from '../../services/doiPhongService'
 
 const RentalManagement = () => {
   const [rentals, setRentals] = useState([])
@@ -204,9 +205,31 @@ const RentalManagement = () => {
     }
   }
 
-  const handleRoomChange = (ctPhieuThue) => {
-    setSelectedCtPhieuThue(ctPhieuThue)
-    setShowRoomChangeModal(true)
+  const handleRoomChange = async (ctPhieuThue) => {
+    try {
+      // Kiểm tra điều kiện đổi phòng ngay từ đầu để hiển thị cảnh báo
+      const response = await doiPhongService.checkRoomChangeEligibility(ctPhieuThue.idCtPt)
+
+      if (response.statusCode === 200 && response.roomChangeEligibility) {
+        const eligibility = response.roomChangeEligibility
+
+        if (!eligibility.eligible) {
+          // Hiển thị cảnh báo nhưng vẫn cho phép mở modal để xem chi tiết
+          const reasons = eligibility.hanChe || []
+          const reasonText = reasons.length > 0 ? reasons.join(', ') : eligibility.reason || 'Không đủ điều kiện đổi phòng'
+          toast.error(`Cảnh báo: ${reasonText}`)
+        }
+
+        // Mở modal trong mọi trường hợp để người dùng xem chi tiết
+        setSelectedCtPhieuThue(ctPhieuThue)
+        setShowRoomChangeModal(true)
+      } else {
+        toast.error(response.message || 'Lỗi khi kiểm tra điều kiện đổi phòng')
+      }
+    } catch (error) {
+      console.error('Error checking room change eligibility:', error)
+      toast.error('Lỗi khi kiểm tra điều kiện đổi phòng')
+    }
   }
 
   const handleRoomChangeSuccess = () => {

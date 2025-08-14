@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @Entity
@@ -71,6 +72,30 @@ public class NhanVien {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "ID_NQ")
     private NhomQuyen nhomQuyen;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "nhanVien", cascade = CascadeType.ALL)
+    private List<PhieuDat> danhSachPhieuDat;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "nhanVien", cascade = CascadeType.ALL)
+    private List<PhieuThue> danhSachPhieuThue;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "nhanVien", cascade = CascadeType.ALL)
+    private List<HoaDon> danhSachHoaDon;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "nhanVien", cascade = CascadeType.ALL)
+    private List<GiaHangPhong> danhSachGiaHangPhong;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "nhanVien", cascade = CascadeType.ALL)
+    private List<GiaDichVu> danhSachGiaDichVu;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "nhanVien", cascade = CascadeType.ALL)
+    private List<GiaPhuThu> danhSachGiaPhuThu;
 
     // Manual getters and setters
     public String getIdNv() {

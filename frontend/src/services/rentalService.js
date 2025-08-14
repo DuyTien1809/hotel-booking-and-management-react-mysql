@@ -156,16 +156,7 @@ export const rentalService = {
     }
   },
 
-  // Check-out with specific date
-  checkOutWithDate: async (rentalId, actualCheckOut) => {
-    try {
-      const response = await api.put(`/api/phieu-thue/checkout-with-date/${rentalId}?actualCheckOut=${actualCheckOut}`)
-      return response.data
-    } catch (error) {
-      console.error('Error checking out with date:', error)
-      throw error
-    }
-  },
+  // checkOutWithDate đã được xóa - sử dụng invoiceService.createInvoiceFromCheckoutWithDate thay thế
 
   // Extend stay
   extendStay: async (rentalId, newCheckOut) => {

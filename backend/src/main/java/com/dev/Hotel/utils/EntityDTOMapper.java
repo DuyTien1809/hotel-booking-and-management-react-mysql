@@ -228,6 +228,7 @@ public class EntityDTOMapper {
 
         if (phieuThue.getPhieuDat() != null) {
             dto.setIdPd(phieuThue.getPhieuDat().getIdPd());
+            dto.setSoTienCoc(phieuThue.getPhieuDat().getSoTienCoc()); // Thêm tiền đặt cọc
         }
 
         // Map chi tiet phieu thue if available
@@ -785,8 +786,10 @@ public class EntityDTOMapper {
 
         if (phieuThue.getChiTietPhieuThue() != null) {
             for (CtPhieuThue ctPhieuThue : phieuThue.getChiTietPhieuThue()) {
-                PhieuThueDetailsDTO.RoomDetailDTO roomDto = new PhieuThueDetailsDTO.RoomDetailDTO();
-                roomDto.setIdCtPt(ctPhieuThue.getIdCtPt());
+                // CHỈ HIỂN THỊ PHÒNG CHƯA THANH TOÁN (cho checkout)
+                if (!"Đã thanh toán".equals(ctPhieuThue.getTtThanhToan())) {
+                    PhieuThueDetailsDTO.RoomDetailDTO roomDto = new PhieuThueDetailsDTO.RoomDetailDTO();
+                    roomDto.setIdCtPt(ctPhieuThue.getIdCtPt());
 
                 if (ctPhieuThue.getPhong() != null) {
                     roomDto.setIdPhong(ctPhieuThue.getPhong().getSoPhong());
@@ -815,7 +818,8 @@ public class EntityDTOMapper {
                     tongTienPhong = tongTienPhong.add(thanhTien);
                 }
 
-                rooms.add(roomDto);
+                    rooms.add(roomDto);
+                } // Đóng block if cho phòng chưa thanh toán
             }
         }
 

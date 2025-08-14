@@ -105,6 +105,28 @@ export const invoiceService = {
     }
   },
 
+  // API MỚI: Lấy chi tiết hóa đơn - chỉ hiển thị items đã thanh toán (có ID_HD)
+  getInvoiceDetails: async (idHd) => {
+    try {
+      const response = await api.get(`/api/hoa-don/details/${idHd}`)
+      return response.data
+    } catch (error) {
+      console.error('Error fetching invoice details:', error)
+      throw error
+    }
+  },
+
+  // API MỚI: Tạo hóa đơn từ checkout với ngày checkout (bao gồm cả checkout process)
+  createInvoiceFromCheckoutWithDate: async (rentalId, actualCheckOutDate) => {
+    try {
+      const response = await api.post(`/api/hoa-don/create-from-checkout/${rentalId}?actualCheckOut=${actualCheckOutDate}`)
+      return response.data
+    } catch (error) {
+      console.error('Error creating invoice from checkout with date:', error)
+      throw error
+    }
+  },
+
   // Get invoices by date range
   getInvoicesByDateRange: async (startDate, endDate) => {
     try {

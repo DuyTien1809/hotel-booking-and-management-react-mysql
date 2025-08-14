@@ -129,14 +129,7 @@ public class PhieuThueController {
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
-    @PutMapping("/checkout-with-date/{idPt}")
-    //@PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
-    public ResponseEntity<Response> checkOutWithDate(
-            @PathVariable("idPt") Integer idPt,
-            @RequestParam("actualCheckOut") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate actualCheckOut) {
-        Response response = phieuThueService.checkOutWithDate(idPt, actualCheckOut);
-        return ResponseEntity.status(response.getStatusCode()).body(response);
-    }
+    // API checkout-with-date đã được xóa - sử dụng create-from-checkout thay thế
 
     @PutMapping("/extend-stay/{idPt}")
     //@PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")

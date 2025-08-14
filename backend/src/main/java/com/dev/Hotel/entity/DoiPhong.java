@@ -2,29 +2,7 @@ package com.dev.Hotel.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import java.math.BigDecimal;
 import java.time.LocalDate;
-
-@Data
-@Entity
-@Table(name = "ctkhuyenmai")
-class CtKhuyenMai {
-    @EmbeddedId
-    private CtKhuyenMaiId id;
-
-    @Column(name = "PHAN_TRAM_GIAM")
-    private BigDecimal phanTramGiam;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("idKm")
-    @JoinColumn(name = "ID_KM")
-    private KhuyenMai khuyenMai;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("idHangPhong")
-    @JoinColumn(name = "ID_HANG_PHONG")
-    private HangPhong hangPhong;
-}
 
 @Data
 @Entity
@@ -39,6 +17,9 @@ public class DoiPhong {
     @Column(name = "NGAY_DI")
     private LocalDate ngayDi;
 
+    @Column(name = "SOPHONGCU")
+    private String soPhongCu;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("idCtPt")
     @JoinColumn(name = "ID_CT_PT")
@@ -50,23 +31,3 @@ public class DoiPhong {
     private Phong phongMoi;
 }
 
-@Data
-@Entity
-@Table(name = "quan_ly")
-class QuanLy {
-    @EmbeddedId
-    private QuanLyId id;
-
-    @Column(name = "NGAYBDQL")
-    private LocalDate ngayBdQl;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("idBp")
-    @JoinColumn(name = "ID_BP")
-    private BoPhan boPhan;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("maNv")
-    @JoinColumn(name = "MANV")
-    private NhanVien nhanVien;
-}

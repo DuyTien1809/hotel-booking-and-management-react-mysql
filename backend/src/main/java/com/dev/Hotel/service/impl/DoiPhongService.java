@@ -9,9 +9,12 @@ import com.dev.Hotel.utils.EntityDTOMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -42,6 +45,18 @@ public class DoiPhongService implements IDoiPhongService {
     
     @Autowired
     private CtPhuThuRepository ctPhuThuRepository;
+
+    @Autowired
+    private GiaHangPhongRepository giaHangPhongRepository;
+
+    @Autowired
+    private CTKhachORepository ctKhachORepository;
+
+    @Autowired
+    private CtDichVuRepository ctDichVuRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Override
     public Response getAllDoiPhong() {
@@ -81,54 +96,105 @@ public class DoiPhongService implements IDoiPhongService {
 
     @Override
     @Transactional
-    public Response requestRoomChange(DoiPhongRequest request) {
+    public Response changeRoom(DoiPhongRequest request) {
         Response response = new Response();
         try {
+            System.out.println("=== BẮT ĐẦU ĐỔI PHÒNG ===");
+            System.out.println("ID CT PT: " + request.getIdCtPt());
+            System.out.println("Số phòng mới: " + request.getSoPhongMoi());
+
             // Validate request
             Response validationResponse = validateRoomChange(request);
             if (validationResponse.getStatusCode() != 200) {
+                System.out.println("Validation failed: " + validationResponse.getMessage());
                 return validationResponse;
             }
+            System.out.println("Validation passed");
 
             // Get chi tiết phiếu thuê
             CtPhieuThue ctPhieuThue = ctPhieuThueRepository.findById(request.getIdCtPt())
                     .orElseThrow(() -> new OurException("Không tìm thấy chi tiết phiếu thuê"));
+            System.out.println("Found CT Phieu Thue: " + ctPhieuThue.getIdCtPt());
 
             // Get phòng mới
             Phong phongMoi = phongRepository.findById(request.getSoPhongMoi())
                     .orElseThrow(() -> new OurException("Không tìm thấy phòng mới"));
+            System.out.println("Found phong moi: " + phongMoi.getSoPhong());
 
             // Get phòng cũ
             Phong phongCu = ctPhieuThue.getPhong();
+            System.out.println("Phong cu: " + phongCu.getSoPhong());
 
             // Kiểm tra phòng mới có trống không
             if (!"TT001".equals(phongMoi.getTrangThai().getIdTt())) {
                 throw new OurException("Phòng " + request.getSoPhongMoi() + " không trống");
             }
 
-            // Tạo đối tượng đổi phòng
+            // Lưu số phòng cũ trước khi cập nhật
+            String soPhongCu = ctPhieuThue.getPhong().getSoPhong();
+            LocalDate ngayDoiPhong = request.getNgayDen() != null ? request.getNgayDen() : LocalDate.now();
+
+            // GIẢI PHÁP MỚI: Tách CtPhieuThue thành 2 giai đoạn
+            // 1. Kết thúc giai đoạn phòng cũ
+            ctPhieuThue.setNgayDi(ngayDoiPhong);
+            CtPhieuThue savedOldCtPhieuThue = ctPhieuThueRepository.save(ctPhieuThue);
+            System.out.println("Kết thúc giai đoạn phòng cũ: " + soPhongCu + " đến ngày " + ngayDoiPhong);
+
+            // 2. Tạo CtPhieuThue mới cho phòng mới
+            CtPhieuThue newCtPhieuThue = new CtPhieuThue();
+            newCtPhieuThue.setPhieuThue(ctPhieuThue.getPhieuThue());
+            newCtPhieuThue.setPhong(phongMoi);
+            newCtPhieuThue.setNgayDen(ngayDoiPhong);
+            newCtPhieuThue.setNgayDi(request.getNgayDi()); // Có thể null nếu chưa checkout
+            newCtPhieuThue.setGioDen(LocalTime.now());
+
+            // Lấy giá phòng mới
+            BigDecimal giaPhongMoi = getCurrentRoomPrice(phongMoi.getHangPhong().getIdHangPhong());
+            newCtPhieuThue.setDonGia(giaPhongMoi);
+            newCtPhieuThue.setTtThanhToan("Chưa thanh toán");
+
+            CtPhieuThue savedNewCtPhieuThue = ctPhieuThueRepository.save(newCtPhieuThue);
+            System.out.println("Tạo giai đoạn phòng mới: " + phongMoi.getSoPhong() + " từ ngày " + ngayDoiPhong);
+
+            // Copy khách hàng từ CtPhieuThue cũ sang mới
+            copyGuestsToNewCtPhieuThue(ctPhieuThue, savedNewCtPhieuThue);
+
+            // Copy dịch vụ và phụ thu chưa thanh toán
+            copyServicesAndSurchargesToNewCtPhieuThue(ctPhieuThue, savedNewCtPhieuThue);
+
+            // Tạo đối tượng đổi phòng để lưu lịch sử
             DoiPhong doiPhong = new DoiPhong();
-            DoiPhongId doiPhongId = new DoiPhongId(request.getIdCtPt(), request.getSoPhongMoi());
+            DoiPhongId doiPhongId = new DoiPhongId(savedNewCtPhieuThue.getIdCtPt(), request.getSoPhongMoi());
             doiPhong.setId(doiPhongId);
-            doiPhong.setCtPhieuThue(ctPhieuThue);
+            doiPhong.setCtPhieuThue(savedNewCtPhieuThue);
             doiPhong.setPhongMoi(phongMoi);
-            doiPhong.setNgayDen(request.getNgayDen() != null ? request.getNgayDen() : LocalDate.now());
+            doiPhong.setSoPhongCu(soPhongCu);
+            doiPhong.setNgayDen(ngayDoiPhong);
             doiPhong.setNgayDi(request.getNgayDi());
 
             // Lưu thông tin đổi phòng
+            System.out.println("Saving DoiPhong record...");
             DoiPhong savedDoiPhong = doiPhongRepository.save(doiPhong);
+            entityManager.flush(); // Đảm bảo dữ liệu được lưu ngay lập tức
+            System.out.println("DoiPhong saved with ID: " + savedDoiPhong.getId().getIdCtPt() + ", " + savedDoiPhong.getId().getSoPhongMoi());
 
             // Cập nhật trạng thái phòng
+            System.out.println("Updating room statuses...");
             updateRoomStatuses(phongCu, phongMoi);
+            System.out.println("Room statuses updated");
 
-            // Tính phí chênh lệch nếu cần
+            // Tính phí chênh lệch nếu cần (áp dụng cho CtPhieuThue mới)
             if (request.getAutoCalculateFee()) {
-                calculateAndApplyRoomChangeFee(ctPhieuThue, phongMoi, request.getNgayDen());
+                calculateAndApplyRoomChangeFee(savedNewCtPhieuThue, phongMoi, ngayDoiPhong);
             }
 
             response.setStatusCode(200);
-            response.setMessage("Đổi phòng thành công từ " + phongCu.getSoPhong() + " sang " + phongMoi.getSoPhong());
+            response.setMessage("Đổi phòng thành công từ " + phongCu.getSoPhong() + " sang " + phongMoi.getSoPhong() +
+                              ". Đã tách thành 2 giai đoạn tính tiền riêng biệt.");
             response.setDoiPhong(mapDoiPhongToDTO(savedDoiPhong));
+
+            System.out.println("=== ĐỔI PHÒNG THÀNH CÔNG ===");
+            System.out.println("Từ phòng: " + phongCu.getSoPhong() + " sang phòng: " + phongMoi.getSoPhong());
 
         } catch (OurException e) {
             response.setStatusCode(400);
@@ -136,6 +202,26 @@ public class DoiPhongService implements IDoiPhongService {
         } catch (Exception e) {
             response.setStatusCode(500);
             response.setMessage("Lỗi khi đổi phòng: " + e.getMessage());
+        }
+        return response;
+    }
+
+    @Override
+    public Response requestRoomChange(DoiPhongRequest request) {
+        Response response = new Response();
+        try {
+            // Chỉ validate yêu cầu, không thực hiện đổi phòng
+            Response validationResponse = validateRoomChange(request);
+            if (validationResponse.getStatusCode() != 200) {
+                return validationResponse;
+            }
+
+            response.setStatusCode(200);
+            response.setMessage("Yêu cầu đổi phòng hợp lệ. Có thể tiến hành đổi phòng.");
+
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi xử lý yêu cầu đổi phòng: " + e.getMessage());
         }
         return response;
     }
@@ -155,11 +241,30 @@ public class DoiPhongService implements IDoiPhongService {
             eligibility.setTenKhachHang(ctPhieuThue.getPhieuThue().getKhachHang().getTen());
             eligibility.setCccd(ctPhieuThue.getPhieuThue().getKhachHang().getCccd());
 
-            // Kiểm tra thời gian thuê còn hiệu lực
+            List<String> reasons = new ArrayList<>();
             LocalDate currentDate = LocalDate.now();
+
+            // Kiểm tra thời gian thuê còn hiệu lực
             if (ctPhieuThue.getNgayDi() != null && ctPhieuThue.getNgayDi().isBefore(currentDate)) {
+                reasons.add("Thời gian thuê đã hết hạn");
+            }
+
+            // Kiểm tra ngày hiện tại có nằm trong khoảng NGAY_DEN - NGAY_DI không
+            if (ctPhieuThue.getNgayDen() != null && ctPhieuThue.getNgayDen().isAfter(currentDate)) {
+                reasons.add("Chưa đến ngày nhận phòng");
+            }
+
+            // Kiểm tra đã đổi phòng lần nào chưa
+            List<DoiPhong> existingChanges = doiPhongRepository.findByCtPhieuThueId(idCtPt);
+            if (!existingChanges.isEmpty()) {
+                reasons.add("Khách hàng đã đổi phòng cho lần thuê này, không thể đổi lần nữa");
+            }
+
+            // Nếu có lỗi thì trả về không đủ điều kiện
+            if (!reasons.isEmpty()) {
                 eligibility.setEligible(false);
-                eligibility.setReason("Thời gian thuê đã hết hạn");
+                eligibility.setReason(String.join(", ", reasons));
+                eligibility.setHanChe(reasons); // Sử dụng trường hanChe để lưu danh sách lý do
                 response.setStatusCode(200);
                 response.setMessage("Không đủ điều kiện đổi phòng");
                 response.setRoomChangeEligibility(eligibility);
@@ -222,17 +327,31 @@ public class DoiPhongService implements IDoiPhongService {
 
     // Helper methods will be added in the next part due to length limit
     private void updateRoomStatuses(Phong phongCu, Phong phongMoi) {
-        // Cập nhật trạng thái phòng cũ thành "Đang dọn dẹp" (TT003)
-        TrangThai cleaningStatus = trangThaiRepository.findById("TT003")
-                .orElseThrow(() -> new OurException("Không tìm thấy trạng thái 'Đang dọn dẹp'"));
-        phongCu.setTrangThai(cleaningStatus);
-        phongRepository.save(phongCu);
+        try {
+            System.out.println("Updating room statuses...");
+            System.out.println("Phong cu: " + phongCu.getSoPhong() + " - Current status: " + phongCu.getTrangThai().getIdTt());
+            System.out.println("Phong moi: " + phongMoi.getSoPhong() + " - Current status: " + phongMoi.getTrangThai().getIdTt());
 
-        // Cập nhật trạng thái phòng mới thành "Đang sử dụng" (TT002)
-        TrangThai occupiedStatus = trangThaiRepository.findById("TT002")
-                .orElseThrow(() -> new OurException("Không tìm thấy trạng thái 'Đang sử dụng'"));
-        phongMoi.setTrangThai(occupiedStatus);
-        phongRepository.save(phongMoi);
+            // Cập nhật trạng thái phòng cũ thành "Đang dọn dẹp" (TT003)
+            TrangThai cleaningStatus = trangThaiRepository.findById("TT003")
+                    .orElseThrow(() -> new OurException("Không tìm thấy trạng thái 'Đang dọn dẹp'"));
+            phongCu.setTrangThai(cleaningStatus);
+            phongRepository.save(phongCu);
+            System.out.println("Updated phong cu to: " + cleaningStatus.getIdTt());
+
+            // Cập nhật trạng thái phòng mới thành "Đang sử dụng" (TT002)
+            TrangThai occupiedStatus = trangThaiRepository.findById("TT002")
+                    .orElseThrow(() -> new OurException("Không tìm thấy trạng thái 'Đang sử dụng'"));
+            phongMoi.setTrangThai(occupiedStatus);
+            phongRepository.save(phongMoi);
+            System.out.println("Updated phong moi to: " + occupiedStatus.getIdTt());
+
+            entityManager.flush(); // Đảm bảo dữ liệu được lưu ngay lập tức
+        } catch (Exception e) {
+            System.err.println("Error updating room statuses: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     private RoomChangeFeeCalculationDTO calculateFeeDetails(CtPhieuThue ctPhieuThue, Phong phongMoi, LocalDate ngayDoiPhong) {
@@ -349,6 +468,47 @@ public class DoiPhongService implements IDoiPhongService {
         }
     }
 
+    private void updateRoomPriceInCtPhieuThue(CtPhieuThue ctPhieuThue, Phong phongMoi) {
+        try {
+            System.out.println("Updating room price for hang phong: " + phongMoi.getHangPhong().getIdHangPhong());
+
+            // Lấy giá hiện tại của hạng phòng mới
+            BigDecimal giaPhongMoi = getCurrentRoomPrice(phongMoi.getHangPhong().getIdHangPhong());
+            BigDecimal giaPhongCu = ctPhieuThue.getDonGia();
+
+            System.out.println("Giá phòng cũ: " + giaPhongCu);
+            System.out.println("Giá phòng mới: " + giaPhongMoi);
+
+            if (giaPhongMoi != null) {
+                // Cập nhật đơn giá trong ct_phieu_thue
+                ctPhieuThue.setDonGia(giaPhongMoi);
+                System.out.println("Đã cập nhật giá phòng từ " + giaPhongCu + " thành " + giaPhongMoi);
+            } else {
+                System.out.println("Không tìm thấy giá phòng mới, giữ nguyên giá cũ");
+            }
+        } catch (Exception e) {
+            System.err.println("Lỗi khi cập nhật giá phòng: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private BigDecimal getCurrentRoomPrice(Integer idHangPhong) {
+        try {
+            // Tìm giá hiện tại của hạng phòng
+            LocalDate currentDate = LocalDate.now();
+
+            // Query để lấy giá hiện tại
+            Optional<GiaHangPhong> giaOpt = giaHangPhongRepository.findLatestPriceByHangPhong(idHangPhong, currentDate);
+
+            if (giaOpt.isPresent()) {
+                return giaOpt.get().getGia();
+            }
+        } catch (Exception e) {
+            System.err.println("Lỗi khi lấy giá hạng phòng: " + e.getMessage());
+        }
+        return null;
+    }
+
     private String generatePhuThuId(Integer hangPhongCu, Integer hangPhongMoi) {
         // Tạo ID phụ thu theo bảng mapping của bạn
         if (hangPhongCu >= hangPhongMoi) {
@@ -436,6 +596,17 @@ public class DoiPhongService implements IDoiPhongService {
             LocalDate currentDate = LocalDate.now();
             if (ctPhieuThue.getNgayDi() != null && ctPhieuThue.getNgayDi().isBefore(currentDate)) {
                 errors.add("Thời gian thuê đã hết hạn, không thể đổi phòng");
+            }
+
+            // Kiểm tra ngày hiện tại có nằm trong khoảng NGAY_DEN - NGAY_DI không
+            if (ctPhieuThue.getNgayDen() != null && ctPhieuThue.getNgayDen().isAfter(currentDate)) {
+                errors.add("Chưa đến ngày nhận phòng, không thể đổi phòng");
+            }
+
+            // Kiểm tra đã đổi phòng lần nào chưa (kiểm tra bảng doiphong)
+            List<DoiPhong> existingChanges = doiPhongRepository.findByCtPhieuThueId(request.getIdCtPt());
+            if (!existingChanges.isEmpty()) {
+                errors.add("Khách hàng đã đổi phòng cho lần thuê này, không thể đổi lần nữa");
             }
 
             // Kiểm tra phòng mới tồn tại
@@ -526,10 +697,15 @@ public class DoiPhongService implements IDoiPhongService {
         dto.setNgayDen(doiPhong.getNgayDen());
         dto.setNgayDi(doiPhong.getNgayDi());
 
-        // Thông tin phòng cũ
-        Phong phongCu = doiPhong.getCtPhieuThue().getPhong();
-        dto.setSoPhongCu(phongCu.getSoPhong());
-        if (phongCu.getHangPhong() != null) {
+        // Thông tin phòng cũ - lấy từ trường soPhongCu đã lưu
+        dto.setSoPhongCu(doiPhong.getSoPhongCu());
+
+        // Tìm thông tin phòng cũ để lấy hạng phòng
+        Phong phongCu = null;
+        if (doiPhong.getSoPhongCu() != null) {
+            phongCu = phongRepository.findById(doiPhong.getSoPhongCu()).orElse(null);
+        }
+        if (phongCu != null && phongCu.getHangPhong() != null) {
             if (phongCu.getHangPhong().getKieuPhong() != null) {
                 dto.setTenKieuPhongCu(phongCu.getHangPhong().getKieuPhong().getTenKp());
             }
@@ -712,5 +888,132 @@ public class DoiPhongService implements IDoiPhongService {
         response.setStatusCode(501);
         response.setMessage("Chức năng lọc đổi phòng chưa được triển khai");
         return response;
+    }
+
+    @Override
+    public Response debugCtPhieuThue(Integer idCtPt) {
+        Response response = new Response();
+        try {
+            CtPhieuThue ctPhieuThue = ctPhieuThueRepository.findById(idCtPt)
+                    .orElseThrow(() -> new OurException("Không tìm thấy chi tiết phiếu thuê"));
+
+            StringBuilder debug = new StringBuilder();
+            debug.append("=== DEBUG CT PHIEU THUE ===\n");
+            debug.append("ID CT PT: ").append(ctPhieuThue.getIdCtPt()).append("\n");
+            debug.append("So Phong: ").append(ctPhieuThue.getPhong().getSoPhong()).append("\n");
+            debug.append("Ngay Den: ").append(ctPhieuThue.getNgayDen()).append("\n");
+            debug.append("Ngay Di: ").append(ctPhieuThue.getNgayDi()).append("\n");
+            debug.append("Don Gia: ").append(ctPhieuThue.getDonGia()).append("\n");
+
+            // Kiểm tra lịch sử đổi phòng
+            List<DoiPhong> doiPhongList = doiPhongRepository.findByCtPhieuThueId(idCtPt);
+            debug.append("So lan doi phong: ").append(doiPhongList.size()).append("\n");
+
+            for (DoiPhong dp : doiPhongList) {
+                debug.append("- Doi phong: ").append(dp.getSoPhongCu()).append(" -> ").append(dp.getId().getSoPhongMoi()).append("\n");
+                debug.append("  Ngay doi: ").append(dp.getNgayDen()).append("\n");
+            }
+
+            response.setStatusCode(200);
+            response.setMessage(debug.toString());
+
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi debug: " + e.getMessage());
+        }
+        return response;
+    }
+
+    /**
+     * Copy khách hàng từ CtPhieuThue cũ sang CtPhieuThue mới khi đổi phòng
+     */
+    private void copyGuestsToNewCtPhieuThue(CtPhieuThue oldCtPhieuThue, CtPhieuThue newCtPhieuThue) {
+        try {
+            // Lấy danh sách khách từ CtPhieuThue cũ
+            List<CtKhachO> oldGuests = ctKhachORepository.findByIdCtPt(oldCtPhieuThue.getIdCtPt());
+
+            // Copy sang CtPhieuThue mới
+            for (CtKhachO oldGuest : oldGuests) {
+                CtKhachO newGuest = new CtKhachO();
+
+                // Set các trường ID (CtKhachO sử dụng @IdClass)
+                newGuest.setIdCtPt(newCtPhieuThue.getIdCtPt());
+                newGuest.setCccd(oldGuest.getCccd());
+                newGuest.setCtPhieuThue(newCtPhieuThue);
+                newGuest.setKhachHang(oldGuest.getKhachHang());
+
+                ctKhachORepository.save(newGuest);
+            }
+
+            System.out.println("Đã copy " + oldGuests.size() + " khách hàng sang CtPhieuThue mới");
+
+        } catch (Exception e) {
+            System.err.println("Lỗi khi copy khách hàng: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Copy dịch vụ và phụ thu chưa thanh toán từ CtPhieuThue cũ sang mới
+     */
+    private void copyServicesAndSurchargesToNewCtPhieuThue(CtPhieuThue oldCtPhieuThue, CtPhieuThue newCtPhieuThue) {
+        try {
+            // Copy dịch vụ chưa thanh toán
+            List<CtDichVu> oldServices = ctDichVuRepository.findByCtPhieuThue(oldCtPhieuThue);
+            for (CtDichVu oldService : oldServices) {
+                if (!"Đã thanh toán".equals(oldService.getTtThanhToan())) {
+                    CtDichVu newService = new CtDichVu();
+
+                    // Tạo composite key mới
+                    CtDichVuId newServiceId = new CtDichVuId();
+                    newServiceId.setIdCtPt(newCtPhieuThue.getIdCtPt());
+                    newServiceId.setIdDv(oldService.getId().getIdDv());
+
+                    newService.setId(newServiceId);
+                    newService.setNgaySuDung(oldService.getNgaySuDung());
+                    newService.setDonGia(oldService.getDonGia());
+                    newService.setSoLuong(oldService.getSoLuong());
+                    newService.setTtThanhToan("Chưa thanh toán");
+                    newService.setCtPhieuThue(newCtPhieuThue);
+                    newService.setDichVu(oldService.getDichVu());
+
+                    ctDichVuRepository.save(newService);
+
+                    // Xóa dịch vụ cũ để tránh trùng lặp
+                    ctDichVuRepository.delete(oldService);
+                }
+            }
+
+            // Copy phụ thu chưa thanh toán
+            List<CtPhuThu> oldSurcharges = ctPhuThuRepository.findByCtPhieuThue(oldCtPhieuThue);
+            for (CtPhuThu oldSurcharge : oldSurcharges) {
+                if (!"Đã thanh toán".equals(oldSurcharge.getTtThanhToan())) {
+                    CtPhuThu newSurcharge = new CtPhuThu();
+
+                    // Tạo composite key mới
+                    CtPhuThuId newSurchargeId = new CtPhuThuId();
+                    newSurchargeId.setIdPhuThu(oldSurcharge.getId().getIdPhuThu());
+                    newSurchargeId.setIdCtPt(newCtPhieuThue.getIdCtPt());
+
+                    newSurcharge.setId(newSurchargeId);
+                    newSurcharge.setDonGia(oldSurcharge.getDonGia());
+                    newSurcharge.setSoLuong(oldSurcharge.getSoLuong());
+                    newSurcharge.setTtThanhToan("Chưa thanh toán");
+                    newSurcharge.setCtPhieuThue(newCtPhieuThue);
+                    newSurcharge.setPhuThu(oldSurcharge.getPhuThu());
+
+                    ctPhuThuRepository.save(newSurcharge);
+
+                    // Xóa phụ thu cũ để tránh trùng lặp
+                    ctPhuThuRepository.delete(oldSurcharge);
+                }
+            }
+
+            System.out.println("Đã copy dịch vụ và phụ thu chưa thanh toán sang CtPhieuThue mới");
+
+        } catch (Exception e) {
+            System.err.println("Lỗi khi copy dịch vụ và phụ thu: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

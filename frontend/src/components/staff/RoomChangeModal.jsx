@@ -88,7 +88,8 @@ const RoomChangeModal = ({ isOpen, onClose, ctPhieuThue, onSuccess }) => {
 
     setLoading(true)
     try {
-      const response = await doiPhongService.requestRoomChange(formData)
+      // Thực hiện đổi phòng thay vì chỉ yêu cầu
+      const response = await doiPhongService.changeRoom(formData)
       if (response.statusCode === 200) {
         toast.success('Đổi phòng thành công!')
         onSuccess && onSuccess()
@@ -153,14 +154,17 @@ const RoomChangeModal = ({ isOpen, onClose, ctPhieuThue, onSuccess }) => {
             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 1 ? 'bg-blue-500 text-white' : 'bg-gray-300'}`}>
               1
             </div>
+            <div className="text-sm ml-2 mr-4">Kiểm tra</div>
             <div className={`w-16 h-1 ${step >= 2 ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 2 ? 'bg-blue-500 text-white' : 'bg-gray-300'}`}>
               2
             </div>
+            <div className="text-sm ml-2 mr-4">Chọn phòng</div>
             <div className={`w-16 h-1 ${step >= 3 ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 3 ? 'bg-blue-500 text-white' : 'bg-gray-300'}`}>
               3
             </div>
+            <div className="text-sm ml-2">Xác nhận</div>
           </div>
         </div>
 
@@ -174,7 +178,7 @@ const RoomChangeModal = ({ isOpen, onClose, ctPhieuThue, onSuccess }) => {
         {step === 1 && eligibility && !loading && (
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Kiểm tra điều kiện đổi phòng</h3>
-            
+
             <div className="bg-gray-50 p-4 rounded-lg">
               <h4 className="font-medium mb-2">Thông tin phòng hiện tại:</h4>
               <p><strong>Phòng:</strong> {eligibility.soPhongHienTai}</p>
@@ -191,6 +195,13 @@ const RoomChangeModal = ({ isOpen, onClose, ctPhieuThue, onSuccess }) => {
               <p className={`font-medium ${eligibility.eligible ? 'text-green-800' : 'text-red-800'}`}>
                 {eligibility.reason}
               </p>
+              {eligibility.hanChe && eligibility.hanChe.length > 0 && (
+                <ul className="mt-2 text-sm text-red-600">
+                  {eligibility.hanChe.map((reason, index) => (
+                    <li key={index}>• {reason}</li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             {eligibility.eligible && (
@@ -203,8 +214,21 @@ const RoomChangeModal = ({ isOpen, onClose, ctPhieuThue, onSuccess }) => {
                 </button>
               </div>
             )}
+
+            {!eligibility.eligible && (
+              <div className="flex justify-end">
+                <button
+                  onClick={handleClose}
+                  className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
+                >
+                  Đóng
+                </button>
+              </div>
+            )}
           </div>
         )}
+
+
 
         {/* Step 2: Chọn phòng */}
         {step === 2 && (

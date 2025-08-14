@@ -27,6 +27,19 @@ public class DoiPhongController {
         return ResponseEntity.ok(response);
     }
 
+    // Debug endpoint để kiểm tra dữ liệu
+    @GetMapping("/debug/{idCtPt}")
+    public ResponseEntity<Response> debugCtPhieuThue(@PathVariable("idCtPt") Integer idCtPt) {
+        Response response = new Response();
+        try {
+            response = doiPhongService.debugCtPhieuThue(idCtPt);
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Error: " + e.getMessage());
+        }
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
     // Lấy tất cả lịch sử đổi phòng
     @GetMapping("/all")
     public ResponseEntity<Response> getAllDoiPhong() {
@@ -47,6 +60,13 @@ public class DoiPhongController {
     @PostMapping("/request")
     public ResponseEntity<Response> requestRoomChange(@RequestBody DoiPhongRequest request) {
         Response response = doiPhongService.requestRoomChange(request);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    // Thực hiện đổi phòng
+    @PostMapping("/change")
+    public ResponseEntity<Response> changeRoom(@RequestBody DoiPhongRequest request) {
+        Response response = doiPhongService.changeRoom(request);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 

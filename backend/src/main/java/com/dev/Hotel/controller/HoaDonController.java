@@ -34,8 +34,10 @@ public class HoaDonController {
     }
 
     @PostMapping("/create-from-checkout/{idPt}")
-    public ResponseEntity<Response> createInvoiceFromCheckout(@PathVariable("idPt") Integer idPt) {
-        Response response = hoaDonService.createInvoiceFromCheckout(idPt);
+    public ResponseEntity<Response> createInvoiceFromCheckout(
+            @PathVariable("idPt") Integer idPt,
+            @RequestParam(value = "actualCheckOut", required = false) String actualCheckOut) {
+        Response response = hoaDonService.createInvoiceFromCheckout(idPt, actualCheckOut);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
@@ -55,6 +57,13 @@ public class HoaDonController {
     @DeleteMapping("/delete/{idHd}")
     public ResponseEntity<Response> deleteHoaDon(@PathVariable("idHd") String idHd) {
         Response response = hoaDonService.deleteHoaDon(idHd);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    // API mới cho hóa đơn - chỉ hiển thị items đã thanh toán (có ID_HD)
+    @GetMapping("/details/{idHd}")
+    public ResponseEntity<Response> getInvoiceDetails(@PathVariable("idHd") String idHd) {
+        Response response = hoaDonService.getInvoiceDetails(idHd);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 }

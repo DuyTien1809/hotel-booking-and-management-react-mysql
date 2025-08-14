@@ -10,7 +10,6 @@ com\dev\Hotel\controller\PhuThuController.class
 com\dev\Hotel\dto\CheckInWalkInRequest$KhachHangInfo.class
 com\dev\Hotel\repo\DoiPhongRepository.class
 com\dev\Hotel\dto\KhachHangDTO.class
-com\dev\Hotel\entity\CtKhachOId.class
 com\dev\Hotel\dto\GiaHangPhongDTO.class
 com\dev\Hotel\service\impl\PhongService.class
 com\dev\Hotel\service\impl\PriceService.class

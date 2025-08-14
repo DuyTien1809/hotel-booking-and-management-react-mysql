@@ -14,8 +14,11 @@ public interface IHoaDonService {
     
     // Business logic
     Response getHoaDonByPhieuThue(Integer idPt);
-    Response createInvoiceFromCheckout(Integer idPt);
+    Response createInvoiceFromCheckout(Integer idPt, String actualCheckOut);
     Response updateInvoiceStatus(String idHd, String trangThai);
+
+    // Invoice details - chỉ hiển thị items đã thanh toán (có ID_HD)
+    Response getInvoiceDetails(String idHd);
     
     // Reports
     Response getInvoicesByDateRange(String startDate, String endDate);
