@@ -3,7 +3,7 @@ import { Gift, Percent, Calendar, Users, ChevronDown, ChevronUp } from 'lucide-r
 import toast from 'react-hot-toast'
 import { promotionService } from '../../services/promotionService'
 
-const PromotionSelector = ({ selectedGuest, onPromotionChange, loading }) => {
+const PromotionSelector = ({ selectedGuest, onPromotionChange, loading, disabled = false, disabledReason = '' }) => {
   const [promotions, setPromotions] = useState(null)
   const [selectedPromotions, setSelectedPromotions] = useState({
     roomType: {}, // { idHangPhong: idKm } - chỉ 1 khuyến mãi cho mỗi hạng phòng
@@ -178,20 +178,32 @@ const PromotionSelector = ({ selectedGuest, onPromotionChange, loading }) => {
   }
 
   return (
-    <div className="bg-gray-50 p-4 rounded-lg">
+    <div className={`p-4 rounded-lg ${disabled ? 'bg-gray-100 opacity-60' : 'bg-gray-50'}`}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center">
-          <Gift className="w-5 h-5 text-red-500 mr-2" />
-          <h3 className="font-semibold text-gray-900">Khuyến mãi có sẵn</h3>
+          <Gift className={`w-5 h-5 mr-2 ${disabled ? 'text-gray-400' : 'text-red-500'}`} />
+          <h3 className={`font-semibold ${disabled ? 'text-gray-500' : 'text-gray-900'}`}>
+            Khuyến mãi có sẵn
+          </h3>
+          {disabled && (
+            <span className="ml-2 text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded">
+              {disabledReason || 'Đã có giảm giá thủ công'}
+            </span>
+          )}
         </div>
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="p-1 hover:bg-gray-200 rounded transition-colors"
+          disabled={disabled}
+          className={`p-1 rounded transition-colors ${
+            disabled
+              ? 'cursor-not-allowed text-gray-400'
+              : 'hover:bg-gray-200 text-gray-600'
+          }`}
         >
           {isExpanded ? (
-            <ChevronUp className="w-4 h-4 text-gray-600" />
+            <ChevronUp className="w-4 h-4" />
           ) : (
-            <ChevronDown className="w-4 h-4 text-gray-600" />
+            <ChevronDown className="w-4 h-4" />
           )}
         </button>
       </div>
@@ -219,12 +231,15 @@ const PromotionSelector = ({ selectedGuest, onPromotionChange, loading }) => {
           {roomTypeData.availablePromotions && roomTypeData.availablePromotions.length > 0 ? (
             <>
               {/* Option không áp dụng khuyến mãi */}
-              <label className="flex items-start space-x-2 mb-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
+              <label className={`flex items-start space-x-2 mb-2 p-2 rounded ${
+                disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-gray-50'
+              }`}>
                 <input
                   type="radio"
                   name={`promotion-room-${idHangPhong}`}
                   checked={!selectedPromotions.roomType[idHangPhong]}
                   onChange={() => {
+                    if (disabled) return
                     const newSelections = { ...selectedPromotions }
                     delete newSelections.roomType[idHangPhong]
                     setSelectedPromotions(newSelections)
@@ -232,7 +247,7 @@ const PromotionSelector = ({ selectedGuest, onPromotionChange, loading }) => {
                     onPromotionChange(calculatedDiscounts)
                   }}
                   className="mt-1"
-                  disabled={loading}
+                  disabled={loading || disabled}
                 />
                 <div className="flex-1">
                   <div className="text-sm text-gray-600">Không áp dụng khuyến mãi</div>
@@ -241,14 +256,19 @@ const PromotionSelector = ({ selectedGuest, onPromotionChange, loading }) => {
 
               {/* Các khuyến mãi có sẵn */}
               {roomTypeData.availablePromotions.map(promo => (
-              <label key={promo.idKm} className="flex items-start space-x-2 mb-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
+              <label key={promo.idKm} className={`flex items-start space-x-2 mb-2 p-2 rounded ${
+                disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-gray-50'
+              }`}>
                 <input
                   type="radio"
                   name={`promotion-room-${idHangPhong}`}
                   checked={selectedPromotions.roomType[idHangPhong] === promo.idKm}
-                  onChange={(e) => handlePromotionToggle('roomType', idHangPhong, promo.idKm, e.target.checked)}
+                  onChange={(e) => {
+                    if (disabled) return
+                    handlePromotionToggle('roomType', idHangPhong, promo.idKm, e.target.checked)
+                  }}
                   className="mt-1"
-                  disabled={loading}
+                  disabled={loading || disabled}
                 />
                 <div className="flex-1">
                   <div className="flex items-center">
@@ -281,13 +301,18 @@ const PromotionSelector = ({ selectedGuest, onPromotionChange, loading }) => {
           </div>
           
           {promotions.invoicePromotions.map(promo => (
-            <label key={promo.idKm} className="flex items-start space-x-2 mb-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
+            <label key={promo.idKm} className={`flex items-start space-x-2 mb-2 p-2 rounded ${
+              disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-gray-50'
+            }`}>
               <input
                 type="checkbox"
                 checked={selectedPromotions.invoice.includes(promo.idKm)}
-                onChange={(e) => handlePromotionToggle('invoice', null, promo.idKm, e.target.checked)}
+                onChange={(e) => {
+                  if (disabled) return
+                  handlePromotionToggle('invoice', null, promo.idKm, e.target.checked)
+                }}
                 className="rounded border-gray-300 mt-1"
-                disabled={loading}
+                disabled={loading || disabled}
               />
               <div className="flex-1">
                 <div className="flex items-center">

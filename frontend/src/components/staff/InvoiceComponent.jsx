@@ -66,7 +66,7 @@ const InvoiceComponent = ({
             <>
               <div className="border-t pt-2">
                 <div className="flex justify-between text-red-600">
-                  <span> Khuyến mãi:</span>
+                  <span>Khuyến mãi:</span>
                   <span>-{bill.promotionDiscount?.toLocaleString('vi-VN')} VNĐ</span>
                 </div>
 
@@ -82,6 +82,16 @@ const InvoiceComponent = ({
                 )}
               </div>
             </>
+          )}
+
+          {/* Hiển thị giảm giá thủ công nếu có */}
+          {bill.manualDiscount > 0 && (
+            <div className="border-t pt-2">
+              <div className="flex justify-between text-orange-600">
+                <span>Khuyén mãi:</span>
+                <span>-{bill.manualDiscount?.toLocaleString('vi-VN')} VNĐ</span>
+              </div>
+            </div>
           )}
 
           <div className="border-t pt-2 flex justify-between font-semibold text-lg">

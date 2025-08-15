@@ -8,6 +8,7 @@ import { dashboardService } from '../../services/dashboardService'
 import InvoiceComponent from '../../components/staff/InvoiceComponent'
 import DetailedInvoiceModal from '../../components/staff/DetailedInvoiceModal'
 import PromotionSelector from '../../components/staff/PromotionSelector'
+import ManualDiscountSelector from '../../components/staff/ManualDiscountSelector'
 import { HOTEL_INFO, INVOICE_STATUS } from '../../constants/hotelInfo'
 
 const CheckOutPage = () => {
@@ -36,6 +37,11 @@ const CheckOutPage = () => {
   const [promotionData, setPromotionData] = useState({
     totalDiscount: 0,
     discountDetails: []
+  })
+  const [manualDiscountData, setManualDiscountData] = useState({
+    discountPercent: 0,
+    discountAmount: 0,
+    hasManualDiscount: false
   })
   const [invoice, setInvoice] = useState(null)
   const [showInvoice, setShowInvoice] = useState(false)
@@ -297,6 +303,7 @@ const CheckOutPage = () => {
       surcharges: totalSurcharges,
       paidAmount: 0, // Không tính các khoản đã thanh toán
       promotionDiscount: 0, // Sẽ được cập nhật khi chọn khuyến mãi
+      manualDiscount: 0, // Sẽ được cập nhật khi chọn giảm giá thủ công
       total: totalRoomCharges + totalServiceCharges + totalSurcharges
     })
 
@@ -304,6 +311,13 @@ const CheckOutPage = () => {
     setPromotionData({
       totalDiscount: 0,
       discountDetails: []
+    })
+
+    // Reset manual discount data khi chọn khách mới
+    setManualDiscountData({
+      discountPercent: 0,
+      discountAmount: 0,
+      hasManualDiscount: false
     })
 
     // Tự động tải chi tiết phiếu thuê để hiển thị đầy đủ thông tin
@@ -373,10 +387,13 @@ const CheckOutPage = () => {
         new Date(checkOutData.actualCheckOut).toISOString().split('T')[0] :
         new Date().toISOString().split('T')[0]
 
+      // Tính tổng discount (promotion + manual)
+      const totalDiscount = promotionData.totalDiscount + manualDiscountData.discountAmount
+
       const invoiceResult = await handleCreateInvoiceFromCheckoutWithPromotions(
         selectedGuest.id,
         actualCheckOutDate,
-        promotionData.totalDiscount
+        totalDiscount
       )
 
       if (invoiceResult && invoiceResult.idHd) {
@@ -504,12 +521,22 @@ const CheckOutPage = () => {
   // Handler cho promotion change
   const handlePromotionChange = (promotionCalculation) => {
     setPromotionData(promotionCalculation)
+    updateBillTotal(promotionCalculation.totalDiscount, manualDiscountData.discountAmount)
+  }
 
-    // Cập nhật bill với promotion discount
+  // Handler cho manual discount change
+  const handleManualDiscountChange = (discountData) => {
+    setManualDiscountData(discountData)
+    updateBillTotal(promotionData.totalDiscount, discountData.discountAmount)
+  }
+
+  // Cập nhật tổng bill với cả promotion và manual discount
+  const updateBillTotal = (promotionDiscount, manualDiscount) => {
     setBill(prevBill => ({
       ...prevBill,
-      promotionDiscount: promotionCalculation.totalDiscount,
-      total: prevBill.roomCharges + prevBill.serviceCharges + prevBill.surcharges - promotionCalculation.totalDiscount
+      promotionDiscount: promotionDiscount,
+      manualDiscount: manualDiscount,
+      total: prevBill.roomCharges + prevBill.serviceCharges + prevBill.surcharges - promotionDiscount - manualDiscount
     }))
   }
 
@@ -1051,7 +1078,6 @@ const CheckOutPage = () => {
                 ) && (
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="font-semibold text-gray-900 mb-3">Chi tiết dịch vụ & phụ thu</h3>
-                  {/* CHỈ HIỂN THỊ CHI TIẾT CỦA PHÒNG CHƯA THANH TOÁN */}
                   {sortRoomDetails(selectedGuest.chiTietPhieuThue.filter(ct => ct.ttThanhToan !== 'Đã thanh toán')).map((ct, ctIndex) => (
                     <div key={ctIndex} className="mb-4">
                       {/* Services - chỉ hiển thị dịch vụ chưa thanh toán */}
@@ -1060,21 +1086,13 @@ const CheckOutPage = () => {
                           <h4 className="text-sm font-medium text-gray-700 mb-2">Phòng {ct.soPhong}:</h4>
                           <p className="text-xs text-blue-600 font-medium mb-1">Dịch vụ:</p>
                           {ct.danhSachDichVu.filter(dv => dv.ttThanhToan !== 'Đã thanh toán')
-                            .sort((a, b) => {
-                              // Sắp xếp theo ngày sử dụng
-                              if (!a.ngaySuDung && !b.ngaySuDung) return 0
-                              if (!a.ngaySuDung) return 1
-                              if (!b.ngaySuDung) return -1
-                              return new Date(a.ngaySuDung) - new Date(b.ngaySuDung)
-                            })
                             .map((dv, dvIndex) => (
                             <div key={dvIndex} className="flex justify-between text-xs bg-white p-2 rounded mb-1">
                               <div>
                                 <span className="font-medium">{dv.tenDv}</span>
                                 <span className="text-gray-500 ml-2">
-                                  {dv.soLuong} x {dv.gia?.toLocaleString('vi-VN')} VNĐ
+                                  {dv.soLuong} x {dv.donGia?.toLocaleString('vi-VN')} VNĐ
                                 </span>
-                                <div className="text-gray-400">Ngày: {dv.ngaySuDung}</div>
                               </div>
                               <div className="text-right">
                                 <div className="font-medium">{dv.thanhTien?.toLocaleString('vi-VN')} VNĐ</div>
@@ -1092,10 +1110,6 @@ const CheckOutPage = () => {
                         <div className="mb-3">
                           <p className="text-xs text-red-600 font-medium mb-1">Phụ thu:</p>
                           {ct.danhSachPhuThu.filter(pt => pt.ttThanhToan !== 'Đã thanh toán')
-                            .sort((a, b) => {
-                              // Sắp xếp theo tên phụ thu vì không có ngày phát sinh
-                              return (a.tenPhuThu || '').localeCompare(b.tenPhuThu || '')
-                            })
                             .map((pt, ptIndex) => (
                             <div key={ptIndex} className="flex justify-between text-xs bg-white p-2 rounded mb-1">
                               <div>
@@ -1124,6 +1138,17 @@ const CheckOutPage = () => {
                 selectedGuest={selectedGuest}
                 onPromotionChange={handlePromotionChange}
                 loading={loading}
+                disabled={manualDiscountData.hasManualDiscount}
+                disabledReason="Đã có giảm giá thủ công"
+              />
+
+              {/* Manual Discount Selector */}
+              <ManualDiscountSelector
+                selectedGuest={selectedGuest}
+                onDiscountChange={handleManualDiscountChange}
+                loading={loading}
+                disabled={promotionData.totalDiscount > 0}
+                currentBill={bill}
               />
 
               {/* Check-out Form */}
@@ -1193,5 +1218,4 @@ const CheckOutPage = () => {
     </div>
   )
 }
-
 export default CheckOutPage

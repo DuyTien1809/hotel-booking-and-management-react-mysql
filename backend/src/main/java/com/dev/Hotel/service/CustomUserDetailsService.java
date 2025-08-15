@@ -39,16 +39,12 @@ public class CustomUserDetailsService implements UserDetailsService {
                     .authorities(Collections.singletonList(new SimpleGrantedAuthority("CUSTOMER")))
                     .build();
         }
-
-        System.out.println("CustomUserDetailsService: Customer not found, trying employee...");
-
         // If not found, try to find employee
         NhanVien nhanVien = nhanVienRepository.findByEmailOrUsername(username, username)
                 .orElseThrow(() -> new OurException("Username/Email not Found"));
 
         // Determine role based on department
         String role = determineUserRole(nhanVien);
-
         // Create UserDetails with appropriate role
         return User.builder()
                 .username(nhanVien.getEmail())
@@ -56,7 +52,6 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .authorities(Collections.singletonList(new SimpleGrantedAuthority(role)))
                 .build();
     }
-
     /**
      * Determine user role based on department
      */
