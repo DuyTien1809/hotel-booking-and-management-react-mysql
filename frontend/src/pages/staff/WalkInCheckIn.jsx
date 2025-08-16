@@ -155,6 +155,10 @@ const WalkInCheckIn = () => {
   const [roomTypes, setRoomTypes] = useState([])
   const [roomCategories, setRoomCategories] = useState([])
 
+  // Available rooms notification state
+  const [availableRoomsInfo, setAvailableRoomsInfo] = useState(null)
+  const [loadingAvailableRooms, setLoadingAvailableRooms] = useState(false)
+
   // Load room types and categories on component mount
   useEffect(() => {
     const loadRoomData = async () => {
@@ -185,6 +189,20 @@ const WalkInCheckIn = () => {
       fetchRoomPrice(bookingData.idKp, bookingData.idLp, bookingData.soLuongPhongO)
     }
   }, [bookingData.idKp, bookingData.idLp, bookingData.soLuongPhongO, bookingData.ngayBdThue, bookingData.ngayDi])
+
+  // Auto-check available rooms for booking when dates are selected (with optional filters)
+  useEffect(() => {
+    if (selectedOption === 'booking' && bookingData.ngayBdThue && bookingData.ngayDi) {
+      checkAvailableRooms(bookingData.ngayBdThue, bookingData.ngayDi, bookingData.idKp, bookingData.idLp)
+    }
+  }, [selectedOption, bookingData.ngayBdThue, bookingData.ngayDi, bookingData.idKp, bookingData.idLp])
+
+  // Auto-check available rooms for rental when dates are selected (with optional filters)
+  useEffect(() => {
+    if (selectedOption === 'rental' && rentalData.ngayDen && rentalData.ngayDi) {
+      checkAvailableRooms(rentalData.ngayDen, rentalData.ngayDi, roomFilters.idKp, roomFilters.idLp)
+    }
+  }, [selectedOption, rentalData.ngayDen, rentalData.ngayDi, roomFilters.idKp, roomFilters.idLp])
 
   const handleCustomerDataChange = (field, value) => {
     setCustomerData(prev => ({
@@ -260,10 +278,17 @@ const WalkInCheckIn = () => {
   }
 
   const handleRoomFilterChange = (field, value) => {
-    setRoomFilters(prev => ({
-      ...prev,
+    const updatedFilters = {
+      ...roomFilters,
       [field]: value
-    }))
+    }
+
+    setRoomFilters(updatedFilters)
+
+    // Auto-check available rooms when filters change (for rental)
+    if (selectedOption === 'rental' && rentalData.ngayDen && rentalData.ngayDi && (updatedFilters.idKp || updatedFilters.idLp)) {
+      checkAvailableRooms(rentalData.ngayDen, rentalData.ngayDi, updatedFilters.idKp, updatedFilters.idLp)
+    }
   }
 
   const validateCustomerForm = () => {
@@ -304,6 +329,45 @@ const WalkInCheckIn = () => {
         // Không hiển thị lỗi nếu không tìm thấy khách hàng
         console.log('Customer not found:', error)
       }
+    }
+  }
+
+  // Function to check available rooms and show notification
+  const checkAvailableRooms = async (checkIn, checkOut, idKp = '', idLp = '') => {
+    // Only check if we have both dates
+    if (!checkIn || !checkOut) {
+      setAvailableRoomsInfo(null)
+      return
+    }
+
+    try {
+      setLoadingAvailableRooms(true)
+      const response = await roomService.getAvailableRoomsForStaff(checkIn, checkOut)
+
+      if (response.statusCode === 200 && response.availableRoomsByHangPhongList) {
+        // Filter by room type and category if specified
+        let filteredRooms = response.availableRoomsByHangPhongList
+
+        if (idKp || idLp) {
+          const selectedRoomType = roomTypes.find(rt => rt.idKp === idKp)
+          const selectedRoomCategory = roomCategories.find(rc => rc.idLp === idLp)
+
+          filteredRooms = response.availableRoomsByHangPhongList.filter(room => {
+            const matchKp = !idKp || room.tenKieuPhong === selectedRoomType?.tenKp
+            const matchLp = !idLp || room.tenLoaiPhong === selectedRoomCategory?.tenLp
+            return matchKp && matchLp
+          })
+        }
+
+        setAvailableRoomsInfo(filteredRooms)
+      } else {
+        setAvailableRoomsInfo([])
+      }
+    } catch (error) {
+      console.error('Error checking available rooms:', error)
+      setAvailableRoomsInfo(null)
+    } finally {
+      setLoadingAvailableRooms(false)
     }
   }
 
@@ -873,7 +937,7 @@ const WalkInCheckIn = () => {
                     className="input"
                     required
                   >
-                    <option value="">Chọn kiểu phòng</option>
+                    <option value="">Tất cả kiểu phòng</option>
                     {roomTypes.map(type => (
                       <option key={type.idKp} value={type.idKp}>
                         {type.tenKp} - {type.moTaKp} - {type.soLuongKhach} khách
@@ -892,7 +956,7 @@ const WalkInCheckIn = () => {
                     className="input"
                     required
                   >
-                    <option value="">Chọn loại phòng</option>
+                    <option value="">Tất cả loại phòng</option>
                     {roomCategories.map(category => (
                       <option key={category.idLp} value={category.idLp}>
                         {category.tenLp} - {category.moTaLp}
@@ -967,6 +1031,37 @@ const WalkInCheckIn = () => {
                   )}
                 </div>
 
+                {/* Available Rooms Notification for Booking */}
+                {selectedOption === 'booking' && (
+                  <div className="col-span-2">
+                    {loadingAvailableRooms && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div className="flex items-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                          <span className="text-blue-700 text-sm">Đang kiểm tra phòng trống...</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {!loadingAvailableRooms && availableRoomsInfo && availableRoomsInfo.length > 0 && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <h4 className="text-green-800 font-medium mb-2">Thông tin phòng trống:</h4>
+                        {availableRoomsInfo.map((room, index) => (
+                          <div key={index} className="text-green-700 text-sm mb-1">
+                            <span className="font-medium">{room.tenKieuPhong} - {room.tenLoaiPhong}:</span>
+                            <span className="ml-2">Còn {room.soPhongTrong} phòng trống (Tổng: {room.tongSoPhong} phòng)</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {!loadingAvailableRooms && availableRoomsInfo && availableRoomsInfo.length === 0 && (
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <span className="text-red-700 text-sm">Không có phòng trống cho loại phòng đã chọn trong khoảng thời gian này.</span>
+                      </div>
+                    )}
+                  </div>
+                )}
 
               </div>
             </div>
@@ -1084,6 +1179,38 @@ const WalkInCheckIn = () => {
                     </select>
                   </div>
                 </div>
+
+                {/* Available Rooms Notification for Rental */}
+                {selectedOption === 'rental' && rentalData.ngayDen && rentalData.ngayDi && (
+                  <div className="mt-4">
+                    {loadingAvailableRooms && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div className="flex items-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                          <span className="text-blue-700 text-sm">Đang kiểm tra phòng trống...</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {!loadingAvailableRooms && availableRoomsInfo && availableRoomsInfo.length > 0 && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <h4 className="text-green-800 font-medium mb-2">Thông tin phòng trống:</h4>
+                        {availableRoomsInfo.map((room, index) => (
+                          <div key={index} className="text-green-700 text-sm mb-1">
+                            <span className="font-medium">{room.tenKieuPhong} - {room.tenLoaiPhong}:</span>
+                            <span className="ml-2">Còn {room.soPhongTrong} phòng trống (Tổng: {room.tongSoPhong} phòng)</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {!loadingAvailableRooms && availableRoomsInfo && availableRoomsInfo.length === 0 && (
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <span className="text-red-700 text-sm">Không có phòng trống cho loại phòng đã chọn trong khoảng thời gian này.</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Room Selection */}

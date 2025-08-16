@@ -13,4 +13,6 @@ public interface IRoomAvailabilityService {
     Response getAvailableRoomsByHangPhongAndPriceRange(LocalDate checkIn, LocalDate checkOut,
             BigDecimal minPrice, BigDecimal maxPrice,
             String idKp, String idLp);
+
+    Response getAvailableRoomsForStaff(LocalDate checkIn, LocalDate checkOut);
 }
