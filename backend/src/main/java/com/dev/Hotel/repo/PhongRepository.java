@@ -65,14 +65,7 @@ public interface PhongRepository extends JpaRepository<Phong, String> {
     @Query("SELECT COUNT(p) FROM Phong p WHERE p.trangThai.tenTrangThai = 'Đang dọn dẹp'")
     long countCleaningRooms();
 
-    // Alternative method names for better readability
-    default List<Phong> findEmptyRooms() {
-        return findAvailableRooms();
-    }
 
-    default List<Phong> findRoomsWithGuests() {
-        return findOccupiedRooms();
-    }
 
     default List<Phong> findRoomsUnderMaintenance() {
         return findMaintenanceRooms();

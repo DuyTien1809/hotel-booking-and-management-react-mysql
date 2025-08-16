@@ -85,7 +85,7 @@ const ReservationManagement = () => {
   const mapBackendStatusToFrontend = (backendStatus) => {
     switch (backendStatus) {
       case 'Chờ xác nhận': return 'pending'
-      case 'Đã xác nhận': return 'confirmed'
+      case 'Xác nhận': return 'confirmed'
       case 'Đã check-in': return 'checkedin'
       case 'Đã hủy': return 'cancelled'
       case 'Đã check-out': return 'checkedout'
@@ -97,7 +97,7 @@ const ReservationManagement = () => {
   const mapFrontendStatusToBackend = (frontendStatus) => {
     switch (frontendStatus) {
       case 'pending': return 'Chờ xác nhận'
-      case 'confirmed': return 'Đã xác nhận'
+      case 'confirmed': return 'Xác nhận'
       case 'checkedin': return 'Đã check-in'
       case 'cancelled': return 'Đã hủy'
       case 'checkedout': return 'Đã check-out'
@@ -118,7 +118,7 @@ const ReservationManagement = () => {
 
   const getStatusText = (status) => {
     switch (status) {
-      case 'confirmed': return 'Đã xác nhận'
+      case 'confirmed': return 'Xác nhận'
       case 'pending': return 'Chờ xác nhận'
       case 'cancelled': return 'Đã hủy'
       case 'checkedin': return 'Đã check-in'
@@ -358,7 +358,7 @@ const ReservationManagement = () => {
             >
               <option value="">Tất cả</option>
               <option value="pending">Chờ xác nhận</option>
-              <option value="confirmed">Đã xác nhận</option>
+              <option value="confirmed">Xác nhận</option>
               <option value="checkedin">Đã check-in</option>
               <option value="checkedout">Đã check-out</option>
               <option value="cancelled">Đã hủy</option>
@@ -885,7 +885,7 @@ const EditReservationModal = ({ reservation, onClose, onUpdate }) => {
                   className="input"
                 >
                   <option value="pending">Chờ xác nhận</option>
-                  <option value="confirmed">Đã xác nhận</option>
+                  <option value="confirmed">Xác nhận</option>
                   <option value="checkedin">Đã check-in</option>
                   <option value="checkedout">Đã check-out</option>
                   <option value="cancelled">Đã hủy</option>

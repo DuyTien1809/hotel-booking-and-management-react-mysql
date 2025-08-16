@@ -58,9 +58,9 @@ public class DashboardService implements IDashboardService {
             long todayBookings = phieuDatRepository.countByNgayDat(today); // Phiếu đặt mới nhận hôm nay
             // Sử dụng các trạng thái có thể có trong hệ thống
             long pendingBookings = phieuDatRepository.countByTrangThai("Chờ xác nhận");
-            long confirmedBookings = phieuDatRepository.countByTrangThai("Đã xác nhận");
+            long confirmedBookings = phieuDatRepository.countByTrangThai("Xác nhận");
 
-            long todayCheckIns = phieuDatRepository.countByNgayBdThueAndTrangThai(today, "Đã xác nhận");
+            long todayCheckIns = phieuDatRepository.countByNgayBdThueAndTrangThai(today, "Xác nhận");
             long todayCheckOuts = phieuThueRepository.countByNgayTraPhong(today);
 
             long occupancyRate = totalRooms > 0 ? Math.round((double) occupiedRooms / totalRooms * 100) : 0;
@@ -227,7 +227,7 @@ public class DashboardService implements IDashboardService {
 
             // Lấy danh sách phiếu đặt có ngày bắt đầu thuê hôm nay và đã được xác nhận
             // NHƯNG chưa check-in (chưa có phiếu thuê)
-            List<PhieuDat> allTodayBookings = phieuDatRepository.findByNgayBdThueAndTrangThai(today, "Đã xác nhận");
+            List<PhieuDat> allTodayBookings = phieuDatRepository.findByNgayBdThueAndTrangThai(today, "Xác nhận");
 
             // Lọc ra những phiếu đặt chưa có phiếu thuê (chưa check-in)
             // Kiểm tra xem có PhieuThue nào có ID_PD = phieuDat.idPd không

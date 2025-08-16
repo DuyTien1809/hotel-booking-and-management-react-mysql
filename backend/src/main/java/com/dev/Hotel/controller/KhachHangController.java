@@ -17,7 +17,7 @@ public class KhachHangController {
     private IKhachHangService khachHangService;
 
     @GetMapping("/all")
-    // @PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
+
     public ResponseEntity<Response> getAllKhachHang() {
         Response response = khachHangService.getAllKhachHang();
         return ResponseEntity.status(response.getStatusCode()).body(response);
@@ -32,21 +32,21 @@ public class KhachHangController {
     }
 
     @GetMapping("/get-by-email/{email}")
-    // @PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
+
     public ResponseEntity<Response> getKhachHangByEmail(@PathVariable("email") String email) {
         Response response = khachHangService.getKhachHangByEmail(email);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
     @GetMapping("/get-by-sdt/{sdt}")
-    // @PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
+
     public ResponseEntity<Response> getKhachHangBySdt(@PathVariable("sdt") String sdt) {
         Response response = khachHangService.getKhachHangBySdt(sdt);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
     @PostMapping("/create")
-    // @PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
+
     public ResponseEntity<Response> createKhachHang(@RequestBody KhachHang khachHang) {
         Response response = khachHangService.createKhachHang(khachHang);
         return ResponseEntity.status(response.getStatusCode()).body(response);
@@ -77,35 +77,35 @@ public class KhachHangController {
     }
 
     @GetMapping("/search")
-    // @PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
+
     public ResponseEntity<Response> searchKhachHang(@RequestParam("keyword") String keyword) {
         Response response = khachHangService.searchKhachHang(keyword);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
     @GetMapping("/find-by-email-or-sdt")
-    // @PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
+
     public ResponseEntity<Response> getKhachHangByEmailOrSdt(@RequestParam("emailOrSdt") String emailOrSdt) {
         Response response = khachHangService.getKhachHangByEmailOrSdt(emailOrSdt);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
     @PostMapping("/validate")
-    // @PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
+
     public ResponseEntity<Response> validateKhachHang(@RequestBody KhachHang khachHang) {
         Response response = khachHangService.validateKhachHang(khachHang);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
     @GetMapping("/exists-by-email/{email}")
-    // @PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
+
     public ResponseEntity<Boolean> existsByEmail(@PathVariable("email") String email) {
         boolean exists = khachHangService.existsByEmail(email);
         return ResponseEntity.ok(exists);
     }
 
     @GetMapping("/exists-by-sdt/{sdt}")
-    // @PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('ADMIN')")
+
     public ResponseEntity<Boolean> existsBySdt(@PathVariable("sdt") String sdt) {
         boolean exists = khachHangService.existsBySdt(sdt);
         return ResponseEntity.ok(exists);

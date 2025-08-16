@@ -123,7 +123,7 @@ export const formatStatus = (status) => {
     'active': 'Đang hoạt động',
     'inactive': 'Không hoạt động',
     'pending': 'Chờ xử lý',
-    'confirmed': 'Đã xác nhận',
+    'confirmed': 'Xác nhận',
     'cancelled': 'Đã hủy',
     'completed': 'Hoàn thành',
     'checked_in': 'Đã nhận phòng',

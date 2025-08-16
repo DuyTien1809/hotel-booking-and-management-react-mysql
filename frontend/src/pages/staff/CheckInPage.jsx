@@ -55,7 +55,7 @@ const CheckInPage = () => {
       const response = await bookingService.getConfirmedBookings()
       const reservationData = response.phieuDatList || []
 
-      // Tất cả đặt phòng đã được filter ở backend (chỉ lấy "Đã xác nhận")
+      // Tất cả đặt phòng đã được filter ở backend (chỉ lấy "Xác nhận")
       const confirmedReservations = reservationData
 
       // Transform data to match frontend format
@@ -340,7 +340,7 @@ const CheckInPage = () => {
 
   const getStatusText = (status) => {
     switch (status) {
-      case 'confirmed': return 'Đã xác nhận'
+      case 'confirmed': return 'Xác nhận'
       case 'checkedin': return 'Đã check-in'
       default: return 'Không xác định'
     }

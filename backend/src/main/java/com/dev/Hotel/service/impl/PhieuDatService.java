@@ -253,7 +253,7 @@ public class PhieuDatService implements IPhieuDatService {
             PhieuDat phieuDat = phieuDatRepository.findById(idPd)
                     .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
 
-            phieuDat.setTrangThai("Đã xác nhận");
+            phieuDat.setTrangThai("Xác nhận");
             PhieuDat updatedPhieuDat = phieuDatRepository.save(phieuDat);
 
             response.setStatusCode(200);
@@ -521,7 +521,7 @@ public class PhieuDatService implements IPhieuDatService {
     public Response getConfirmedBookings() {
         Response response = new Response();
         try {
-            List<PhieuDat> phieuDatList = phieuDatRepository.findByTrangThaiWithDetails("Đã xác nhận");
+            List<PhieuDat> phieuDatList = phieuDatRepository.findByTrangThaiWithDetails("Xác nhận");
             // Sắp xếp theo ngày bắt đầu thuê
             phieuDatList.sort((a, b) -> {
                 if (a.getNgayBdThue() == null && b.getNgayBdThue() == null)
@@ -629,7 +629,7 @@ public class PhieuDatService implements IPhieuDatService {
             phieuDat.setNgayBdThue(request.getNgayBdThue());
             phieuDat.setNgayDi(request.getNgayDi());
             phieuDat.setSoTienCoc(request.getTienDatCoc());
-            phieuDat.setTrangThai("Đã xác nhận");
+            phieuDat.setTrangThai("Xác nhận");
             phieuDat.setKhachHang(khachHang);
 
             // Set employee

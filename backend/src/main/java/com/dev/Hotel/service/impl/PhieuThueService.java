@@ -248,7 +248,7 @@ public class PhieuThueService implements IPhieuThueService {
             PhieuDat phieuDat = phieuDatRepository.findById(idPd)
                     .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
 
-            if (!"Đã xác nhận".equals(phieuDat.getTrangThai())) {
+            if (!"Xác nhận".equals(phieuDat.getTrangThai())) {
                 throw new OurException("Phiếu đặt chưa được xác nhận");
             }
 
@@ -372,7 +372,7 @@ public class PhieuThueService implements IPhieuThueService {
 
             System.out.println("Found booking with status: " + phieuDat.getTrangThai());
 
-            if (!"Đã xác nhận".equals(phieuDat.getTrangThai())) {
+            if (!"Xác nhận".equals(phieuDat.getTrangThai())) {
                 throw new OurException("Phiếu đặt chưa được xác nhận. Trạng thái hiện tại: " + phieuDat.getTrangThai());
             }
 
@@ -532,7 +532,7 @@ public class PhieuThueService implements IPhieuThueService {
             phieuDat.setNgayDat(LocalDate.now());
             phieuDat.setNgayBdThue(request.getNgayDen());
             phieuDat.setNgayDi(request.getNgayDi());
-            phieuDat.setTrangThai("Đã xác nhận");
+            phieuDat.setTrangThai("Xác nhận");
             phieuDat.setSoTienCoc(BigDecimal.ZERO); // Can be set based on business rules
             phieuDat.setKhachHang(khachHang);
             phieuDat.setNhanVien(nhanVien);
