@@ -16,6 +16,7 @@ D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\
 D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\controller\PhieuThueController.java
 D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\controller\PhongController.java
 D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\controller\PhuThuController.java
+D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\controller\PromotionController.java
 D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\controller\ReportController.java
 D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\controller\ServiceController.java
 D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\controller\ServiceManagementController.java
@@ -56,6 +57,7 @@ D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\
 D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\dto\PhieuThueSimpleDTO.java
 D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\dto\PhongDTO.java
 D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\dto\PhuThuDTO.java
+D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\dto\PromotionsByRentalDTO.java
 D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\dto\Response.java
 D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\dto\RoomChangeEligibilityDTO.java
 D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\dto\RoomChangeFeeCalculationDTO.java
@@ -149,6 +151,7 @@ D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\
 D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\service\impl\PhongService.java
 D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\service\impl\PhuThuService.java
 D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\service\impl\PriceService.java
+D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\service\impl\PromotionService.java
 D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\service\impl\ReportService.java
 D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\service\impl\RoomAvailabilityService.java
 D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\service\impl\RoomPricingService.java

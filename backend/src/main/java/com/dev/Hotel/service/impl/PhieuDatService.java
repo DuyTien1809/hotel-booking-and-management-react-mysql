@@ -5,6 +5,7 @@ import com.dev.Hotel.dto.CreateBookingAtReceptionRequest;
 import com.dev.Hotel.dto.CreateBookingRequest;
 import com.dev.Hotel.dto.UpdateBookingRequest;
 import com.dev.Hotel.entity.PhieuDat;
+import com.dev.Hotel.entity.PhieuThue;
 import com.dev.Hotel.entity.KhachHang;
 import com.dev.Hotel.entity.CtPhieuDat;
 import com.dev.Hotel.entity.NhanVien;
@@ -14,6 +15,7 @@ import com.dev.Hotel.entity.CtPhieuDatId;
 import com.dev.Hotel.entity.CtKhachO;
 import com.dev.Hotel.exception.OurException;
 import com.dev.Hotel.repo.PhieuDatRepository;
+import com.dev.Hotel.repo.PhieuThueRepository;
 import com.dev.Hotel.repo.KhachHangRepository;
 import com.dev.Hotel.repo.NhanVienRepository;
 import com.dev.Hotel.repo.HangPhongRepository;
@@ -39,6 +41,9 @@ public class PhieuDatService implements IPhieuDatService {
 
     @Autowired
     private PhieuDatRepository phieuDatRepository;
+
+    @Autowired
+    private PhieuThueRepository phieuThueRepository;
 
     @Autowired
     private KhachHangRepository khachHangRepository;
@@ -521,9 +526,20 @@ public class PhieuDatService implements IPhieuDatService {
     public Response getConfirmedBookings() {
         Response response = new Response();
         try {
-            List<PhieuDat> phieuDatList = phieuDatRepository.findByTrangThaiWithDetails("Xác nhận");
+            // Lấy tất cả phiếu đặt đã xác nhận
+            List<PhieuDat> allConfirmedBookings = phieuDatRepository.findByTrangThaiWithDetails("Xác nhận");
+
+            // Lọc ra những phiếu đặt chưa có phiếu thuê (chưa check-in)
+            List<PhieuDat> availableForCheckIn = allConfirmedBookings.stream()
+                .filter(pd -> {
+                    // Kiểm tra xem phiếu đặt này đã có phiếu thuê chưa
+                    List<PhieuThue> existingRentals = phieuThueRepository.findByPhieuDat(pd);
+                    return existingRentals.isEmpty(); // Chỉ lấy những phiếu chưa có phiếu thuê
+                })
+                .collect(java.util.stream.Collectors.toList());
+
             // Sắp xếp theo ngày bắt đầu thuê
-            phieuDatList.sort((a, b) -> {
+            availableForCheckIn.sort((a, b) -> {
                 if (a.getNgayBdThue() == null && b.getNgayBdThue() == null)
                     return 0;
                 if (a.getNgayBdThue() == null)
@@ -535,7 +551,7 @@ public class PhieuDatService implements IPhieuDatService {
 
             response.setStatusCode(200);
             response.setMessage("Thành công");
-            response.setPhieuDatList(EntityDTOMapper.mapPhieuDatListToDTO(phieuDatList));
+            response.setPhieuDatList(EntityDTOMapper.mapPhieuDatListToDTO(availableForCheckIn));
         } catch (Exception e) {
             response.setStatusCode(500);
             response.setMessage("Lỗi khi lấy danh sách đặt phòng đã xác nhận: " + e.getMessage());

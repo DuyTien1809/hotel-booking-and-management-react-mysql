@@ -404,15 +404,8 @@ const CheckOutPage = () => {
           await invoiceService.updateInvoiceStatus(invoiceResult.idHd, INVOICE_STATUS.PAID)
           toast.success('Trạng thái hóa đơn đã được cập nhật!')
 
-          // Cập nhật trạng thái phiếu đặt nếu có
-          if (selectedGuest.bookingId) {
-            try {
-              await bookingService.updateBookingStatus(selectedGuest.bookingId, 'Đã hoàn thành')
-            } catch (error) {
-              console.error('Error updating booking status:', error)
-              // Không hiển thị lỗi vì đây không phải lỗi nghiêm trọng
-            }
-          }
+          // Note: Không cập nhật trạng thái phiếu đặt khi check-out
+          // Phiếu đặt sẽ giữ nguyên trạng thái hiện tại (Xác nhận, Chờ xác nhận, hoặc Đã hủy)
 
           // Chuyển hướng đến trang hóa đơn và highlight hóa đơn vừa tạo
           navigate(`/staff/invoices?highlight=${invoiceResult.idHd}`)

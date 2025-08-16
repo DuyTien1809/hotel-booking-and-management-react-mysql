@@ -194,9 +194,6 @@ const RentalManagement = () => {
       case 'active':
       case 'đang thuê':
         return 'bg-green-100 text-green-800'
-      case 'completed':
-      case 'đã trả phòng':
-        return 'bg-blue-100 text-blue-800'
       case 'cancelled':
       case 'đã hủy':
         return 'bg-red-100 text-red-800'

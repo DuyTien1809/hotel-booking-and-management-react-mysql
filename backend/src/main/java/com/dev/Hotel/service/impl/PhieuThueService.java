@@ -262,9 +262,8 @@ public class PhieuThueService implements IPhieuThueService {
 
             PhieuThue savedPhieuThue = phieuThueRepository.save(phieuThue);
 
-            // Update booking status
-            phieuDat.setTrangThai("Đã nhận phòng");
-            phieuDatRepository.save(phieuDat);
+            // Note: Không cập nhật trạng thái phiếu đặt khi check-in
+            // Phiếu đặt sẽ giữ nguyên trạng thái hiện tại
 
             response.setStatusCode(200);
             response.setMessage("Check-in thành công");
@@ -325,9 +324,8 @@ public class PhieuThueService implements IPhieuThueService {
             phong.setTrangThai(occupiedStatus);
             phongRepository.save(phong);
 
-            // Update booking status to checked-in
-            phieuDat.setTrangThai("Đã check-in");
-            phieuDatRepository.save(phieuDat);
+            // Note: Không cập nhật trạng thái phiếu đặt khi check-in
+            // Phiếu đặt sẽ giữ nguyên trạng thái hiện tại (Xác nhận, Chờ xác nhận, hoặc Đã hủy)
 
             response.setStatusCode(200);
             response.setMessage("Check-in thành công vào phòng " + request.getSoPhong());
@@ -439,9 +437,8 @@ public class PhieuThueService implements IPhieuThueService {
                 phongRepository.save(phong);
             }
 
-            // Update booking status to checked-in
-            phieuDat.setTrangThai("Đã check-in");
-            phieuDatRepository.save(phieuDat);
+            // Note: Không cập nhật trạng thái phiếu đặt khi check-in
+            // Phiếu đặt sẽ giữ nguyên trạng thái hiện tại
 
             response.setStatusCode(200);
             response.setMessage("Check-in thành công cho " + request.getDanhSachSoPhong().size() + " phòng");

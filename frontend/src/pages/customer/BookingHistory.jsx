@@ -3,6 +3,11 @@ import { Calendar, Clock, CheckCircle, XCircle, Eye, Download } from 'lucide-rea
 import Pagination from '../../components/common/Pagination'
 import { api } from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
+import {
+  mapBackendStatusToFrontend,
+  getBookingStatusColor,
+  getBookingStatusText
+} from '../../constants/hotelInfo'
 
 const BookingHistory = () => {
   const { user } = useAuth()
@@ -86,73 +91,18 @@ const BookingHistory = () => {
     }
   }
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'completed':
-      case 'Đã hoàn thành':
-      case 'Hoàn thành':
-      case 'COMPLETED':
-        return 'text-green-600 bg-green-100'
-      case 'confirmed':
-      case 'Đã xác nhận':
-      case 'Xác nhận':
-      case 'CONFIRMED':
-        return 'text-blue-600 bg-blue-100'
-      case 'pending':
-      case 'Chờ xác nhận':
-      case 'PENDING':
-        return 'text-yellow-600 bg-yellow-100'
-      case 'cancelled':
-      case 'Đã hủy':
-      case 'CANCELLED':
-        return 'text-red-600 bg-red-100'
-      default:
-        return 'text-gray-600 bg-gray-100'
-    }
-  }
-
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'completed':
-      case 'COMPLETED':
-      case 'Hoàn thành':
-        return 'Đã hoàn thành'
-      case 'confirmed':
-      case 'CONFIRMED':
-      case 'Xác nhận':
-        return 'Xác nhận'
-      case 'pending':
-      case 'PENDING':
-      case 'Chờ xác nhận':
-        return 'Chờ xác nhận'
-      case 'cancelled':
-      case 'CANCELLED':
-      case 'Đã hủy':
-        return 'Đã hủy'
-      default:
-        return status || 'Không xác định'
-    }
-  }
+  // Note: Sử dụng functions từ constants/hotelInfo.js
+  // Chỉ còn 3 trạng thái: Chờ xác nhận, Xác nhận, Đã hủy
 
   const getStatusIcon = (status) => {
-    switch (status) {
-      case 'completed':
-      case 'COMPLETED':
-      case 'Đã hoàn thành':
-      case 'Hoàn thành':
-        return <CheckCircle className="w-4 h-4" />
+    // Map status to frontend format first
+    const frontendStatus = mapBackendStatusToFrontend(status)
+    switch (frontendStatus) {
       case 'confirmed':
-      case 'CONFIRMED':
-      case 'Đã xác nhận':
-      case 'Xác nhận':
-        return <Calendar className="w-4 h-4" />
+        return <CheckCircle className="w-4 h-4" />
       case 'pending':
-      case 'PENDING':
-      case 'Chờ xác nhận':
         return <Clock className="w-4 h-4" />
       case 'cancelled':
-      case 'CANCELLED':
-      case 'Đã hủy':
         return <XCircle className="w-4 h-4" />
       default:
         return <Clock className="w-4 h-4" />
@@ -256,8 +206,7 @@ const BookingHistory = () => {
             >
               <option value="">Tất cả</option>
               <option value="pending">Chờ xác nhận</option>
-              <option value="confirmed">Đã xác nhận</option>
-              <option value="completed">Đã hoàn thành</option>
+              <option value="confirmed">Xác nhận</option>
               <option value="cancelled">Đã hủy</option>
             </select>
           </div>
@@ -346,9 +295,9 @@ const BookingHistory = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(booking.trangThai)}`}>
+                        <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getBookingStatusColor(mapBackendStatusToFrontend(booking.trangThai))}`}>
                           {getStatusIcon(booking.trangThai)}
-                          <span className="ml-1">{getStatusText(booking.trangThai)}</span>
+                          <span className="ml-1">{getBookingStatusText(mapBackendStatusToFrontend(booking.trangThai))}</span>
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

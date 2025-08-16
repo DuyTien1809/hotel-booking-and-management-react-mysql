@@ -421,7 +421,6 @@ const ReportsPage = () => {
               <option value="ALL">Tất cả</option>
               <option value="Chờ xác nhận">Chờ xác nhận</option>
               <option value="Xác nhận">Xác nhận</option>
-              <option value="Đã check-in">Đã check-in</option>
               <option value="Đã hủy">Đã hủy</option>
             </select>
           </div>
