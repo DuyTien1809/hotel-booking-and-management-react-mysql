@@ -3,7 +3,6 @@ package com.dev.Hotel.repo;
 import com.dev.Hotel.entity.DoiPhong;
 import com.dev.Hotel.entity.DoiPhongId;
 import com.dev.Hotel.entity.CtPhieuThue;
-import com.dev.Hotel.entity.Phong;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,14 +20,11 @@ public interface DoiPhongRepository extends JpaRepository<DoiPhong, DoiPhongId> 
     // Tìm lịch sử đổi phòng theo ID chi tiết phiếu thuê
     @Query("SELECT dp FROM DoiPhong dp WHERE dp.ctPhieuThue.idCtPt = :idCtPt ORDER BY dp.ngayDen DESC")
     List<DoiPhong> findByCtPhieuThueId(@Param("idCtPt") Integer idCtPt);
-    
-    // Tìm lịch sử đổi phòng theo phòng mới
-    List<DoiPhong> findByPhongMoi(Phong phongMoi);
-    
+
     // Tìm lịch sử đổi phòng theo số phòng mới
     @Query("SELECT dp FROM DoiPhong dp WHERE dp.phongMoi.soPhong = :soPhongMoi ORDER BY dp.ngayDen DESC")
     List<DoiPhong> findByPhongMoiSoPhong(@Param("soPhongMoi") String soPhongMoi);
-    
+
     // Tìm lịch sử đổi phòng trong khoảng thời gian
     @Query("SELECT dp FROM DoiPhong dp WHERE dp.ngayDen BETWEEN :startDate AND :endDate ORDER BY dp.ngayDen DESC")
     List<DoiPhong> findByNgayDenBetween(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);

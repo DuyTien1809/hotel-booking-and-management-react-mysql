@@ -8,6 +8,7 @@ import com.dev.Hotel.repo.PhieuThueRepository;
 import com.dev.Hotel.repo.PhongRepository;
 import com.dev.Hotel.repo.NhanVienRepository;
 import com.dev.Hotel.repo.KhachHangRepository;
+import com.dev.Hotel.repo.HoaDonRepository;
 import com.dev.Hotel.service.interfac.IDashboardService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,9 @@ public class DashboardService implements IDashboardService {
     @Autowired
     private KhachHangRepository khachHangRepository;
 
+    @Autowired
+    private HoaDonRepository hoaDonRepository;
+
     @Override
     public Response getStaffStats() {
         Response response = new Response();
@@ -54,9 +58,9 @@ public class DashboardService implements IDashboardService {
             long todayBookings = phieuDatRepository.countByNgayDat(today); // Phiếu đặt mới nhận hôm nay
             // Sử dụng các trạng thái có thể có trong hệ thống
             long pendingBookings = phieuDatRepository.countByTrangThai("Chờ xác nhận");
-            long confirmedBookings = phieuDatRepository.countByTrangThai("Đã xác nhận");
+            long confirmedBookings = phieuDatRepository.countByTrangThai("Xác nhận");
 
-            long todayCheckIns = phieuDatRepository.countByNgayBdThueAndTrangThai(today, "Đã xác nhận");
+            long todayCheckIns = phieuDatRepository.countByNgayBdThueAndTrangThai(today, "Xác nhận");
             long todayCheckOuts = phieuThueRepository.countByNgayTraPhong(today);
 
             long occupancyRate = totalRooms > 0 ? Math.round((double) occupiedRooms / totalRooms * 100) : 0;
@@ -222,7 +226,18 @@ public class DashboardService implements IDashboardService {
             LocalDate today = LocalDate.now();
 
             // Lấy danh sách phiếu đặt có ngày bắt đầu thuê hôm nay và đã được xác nhận
-            List<PhieuDat> todayCheckInList = phieuDatRepository.findByNgayBdThueAndTrangThai(today, "Đã xác nhận");
+            // NHƯNG chưa check-in (chưa có phiếu thuê)
+            List<PhieuDat> allTodayBookings = phieuDatRepository.findByNgayBdThueAndTrangThai(today, "Xác nhận");
+
+            // Lọc ra những phiếu đặt chưa có phiếu thuê (chưa check-in)
+            // Kiểm tra xem có PhieuThue nào có ID_PD = phieuDat.idPd không
+            List<PhieuDat> todayCheckInList = allTodayBookings.stream()
+                .filter(pd -> {
+                    // Kiểm tra xem phiếu đặt này đã có phiếu thuê chưa
+                    List<PhieuThue> existingRentals = phieuThueRepository.findByPhieuDat(pd);
+                    return existingRentals.isEmpty();
+                })
+                .collect(java.util.stream.Collectors.toList());
 
             List<Map<String, Object>> checkInData = new ArrayList<>();
 
@@ -274,7 +289,16 @@ public class DashboardService implements IDashboardService {
             LocalDate today = LocalDate.now();
 
             // Lấy danh sách phiếu thuê có ngày trả phòng hôm nay
-            List<PhieuThue> todayCheckOutList = phieuThueRepository.findByNgayTraPhong(today);
+            // NHƯNG chưa xuất hóa đơn (chưa check-out)
+            List<PhieuThue> allTodayCheckOuts = phieuThueRepository.findByNgayTraPhong(today);
+
+            // Lọc ra những phiếu thuê chưa có hóa đơn (chưa check-out)
+            List<PhieuThue> todayCheckOutList = allTodayCheckOuts.stream()
+                .filter(pt -> {
+                    // Kiểm tra xem phiếu thuê này đã có hóa đơn chưa
+                    return hoaDonRepository.findByPhieuThue(pt).isEmpty();
+                })
+                .collect(java.util.stream.Collectors.toList());
 
             // Convert to Map để tránh lỗi EntityDTOMapper
             List<Map<String, Object>> checkOutData = new ArrayList<>();

@@ -22,9 +22,7 @@ public interface TienNghiRepository extends JpaRepository<TienNghi, String> {
         return findByHangPhongIdNative(hangPhong.getIdHangPhong());
     }
 
-    // Test query để kiểm tra dữ liệu
-    @Query(value = "SELECT COUNT(*) FROM cttiennghi WHERE ID_HANG_PHONG = :idHangPhong", nativeQuery = true)
-    Integer countTienNghiByHangPhong(@Param("idHangPhong") Integer idHangPhong);
+
 
     // Query để tìm ID tiện ích lớn nhất
     @Query("SELECT MAX(t.idTn) FROM TienNghi t WHERE t.idTn LIKE 'TN%'")

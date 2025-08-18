@@ -28,8 +28,7 @@ public interface CtPhuThuRepository extends JpaRepository<CtPhuThu, CtPhuThuId> 
     @Query("SELECT cp FROM CtPhuThu cp WHERE cp.id.idPhuThu = :idPhuThu AND cp.id.idCtPt = :idCtPt")
     CtPhuThu findByIdPhuThuAndIdCtPt(@Param("idPhuThu") String idPhuThu, @Param("idCtPt") Integer idCtPt);
     
-    @Query("SELECT cp FROM CtPhuThu cp WHERE cp.ttThanhToan = :trangThai")
-    List<CtPhuThu> findByTtThanhToan(@Param("trangThai") String trangThai);
+
     
     // Query to get all surcharge usage with details
     @Query("SELECT cp FROM CtPhuThu cp " +

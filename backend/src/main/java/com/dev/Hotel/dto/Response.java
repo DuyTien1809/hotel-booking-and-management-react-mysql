@@ -61,6 +61,11 @@ public class Response {
     private TienNghiDTO tienNghi;
     private List<TienNghiDTO> tienNghiList;
 
+    // Promotion DTOs
+    private KhuyenMaiDTO khuyenMai;
+    private List<KhuyenMaiDTO> khuyenMaiList;
+    private PromotionsByRentalDTO promotionsByRental;
+
     // Hot Hang Phong DTOs
     private List<HotHangPhongDTO> hotHangPhongList;
 

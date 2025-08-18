@@ -16,6 +16,12 @@ import {
 import Pagination from '../../components/common/Pagination'
 import { bookingService } from '../../services/bookingService'
 import { roomService } from '../../services/roomService'
+import {
+  mapBackendStatusToFrontend,
+  mapFrontendStatusToBackend,
+  getBookingStatusColor,
+  getBookingStatusText
+} from '../../constants/hotelInfo'
 
 const ReservationManagement = () => {
   const [reservations, setReservations] = useState([])
@@ -81,59 +87,14 @@ const ReservationManagement = () => {
     }
   }
 
-  // Map backend status to frontend status
-  const mapBackendStatusToFrontend = (backendStatus) => {
-    switch (backendStatus) {
-      case 'Chờ xác nhận': return 'pending'
-      case 'Đã xác nhận': return 'confirmed'
-      case 'Đã check-in': return 'checkedin'
-      case 'Đã hủy': return 'cancelled'
-      case 'Đã check-out': return 'checkedout'
-      default: return 'pending'
-    }
-  }
-
-  // Map frontend status to backend status
-  const mapFrontendStatusToBackend = (frontendStatus) => {
-    switch (frontendStatus) {
-      case 'pending': return 'Chờ xác nhận'
-      case 'confirmed': return 'Đã xác nhận'
-      case 'checkedin': return 'Đã check-in'
-      case 'cancelled': return 'Đã hủy'
-      case 'checkedout': return 'Đã check-out'
-      default: return 'Chờ xác nhận'
-    }
-  }
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'confirmed': return 'text-blue-600 bg-blue-100'
-      case 'pending': return 'text-yellow-600 bg-yellow-100'
-      case 'cancelled': return 'text-red-600 bg-red-100'
-      case 'checkedin': return 'text-green-600 bg-green-100'
-      case 'checkedout': return 'text-gray-600 bg-gray-100'
-      default: return 'text-gray-600 bg-gray-100'
-    }
-  }
-
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'confirmed': return 'Đã xác nhận'
-      case 'pending': return 'Chờ xác nhận'
-      case 'cancelled': return 'Đã hủy'
-      case 'checkedin': return 'Đã check-in'
-      case 'checkedout': return 'Đã check-out'
-      default: return 'Không xác định'
-    }
-  }
+  // Note: Sử dụng functions từ constants/hotelInfo.js
+  // Chỉ còn 3 trạng thái: Chờ xác nhận, Xác nhận, Đã hủy
 
   const getStatusIcon = (status) => {
     switch (status) {
       case 'confirmed': return <CheckCircle className="w-4 h-4" />
       case 'pending': return <Clock className="w-4 h-4" />
       case 'cancelled': return <XCircle className="w-4 h-4" />
-      case 'checkedin': return <Check className="w-4 h-4" />
-      case 'checkedout': return <CheckCircle className="w-4 h-4" />
       default: return <AlertCircle className="w-4 h-4" />
     }
   }
@@ -358,9 +319,7 @@ const ReservationManagement = () => {
             >
               <option value="">Tất cả</option>
               <option value="pending">Chờ xác nhận</option>
-              <option value="confirmed">Đã xác nhận</option>
-              <option value="checkedin">Đã check-in</option>
-              <option value="checkedout">Đã check-out</option>
+              <option value="confirmed">Xác nhận</option>
               <option value="cancelled">Đã hủy</option>
             </select>
           </div>
@@ -474,9 +433,9 @@ const ReservationManagement = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(reservation.status)}`}>
+                        <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getBookingStatusColor(reservation.status)}`}>
                           {getStatusIcon(reservation.status)}
-                          <span className="ml-1">{getStatusText(reservation.status)}</span>
+                          <span className="ml-1">{getBookingStatusText(reservation.status)}</span>
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -623,9 +582,9 @@ const ReservationManagement = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600">Trạng thái</label>
-                    <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedReservation.status)}`}>
+                    <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getBookingStatusColor(selectedReservation.status)}`}>
                       {getStatusIcon(selectedReservation.status)}
-                      <span className="ml-1">{getStatusText(selectedReservation.status)}</span>
+                      <span className="ml-1">{getBookingStatusText(selectedReservation.status)}</span>
                     </span>
                   </div>
                 </div>
@@ -885,9 +844,7 @@ const EditReservationModal = ({ reservation, onClose, onUpdate }) => {
                   className="input"
                 >
                   <option value="pending">Chờ xác nhận</option>
-                  <option value="confirmed">Đã xác nhận</option>
-                  <option value="checkedin">Đã check-in</option>
-                  <option value="checkedout">Đã check-out</option>
+                  <option value="confirmed">Xác nhận</option>
                   <option value="cancelled">Đã hủy</option>
                 </select>
               </div>

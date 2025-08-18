@@ -7,6 +7,8 @@ import { invoiceService } from '../../services/invoiceService'
 import { dashboardService } from '../../services/dashboardService'
 import InvoiceComponent from '../../components/staff/InvoiceComponent'
 import DetailedInvoiceModal from '../../components/staff/DetailedInvoiceModal'
+import PromotionSelector from '../../components/staff/PromotionSelector'
+import ManualDiscountSelector from '../../components/staff/ManualDiscountSelector'
 import { HOTEL_INFO, INVOICE_STATUS } from '../../constants/hotelInfo'
 
 const CheckOutPage = () => {
@@ -29,7 +31,17 @@ const CheckOutPage = () => {
     serviceCharges: 0,
     surcharges: 0,
     paidAmount: 0,
+    promotionDiscount: 0,
     total: 0
+  })
+  const [promotionData, setPromotionData] = useState({
+    totalDiscount: 0,
+    discountDetails: []
+  })
+  const [manualDiscountData, setManualDiscountData] = useState({
+    discountPercent: 0,
+    discountAmount: 0,
+    hasManualDiscount: false
   })
   const [invoice, setInvoice] = useState(null)
   const [showInvoice, setShowInvoice] = useState(false)
@@ -290,7 +302,22 @@ const CheckOutPage = () => {
       serviceCharges: totalServiceCharges,
       surcharges: totalSurcharges,
       paidAmount: 0, // Không tính các khoản đã thanh toán
+      promotionDiscount: 0, // Sẽ được cập nhật khi chọn khuyến mãi
+      manualDiscount: 0, // Sẽ được cập nhật khi chọn giảm giá thủ công
       total: totalRoomCharges + totalServiceCharges + totalSurcharges
+    })
+
+    // Reset promotion data khi chọn khách mới
+    setPromotionData({
+      totalDiscount: 0,
+      discountDetails: []
+    })
+
+    // Reset manual discount data khi chọn khách mới
+    setManualDiscountData({
+      discountPercent: 0,
+      discountAmount: 0,
+      hasManualDiscount: false
     })
 
     // Tự động tải chi tiết phiếu thuê để hiển thị đầy đủ thông tin
@@ -360,7 +387,14 @@ const CheckOutPage = () => {
         new Date(checkOutData.actualCheckOut).toISOString().split('T')[0] :
         new Date().toISOString().split('T')[0]
 
-      const invoiceResult = await handleCreateInvoiceFromCheckout(selectedGuest.id, actualCheckOutDate)
+      // Tính tổng discount (promotion + manual)
+      const totalDiscount = promotionData.totalDiscount + manualDiscountData.discountAmount
+
+      const invoiceResult = await handleCreateInvoiceFromCheckoutWithPromotions(
+        selectedGuest.id,
+        actualCheckOutDate,
+        totalDiscount
+      )
 
       if (invoiceResult && invoiceResult.idHd) {
         toast.success(`Check-out thành công cho ${selectedGuest.customerName}!`)
@@ -370,15 +404,8 @@ const CheckOutPage = () => {
           await invoiceService.updateInvoiceStatus(invoiceResult.idHd, INVOICE_STATUS.PAID)
           toast.success('Trạng thái hóa đơn đã được cập nhật!')
 
-          // Cập nhật trạng thái phiếu đặt nếu có
-          if (selectedGuest.bookingId) {
-            try {
-              await bookingService.updateBookingStatus(selectedGuest.bookingId, 'Đã hoàn thành')
-            } catch (error) {
-              console.error('Error updating booking status:', error)
-              // Không hiển thị lỗi vì đây không phải lỗi nghiêm trọng
-            }
-          }
+          // Note: Không cập nhật trạng thái phiếu đặt khi check-out
+          // Phiếu đặt sẽ giữ nguyên trạng thái hiện tại (Xác nhận, Chờ xác nhận, hoặc Đã hủy)
 
           // Chuyển hướng đến trang hóa đơn và highlight hóa đơn vừa tạo
           navigate(`/staff/invoices?highlight=${invoiceResult.idHd}`)
@@ -459,9 +486,51 @@ const CheckOutPage = () => {
     }
   }
 
+  // API MỚI: Tạo hóa đơn từ checkout với khuyến mãi
+  const handleCreateInvoiceFromCheckoutWithPromotions = async (rentalId, actualCheckOutDate, promotionDiscount) => {
+    try {
+      const response = await invoiceService.createInvoiceFromCheckoutWithPromotions(rentalId, actualCheckOutDate, promotionDiscount)
+      if (response.statusCode === 200) {
+        setInvoice(response.hoaDon)
+        toast.success('Hóa đơn đã được tạo thành công!')
+        setShowInvoice(true)
+        return response.hoaDon // Trả về thông tin hóa đơn
+      } else {
+        toast.error('Không thể tạo hóa đơn: ' + response.message)
+        return null
+      }
+    } catch (error) {
+      console.error('Error creating invoice from checkout with promotions:', error)
+      toast.error('Có lỗi xảy ra khi tạo hóa đơn')
+      return null
+    }
+  }
+
   const handleViewRoomDetails = (room) => {
     setSelectedRoom(room)
     setShowRoomDetails(true)
+  }
+
+  // Handler cho promotion change
+  const handlePromotionChange = (promotionCalculation) => {
+    setPromotionData(promotionCalculation)
+    updateBillTotal(promotionCalculation.totalDiscount, manualDiscountData.discountAmount)
+  }
+
+  // Handler cho manual discount change
+  const handleManualDiscountChange = (discountData) => {
+    setManualDiscountData(discountData)
+    updateBillTotal(promotionData.totalDiscount, discountData.discountAmount)
+  }
+
+  // Cập nhật tổng bill với cả promotion và manual discount
+  const updateBillTotal = (promotionDiscount, manualDiscount) => {
+    setBill(prevBill => ({
+      ...prevBill,
+      promotionDiscount: promotionDiscount,
+      manualDiscount: manualDiscount,
+      total: prevBill.roomCharges + prevBill.serviceCharges + prevBill.surcharges - promotionDiscount - manualDiscount
+    }))
   }
 
   const formatCurrency = (amount) => {
@@ -469,6 +538,16 @@ const CheckOutPage = () => {
       style: 'currency',
       currency: 'VND'
     }).format(amount || 0)
+  }
+
+  // Helper function để format ngày theo định dạng dd-mm-yy
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Chưa xác định'
+    const date = new Date(dateString)
+    const day = date.getDate().toString().padStart(2, '0')
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const year = date.getFullYear().toString().slice(-2)
+    return `${day}-${month}-${year}`
   }
   const RentalDetailsModal = () => {
     if (!showDetails || !rentalDetails) return null
@@ -528,9 +607,9 @@ const CheckOutPage = () => {
                       <tr key={index} className="hover:bg-gray-50">
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{ct.soPhong}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{ct.tenKieuPhong} {ct.tenLoaiPhong}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{new Date(ct.ngayDen).toLocaleDateString('vi-VN')}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{formatDate(ct.ngayDen)}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                          {ct.ngayDi ? new Date(ct.ngayDi).toLocaleDateString('vi-VN') : 'Chưa xác định'}
+                          {formatDate(ct.ngayDi)}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                           {(() => {
@@ -602,7 +681,7 @@ const CheckOutPage = () => {
                       <tr key={index} className="hover:bg-gray-50">
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{service.tenDichVu}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{service.tenPhong}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{new Date(service.ngaySD).toLocaleDateString('vi-VN')}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{formatDate(service.ngaySD)}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(service.gia)}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">{service.soLuong}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right font-medium">{formatCurrency(service.thanhTien)}</td>
@@ -635,7 +714,7 @@ const CheckOutPage = () => {
                       <tr key={index} className="hover:bg-gray-50">
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{surcharge.loaiPhuThu}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{surcharge.tenPhong}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{new Date(surcharge.ngayPhatSinh).toLocaleDateString('vi-VN')}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{formatDate(surcharge.ngayPhatSinh)}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(surcharge.donGia)}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">{surcharge.soLuong}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right font-medium">{formatCurrency(surcharge.thanhTien)}</td>
@@ -918,7 +997,7 @@ const CheckOutPage = () => {
                           <span className="font-medium">Phòng {ct.soPhong}</span>
                           <span className="text-gray-600"> - {ct.tenKieuPhong} {ct.tenLoaiPhong}</span>
                           <div className="text-xs text-gray-500 mt-1">
-                            Tầng {ct.tang} | {ct.ngayDen} - {ct.ngayDi ? new Date(ct.ngayDi).toLocaleDateString('vi-VN') : 'Chưa xác định'}
+                            Tầng {ct.tang} | {formatDate(ct.ngayDen)} - {formatDate(ct.ngayDi)}
                           </div>
                           <div className="text-xs text-gray-500">
                             Đơn giá: {ct.donGia?.toLocaleString('vi-VN')} VNĐ/đêm
@@ -992,7 +1071,6 @@ const CheckOutPage = () => {
                 ) && (
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="font-semibold text-gray-900 mb-3">Chi tiết dịch vụ & phụ thu</h3>
-                  {/* CHỈ HIỂN THỊ CHI TIẾT CỦA PHÒNG CHƯA THANH TOÁN */}
                   {sortRoomDetails(selectedGuest.chiTietPhieuThue.filter(ct => ct.ttThanhToan !== 'Đã thanh toán')).map((ct, ctIndex) => (
                     <div key={ctIndex} className="mb-4">
                       {/* Services - chỉ hiển thị dịch vụ chưa thanh toán */}
@@ -1001,21 +1079,13 @@ const CheckOutPage = () => {
                           <h4 className="text-sm font-medium text-gray-700 mb-2">Phòng {ct.soPhong}:</h4>
                           <p className="text-xs text-blue-600 font-medium mb-1">Dịch vụ:</p>
                           {ct.danhSachDichVu.filter(dv => dv.ttThanhToan !== 'Đã thanh toán')
-                            .sort((a, b) => {
-                              // Sắp xếp theo ngày sử dụng
-                              if (!a.ngaySuDung && !b.ngaySuDung) return 0
-                              if (!a.ngaySuDung) return 1
-                              if (!b.ngaySuDung) return -1
-                              return new Date(a.ngaySuDung) - new Date(b.ngaySuDung)
-                            })
                             .map((dv, dvIndex) => (
                             <div key={dvIndex} className="flex justify-between text-xs bg-white p-2 rounded mb-1">
                               <div>
                                 <span className="font-medium">{dv.tenDv}</span>
                                 <span className="text-gray-500 ml-2">
-                                  {dv.soLuong} x {dv.gia?.toLocaleString('vi-VN')} VNĐ
+                                  {dv.soLuong} x {dv.donGia?.toLocaleString('vi-VN')} VNĐ
                                 </span>
-                                <div className="text-gray-400">Ngày: {dv.ngaySuDung}</div>
                               </div>
                               <div className="text-right">
                                 <div className="font-medium">{dv.thanhTien?.toLocaleString('vi-VN')} VNĐ</div>
@@ -1033,10 +1103,6 @@ const CheckOutPage = () => {
                         <div className="mb-3">
                           <p className="text-xs text-red-600 font-medium mb-1">Phụ thu:</p>
                           {ct.danhSachPhuThu.filter(pt => pt.ttThanhToan !== 'Đã thanh toán')
-                            .sort((a, b) => {
-                              // Sắp xếp theo tên phụ thu vì không có ngày phát sinh
-                              return (a.tenPhuThu || '').localeCompare(b.tenPhuThu || '')
-                            })
                             .map((pt, ptIndex) => (
                             <div key={ptIndex} className="flex justify-between text-xs bg-white p-2 rounded mb-1">
                               <div>
@@ -1060,6 +1126,23 @@ const CheckOutPage = () => {
                 </div>
               )}
 
+              {/* Promotion Selector */}
+              <PromotionSelector
+                selectedGuest={selectedGuest}
+                onPromotionChange={handlePromotionChange}
+                loading={loading}
+                disabled={manualDiscountData.hasManualDiscount}
+                disabledReason="Đã có giảm giá thủ công"
+              />
+
+              {/* Manual Discount Selector */}
+              <ManualDiscountSelector
+                selectedGuest={selectedGuest}
+                onDiscountChange={handleManualDiscountChange}
+                loading={loading}
+                disabled={promotionData.totalDiscount > 0}
+                currentBill={bill}
+              />
 
               {/* Check-out Form */}
               <div className="space-y-4">
@@ -1094,6 +1177,7 @@ const CheckOutPage = () => {
               <InvoiceComponent
                 selectedGuest={selectedGuest}
                 bill={bill}
+                promotionData={promotionData}
                 checkOutData={checkOutData}
                 onCheckOut={handleCheckOut}
                 onCancel={() => setSelectedGuest(null)}
@@ -1127,5 +1211,4 @@ const CheckOutPage = () => {
     </div>
   )
 }
-
 export default CheckOutPage

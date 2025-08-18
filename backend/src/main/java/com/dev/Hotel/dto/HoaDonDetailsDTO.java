@@ -16,6 +16,7 @@ public class HoaDonDetailsDTO {
     private Integer idPt;
     private LocalDate ngayLap;
     private BigDecimal tongTien;
+    private BigDecimal soTienGiam; // Số tiền khuyến mãi
     private String trangThai;
     
     // Customer info

@@ -27,8 +27,7 @@ public interface PhieuDatRepository extends JpaRepository<PhieuDat, Integer> {
     @Query("SELECT pd FROM PhieuDat pd WHERE pd.ngayDat BETWEEN :startDate AND :endDate")
     List<PhieuDat> findByNgayDatBetween(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
     
-    @Query("SELECT pd FROM PhieuDat pd WHERE pd.ngayBdThue >= :date AND pd.trangThai = :trangThai")
-    List<PhieuDat> findUpcomingBookings(@Param("date") LocalDate date, @Param("trangThai") String trangThai);
+
 
     // Dashboard specific queries
     @Query("SELECT COUNT(pd) FROM PhieuDat pd WHERE pd.ngayDat = :date")

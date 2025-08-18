@@ -2,18 +2,19 @@ import React, { useState } from 'react'
 import { FileText, CreditCard, Banknote, QrCode, CheckCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-const InvoiceComponent = ({ 
-  selectedGuest, 
-  bill, 
-  checkOutData, 
-  onCheckOut, 
-  onCancel, 
-  loading 
+const InvoiceComponent = ({
+  selectedGuest,
+  bill,
+  promotionData,
+  checkOutData,
+  onCheckOut,
+  onCancel,
+  loading
 }) => {
   const [showQRCode, setShowQRCode] = useState(false)
   const [paymentConfirmed, setPaymentConfirmed] = useState(false)
 
-  // Tính toán số tiền cần thanh toán - trừ đi tiền đặt cọc (không trừ paidAmount vì đã loại bỏ khoản đã thanh toán)
+  // Tính toán số tiền cần thanh toán - đã bao gồm khuyến mãi trong bill.total
   const remainingAmount = Math.max(0, bill.total - (selectedGuest?.depositAmount || 0))
 
   // Tạo QR code cho chuyển khoản
@@ -59,6 +60,40 @@ const InvoiceComponent = ({
             <span>Phụ thu:</span>
             <span>{(bill.surcharges || 0)?.toLocaleString('vi-VN')} VNĐ</span>
           </div>
+
+          {/* Hiển thị khuyến mãi nếu có */}
+          {bill.promotionDiscount > 0 && (
+            <>
+              <div className="border-t pt-2">
+                <div className="flex justify-between text-red-600">
+                  <span>Khuyến mãi:</span>
+                  <span>-{bill.promotionDiscount?.toLocaleString('vi-VN')} VNĐ</span>
+                </div>
+
+                {/* Chi tiết khuyến mãi */}
+                {promotionData?.discountDetails && promotionData.discountDetails.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {promotionData.discountDetails.map((detail, index) => (
+                      <div key={index} className="text-xs text-gray-600 ml-4">
+                        • {detail.promotionName}: -{detail.discountAmount?.toLocaleString('vi-VN')} VNĐ
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Hiển thị giảm giá thủ công nếu có */}
+          {bill.manualDiscount > 0 && (
+            <div className="border-t pt-2">
+              <div className="flex justify-between text-orange-600">
+                <span>Khuyén mãi:</span>
+                <span>-{bill.manualDiscount?.toLocaleString('vi-VN')} VNĐ</span>
+              </div>
+            </div>
+          )}
+
           <div className="border-t pt-2 flex justify-between font-semibold text-lg">
             <span>Tổng cộng:</span>
             <span>{bill.total?.toLocaleString('vi-VN')} VNĐ</span>

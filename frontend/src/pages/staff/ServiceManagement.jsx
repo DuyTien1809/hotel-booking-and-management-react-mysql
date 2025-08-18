@@ -205,31 +205,6 @@ const ServiceManagement = () => {
     setShowModal(true)
   }
 
-  const handleAdd = () => {
-    setSelectedService(null)
-    if (activeTab === 'services') {
-      setFormData({
-        idDv: '',
-        tenDv: '',
-        donViTinh: '',
-        gia: '',
-        idPhuThu: '',
-        tenPhuThu: ''
-      })
-    } else {
-      setFormData({
-        idDv: '',
-        tenDv: '',
-        donViTinh: '',
-        gia: '',
-        idPhuThu: '',
-        tenPhuThu: ''
-      })
-    }
-    setModalType('add')
-    setShowModal(true)
-  }
-
   const handleDelete = async (item) => {
     if (activeTab === 'services') {
       if (window.confirm(`Bạn có chắc chắn muốn xóa dịch vụ "${item.tenDv}"?`)) {
@@ -767,14 +742,7 @@ const ServiceManagement = () => {
           {activeTab === 'services' && (
             <div>
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Danh sách Dịch vụ</h3>
-                <button
-                  onClick={handleAdd}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Thêm dịch vụ
-                </button>
+                <h3 className="text-lg font-medium text-gray-900">Danh sách Dịch vụ</h3>      
               </div>
 
               <div className="overflow-x-auto">
@@ -856,14 +824,7 @@ const ServiceManagement = () => {
           {activeTab === 'surcharges' && (
             <div>
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Danh sách Phụ thu</h3>
-                <button
-                  onClick={handleAdd}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Thêm phụ thu
-                </button>
+                <h3 className="text-lg font-medium text-gray-900">Danh sách Phụ thu</h3>          
               </div>
 
               <div className="overflow-x-auto">

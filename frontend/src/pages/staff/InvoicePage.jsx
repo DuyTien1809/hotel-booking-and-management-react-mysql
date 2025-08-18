@@ -126,6 +126,7 @@ const InvoicePage = () => {
         idPt: invoiceDetails.idPt,
         ngayLap: invoiceDetails.ngayLap,
         tongTien: invoiceDetails.tongTien,
+        soTienGiam: invoiceDetails.soTienGiam, // Thêm thông tin khuyến mãi
         trangThai: invoiceDetails.trangThai,
         cccdKhachHang: invoiceDetails.cccdKhachHang,
         hoTenKhachHang: invoiceDetails.hoTenKhachHang,
@@ -450,6 +451,7 @@ const InvoicePage = () => {
             roomCharges: calculateRoomCharges(selectedInvoice.invoiceDetails?.danhSachPhong || []),
             serviceCharges: calculateServiceCharges(selectedInvoice.invoiceDetails?.danhSachDichVu || []),
             surcharges: calculateSurcharges(selectedInvoice.invoiceDetails?.danhSachPhuThu || []),
+            promotionDiscount: selectedInvoice.invoiceDetails?.soTienGiam || 0, // Thêm khuyến mãi
             paidAmount: 0, // Không hiển thị khoản đã thanh toán
             total: selectedInvoice.invoiceDetails?.tongTien || selectedInvoice.tongTien || 0
           }}

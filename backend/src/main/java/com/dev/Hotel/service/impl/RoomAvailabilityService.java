@@ -500,4 +500,85 @@ public class RoomAvailabilityService implements IRoomAvailabilityService {
         }
         return response;
     }
+
+    @Override
+    public Response getAvailableRoomsForStaff(LocalDate checkIn, LocalDate checkOut) {
+        Response response = new Response();
+        try {
+            // Gọi stored procedure GetAvailableRoomsByHangPhong
+            StoredProcedureQuery query = entityManager.createStoredProcedureQuery("GetAvailableRoomsByHangPhong");
+            query.registerStoredProcedureParameter("p_ngay_den", LocalDate.class, ParameterMode.IN);
+            query.registerStoredProcedureParameter("p_ngay_di", LocalDate.class, ParameterMode.IN);
+
+            query.setParameter("p_ngay_den", checkIn);
+            query.setParameter("p_ngay_di", checkOut);
+
+            System.out.println("=== CALLING STORED PROCEDURE FOR STAFF ===");
+            System.out.println("p_ngay_den: " + checkIn);
+            System.out.println("p_ngay_di: " + checkOut);
+            System.out.println("==========================================");
+
+            query.execute();
+
+            @SuppressWarnings("unchecked")
+            List<Object[]> results = query.getResultList();
+            System.out.println("Stored procedure returned " + results.size() + " results for staff");
+
+            List<AvailableRoomsByHangPhongDTO> availableRooms = new ArrayList<>();
+
+            for (Object[] result : results) {
+                try {
+                    if (result.length >= 7) {
+                        // Mapping theo thứ tự kết quả từ stored procedure:
+                        // [0] = ID_HANG_PHONG (Integer)
+                        // [1] = TEN_KIEU_PHONG (String)
+                        // [2] = TEN_LOAI_PHONG (String)
+                        // [3] = TONG_SO_PHONG (Long)
+                        // [4] = SO_PHONG_CHIEM (Long)
+                        // [5] = SO_PHONG_KHONG_KHADUNG (Long)
+                        // [6] = SO_PHONG_TRONG (Long)
+
+                        Integer idHangPhong = convertToInteger(result[0]);
+                        String tenKieuPhong = (String) result[1];
+                        String tenLoaiPhong = (String) result[2];
+                        Integer tongSoPhong = convertToInteger(result[3]);
+                        Integer soPhongChiem = convertToInteger(result[4]);
+                        Integer soPhongKhongKhaDung = convertToInteger(result[5]);
+                        Integer soPhongTrong = convertToInteger(result[6]);
+
+                        System.out.println("Processing room for staff: ID=" + idHangPhong +
+                                ", KieuPhong=" + tenKieuPhong +
+                                ", LoaiPhong=" + tenLoaiPhong +
+                                ", Total=" + tongSoPhong +
+                                ", Occupied=" + soPhongChiem +
+                                ", Unavailable=" + soPhongKhongKhaDung +
+                                ", Available=" + soPhongTrong);
+
+                        AvailableRoomsByHangPhongDTO dto = new AvailableRoomsByHangPhongDTO(
+                                idHangPhong, tenKieuPhong, tenLoaiPhong,
+                                tongSoPhong, soPhongChiem, soPhongKhongKhaDung, soPhongTrong);
+
+                        availableRooms.add(dto);
+
+                    } else {
+                        System.out.println("Skipping result with insufficient columns: " + result.length);
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error processing result row for staff: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+
+            response.setStatusCode(200);
+            response.setMessage("Lấy danh sách phòng trống cho nhân viên thành công");
+            response.setAvailableRoomsByHangPhongList(availableRooms);
+
+        } catch (Exception e) {
+            System.err.println("Error in getAvailableRoomsForStaff: " + e.getMessage());
+            e.printStackTrace();
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi lấy danh sách phòng trống cho nhân viên: " + e.getMessage());
+        }
+        return response;
+    }
 }

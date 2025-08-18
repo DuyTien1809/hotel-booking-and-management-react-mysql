@@ -275,7 +275,7 @@ const ReportsPage = () => {
           // Định dạng cho cột trạng thái (cột 6)
           if (col === 6 && worksheet[cellAddress].v) {
             const status = worksheet[cellAddress].v
-            if (status === 'Đã xác nhận') {
+            if (status === 'Xác nhận') {
               worksheet[cellAddress].s.font = { color: { rgb: '059669' }, bold: true }
             } else if (status === 'Chờ xác nhận') {
               worksheet[cellAddress].s.font = { color: { rgb: 'D97706' }, bold: true }
@@ -420,8 +420,7 @@ const ReportsPage = () => {
             >
               <option value="ALL">Tất cả</option>
               <option value="Chờ xác nhận">Chờ xác nhận</option>
-              <option value="Đã xác nhận">Đã xác nhận</option>
-              <option value="Đã check-in">Đã check-in</option>
+              <option value="Xác nhận">Xác nhận</option>
               <option value="Đã hủy">Đã hủy</option>
             </select>
           </div>
@@ -575,7 +574,7 @@ const ReportsPage = () => {
                         </td>
                         <td className="px-3 py-4 whitespace-nowrap">
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            booking.trangThaiGoc === 'Đã xác nhận' ? 'bg-green-100 text-green-800' :
+                            booking.trangThaiGoc === 'Xác nhận' ? 'bg-green-100 text-green-800' :
                             booking.trangThaiGoc === 'Chờ xác nhận' ? 'bg-yellow-100 text-yellow-800' :
                             booking.trangThaiGoc === 'Đã hủy' ? 'bg-red-100 text-red-800' :
                             'bg-gray-100 text-gray-800'

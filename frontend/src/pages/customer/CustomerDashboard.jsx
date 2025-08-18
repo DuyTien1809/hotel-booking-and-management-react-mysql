@@ -43,7 +43,7 @@ const CustomerDashboard = () => {
 
   const getStatusText = (status) => {
     switch (status) {
-      case 'confirmed': return 'Đã xác nhận'
+      case 'confirmed': return 'Xác nhận'
       case 'pending': return 'Chờ xác nhận'
       case 'cancelled': return 'Đã hủy'
       default: return 'Không xác định'

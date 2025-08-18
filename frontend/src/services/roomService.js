@@ -239,5 +239,20 @@ export const roomService = {
     } catch (error) {
       throw error.response?.data || error.message
     }
+  },
+
+  // Get available rooms for staff (returns room count by category)
+  async getAvailableRoomsForStaff(checkIn, checkOut) {
+    try {
+      const params = new URLSearchParams({
+        checkIn,
+        checkOut
+      })
+
+      const response = await api.get(`/api/phong/get-available-room-for-staff?${params.toString()}`)
+      return response.data
+    } catch (error) {
+      throw error.response?.data || error.message
+    }
   }
 }

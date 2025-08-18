@@ -482,7 +482,7 @@ public class PhongService implements IPhongService {
 
         try {
             // Đếm booking theo PhieuDat (tạm thời, sau này sẽ dùng CtPhieuDat khi có dữ liệu)
-            List<PhieuDat> confirmedBookings = phieuDatRepository.findByTrangThai("Đã xác nhận");
+            List<PhieuDat> confirmedBookings = phieuDatRepository.findByTrangThai("Xác nhận");
 
             for (PhieuDat booking : confirmedBookings) {
                 if (booking.getNgayBdThue() != null && booking.getNgayDi() != null) {

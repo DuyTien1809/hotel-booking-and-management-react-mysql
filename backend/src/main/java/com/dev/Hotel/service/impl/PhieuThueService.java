@@ -248,7 +248,7 @@ public class PhieuThueService implements IPhieuThueService {
             PhieuDat phieuDat = phieuDatRepository.findById(idPd)
                     .orElseThrow(() -> new OurException("Phiếu đặt không tồn tại"));
 
-            if (!"Đã xác nhận".equals(phieuDat.getTrangThai())) {
+            if (!"Xác nhận".equals(phieuDat.getTrangThai())) {
                 throw new OurException("Phiếu đặt chưa được xác nhận");
             }
 
@@ -262,9 +262,8 @@ public class PhieuThueService implements IPhieuThueService {
 
             PhieuThue savedPhieuThue = phieuThueRepository.save(phieuThue);
 
-            // Update booking status
-            phieuDat.setTrangThai("Đã nhận phòng");
-            phieuDatRepository.save(phieuDat);
+            // Note: Không cập nhật trạng thái phiếu đặt khi check-in
+            // Phiếu đặt sẽ giữ nguyên trạng thái hiện tại
 
             response.setStatusCode(200);
             response.setMessage("Check-in thành công");
@@ -325,9 +324,8 @@ public class PhieuThueService implements IPhieuThueService {
             phong.setTrangThai(occupiedStatus);
             phongRepository.save(phong);
 
-            // Update booking status to checked-in
-            phieuDat.setTrangThai("Đã check-in");
-            phieuDatRepository.save(phieuDat);
+            // Note: Không cập nhật trạng thái phiếu đặt khi check-in
+            // Phiếu đặt sẽ giữ nguyên trạng thái hiện tại (Xác nhận, Chờ xác nhận, hoặc Đã hủy)
 
             response.setStatusCode(200);
             response.setMessage("Check-in thành công vào phòng " + request.getSoPhong());
@@ -372,7 +370,7 @@ public class PhieuThueService implements IPhieuThueService {
 
             System.out.println("Found booking with status: " + phieuDat.getTrangThai());
 
-            if (!"Đã xác nhận".equals(phieuDat.getTrangThai())) {
+            if (!"Xác nhận".equals(phieuDat.getTrangThai())) {
                 throw new OurException("Phiếu đặt chưa được xác nhận. Trạng thái hiện tại: " + phieuDat.getTrangThai());
             }
 
@@ -439,9 +437,8 @@ public class PhieuThueService implements IPhieuThueService {
                 phongRepository.save(phong);
             }
 
-            // Update booking status to checked-in
-            phieuDat.setTrangThai("Đã check-in");
-            phieuDatRepository.save(phieuDat);
+            // Note: Không cập nhật trạng thái phiếu đặt khi check-in
+            // Phiếu đặt sẽ giữ nguyên trạng thái hiện tại
 
             response.setStatusCode(200);
             response.setMessage("Check-in thành công cho " + request.getDanhSachSoPhong().size() + " phòng");
@@ -532,7 +529,7 @@ public class PhieuThueService implements IPhieuThueService {
             phieuDat.setNgayDat(LocalDate.now());
             phieuDat.setNgayBdThue(request.getNgayDen());
             phieuDat.setNgayDi(request.getNgayDi());
-            phieuDat.setTrangThai("Đã xác nhận");
+            phieuDat.setTrangThai("Xác nhận");
             phieuDat.setSoTienCoc(BigDecimal.ZERO); // Can be set based on business rules
             phieuDat.setKhachHang(khachHang);
             phieuDat.setNhanVien(nhanVien);

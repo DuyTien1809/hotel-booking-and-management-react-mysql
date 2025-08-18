@@ -127,6 +127,31 @@ export const invoiceService = {
     }
   },
 
+  // API MỚI: Tạo hóa đơn từ checkout với khuyến mãi
+  createInvoiceFromCheckoutWithPromotions: async (rentalId, actualCheckOutDate, promotionDiscount) => {
+    try {
+      let url = `/api/hoa-don/create-from-checkout-with-promotions/${rentalId}`
+      const params = new URLSearchParams()
+
+      if (actualCheckOutDate) {
+        params.append('actualCheckOut', actualCheckOutDate)
+      }
+      if (promotionDiscount && promotionDiscount > 0) {
+        params.append('promotionDiscount', promotionDiscount.toString())
+      }
+
+      if (params.toString()) {
+        url += '?' + params.toString()
+      }
+
+      const response = await api.post(url)
+      return response.data
+    } catch (error) {
+      console.error('Error creating invoice from checkout with promotions:', error)
+      throw error
+    }
+  },
+
   // Get invoices by date range
   getInvoicesByDateRange: async (startDate, endDate) => {
     try {

@@ -14,6 +14,8 @@ public class AvailableRoomsByHangPhongDTO {
     private String tenLoaiPhong;
     private Integer tongSoPhong;
     private Integer soPhongTrong;
+    private Integer soPhongChiem;
+    private Integer soPhongKhongKhaDung;
 
     // Thông tin bổ sung
     private BigDecimal giaHienTai;
@@ -35,7 +37,20 @@ public class AvailableRoomsByHangPhongDTO {
     // Price segments for detailed breakdown
     private List<Object> priceSegments;
 
-    // Constructor cho stored procedure result
+    // Constructor cho stored procedure result với đầy đủ thông tin
+    public AvailableRoomsByHangPhongDTO(Integer idHangPhong, String tenKieuPhong,
+            String tenLoaiPhong, Integer tongSoPhong, Integer soPhongChiem,
+            Integer soPhongKhongKhaDung, Integer soPhongTrong) {
+        this.idHangPhong = idHangPhong;
+        this.tenKieuPhong = tenKieuPhong;
+        this.tenLoaiPhong = tenLoaiPhong;
+        this.tongSoPhong = tongSoPhong;
+        this.soPhongChiem = soPhongChiem;
+        this.soPhongKhongKhaDung = soPhongKhongKhaDung;
+        this.soPhongTrong = soPhongTrong;
+    }
+
+    // Constructor cho stored procedure result (backward compatibility)
     public AvailableRoomsByHangPhongDTO(Integer idHangPhong, String tenKieuPhong,
             String tenLoaiPhong, Integer tongSoPhong,
             Integer soPhongTrong) {

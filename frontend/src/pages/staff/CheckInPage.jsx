@@ -6,6 +6,10 @@ import { rentalService } from '../../services/rentalService'
 import { roomService } from '../../services/roomService'
 import Pagination from '../../components/common/Pagination'
 import RoomMap from '../../components/staff/RoomMap'
+import {
+  getBookingStatusColor,
+  getBookingStatusText
+} from '../../constants/hotelInfo'
 
 const CheckInPage = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -51,11 +55,11 @@ const CheckInPage = () => {
   const fetchConfirmedReservations = async () => {
     try {
       setLoading(true)
-      // Lấy tất cả đặt phòng đã được xác nhận, sắp xếp theo thời gian
+      // Lấy danh sách phiếu đặt đã xác nhận nhưng chưa check-in (chưa có phiếu thuê)
       const response = await bookingService.getConfirmedBookings()
       const reservationData = response.phieuDatList || []
 
-      // Tất cả đặt phòng đã được filter ở backend (chỉ lấy "Đã xác nhận")
+      // Backend đã filter: chỉ lấy phiếu đặt "Xác nhận" và chưa có phiếu thuê tương ứng
       const confirmedReservations = reservationData
 
       // Transform data to match frontend format
@@ -330,28 +334,15 @@ const CheckInPage = () => {
     }
   }
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'confirmed': return 'text-blue-600 bg-blue-100'
-      case 'checkedin': return 'text-green-600 bg-green-100'
-      default: return 'text-gray-600 bg-gray-100'
-    }
-  }
-
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'confirmed': return 'Đã xác nhận'
-      case 'checkedin': return 'Đã check-in'
-      default: return 'Không xác định'
-    }
-  }
+  // Note: Sử dụng functions từ constants/hotelInfo.js
+  // Chỉ còn 3 trạng thái: Chờ xác nhận, Xác nhận, Đã hủy
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Check-in khách hàng</h1>
-        <p className="text-gray-600 mt-2">Thực hiện check-in cho khách hàng có đặt phòng đã được xác nhận</p>
+        <p className="text-gray-600 mt-2">Thực hiện check-in cho khách hàng có đặt phòng đã được xác nhận và chưa check-in</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -420,8 +411,8 @@ const CheckInPage = () => {
                         <h3 className="font-semibold text-gray-900">{reservation.customerName}</h3>
                         <p className="text-sm text-gray-600">{reservation.maPhieuThue}</p>
                       </div>
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(reservation.status)}`}>
-                        {getStatusText(reservation.status)}
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getBookingStatusColor(reservation.status)}`}>
+                        {getBookingStatusText(reservation.status)}
                       </span>
                     </div>
 

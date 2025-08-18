@@ -196,4 +196,12 @@ public class PhongController {
                 + " rooms");
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
+
+    @GetMapping("/get-available-room-for-staff")
+    public ResponseEntity<Response> getAvailableRoomsForStaff(
+            @RequestParam("checkIn") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
+            @RequestParam("checkOut") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut) {
+        Response response = roomAvailabilityService.getAvailableRoomsForStaff(checkIn, checkOut);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
 }

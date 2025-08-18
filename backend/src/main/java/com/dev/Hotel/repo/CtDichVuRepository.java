@@ -31,8 +31,7 @@ public interface CtDichVuRepository extends JpaRepository<CtDichVu, CtDichVuId> 
     @Query("SELECT cd FROM CtDichVu cd WHERE cd.ngaySuDung BETWEEN :startDate AND :endDate")
     List<CtDichVu> findByNgaySuDungBetween(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
     
-    @Query("SELECT cd FROM CtDichVu cd WHERE cd.ttThanhToan = :trangThai")
-    List<CtDichVu> findByTtThanhToan(@Param("trangThai") String trangThai);
+
     
     // Query to get all service usage with details
     @Query("SELECT cd FROM CtDichVu cd " +

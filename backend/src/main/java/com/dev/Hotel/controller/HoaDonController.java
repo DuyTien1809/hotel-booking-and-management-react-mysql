@@ -41,6 +41,15 @@ public class HoaDonController {
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
+    @PostMapping("/create-from-checkout-with-promotions/{idPt}")
+    public ResponseEntity<Response> createInvoiceFromCheckoutWithPromotions(
+            @PathVariable("idPt") Integer idPt,
+            @RequestParam(value = "actualCheckOut", required = false) String actualCheckOut,
+            @RequestParam(value = "promotionDiscount", required = false) java.math.BigDecimal promotionDiscount) {
+        Response response = hoaDonService.createInvoiceFromCheckoutWithPromotions(idPt, actualCheckOut, promotionDiscount);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
     @GetMapping("/by-phieu-thue/{idPt}")
     public ResponseEntity<Response> getHoaDonByPhieuThue(@PathVariable("idPt") Integer idPt) {
         Response response = hoaDonService.getHoaDonByPhieuThue(idPt);
