@@ -41,6 +41,6 @@ public interface HangPhongRepository extends JpaRepository<HangPhong, Integer> {
         Optional<HangPhong> findByIdWithImages(@Param("idHangPhong") Integer idHangPhong);
 
         // Gọi stored procedure để lấy top 3 hạng phòng hot nhất trong tháng
-        @Query(value = "CALL GetTop3HotHangPhongThisMonth()", nativeQuery = true)
-        List<Object[]> getTop3HotHangPhongThisMonth();
+        @Query(value = "CALL GetHotHangPhongThisMonth()", nativeQuery = true)
+        List<Object[]> getHotHangPhongThisMonth();
 }

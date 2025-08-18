@@ -430,8 +430,8 @@ public class HangPhongService implements IHangPhongService {
     public Response getHotHangPhongThisMonth() {
         Response response = new Response();
         try {
-            // Gọi stored procedure để lấy top 3 hạng phòng hot nhất
-            List<Object[]> results = hangPhongRepository.getTop3HotHangPhongThisMonth();
+            // Gọi stored procedure để lấy tất cả hạng phòng hot trong tháng
+            List<Object[]> results = hangPhongRepository.getHotHangPhongThisMonth();
 
             // Convert Object[] thành HotHangPhongDTO
             List<com.dev.Hotel.dto.HotHangPhongDTO> hotHangPhongList = new java.util.ArrayList<>();

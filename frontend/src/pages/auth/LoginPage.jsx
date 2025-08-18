@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { Eye, EyeOff, LogIn } from 'lucide-react'
@@ -11,7 +11,8 @@ const LoginPage = () => {
   })
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  
+  const loginFormRef = useRef(null)
+
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -19,6 +20,18 @@ const LoginPage = () => {
   const from = location.state?.from?.pathname || '/'
   const searchParams = new URLSearchParams(location.search)
   const redirectParam = searchParams.get('redirect')
+
+  // Scroll to login form when component mounts
+  useEffect(() => {
+    if (loginFormRef.current) {
+      setTimeout(() => {
+        loginFormRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        })
+      }, 100)
+    }
+  }, [])
 
   const handleChange = (e) => {
     setFormData({
@@ -84,7 +97,7 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        <div>
+        <div ref={loginFormRef}>
           <div className="flex justify-center">
             <div className="w-12 h-12 bg-primary-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-xl">H</span>

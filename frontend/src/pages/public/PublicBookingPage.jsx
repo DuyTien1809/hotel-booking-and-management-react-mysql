@@ -27,7 +27,14 @@ const PublicBookingPage = () => {
         const parsedData = JSON.parse(savedSearchData)
         setRooms(parsedData.rooms || [])
         setHasSearched(parsedData.hasSearched || false)
-        setSearchDates(parsedData.searchDates || { checkIn: null, checkOut: null })
+
+        // Convert date strings back to Date objects
+        const savedSearchDates = parsedData.searchDates || { checkIn: null, checkOut: null }
+        const convertedSearchDates = {
+          checkIn: savedSearchDates.checkIn ? new Date(savedSearchDates.checkIn) : null,
+          checkOut: savedSearchDates.checkOut ? new Date(savedSearchDates.checkOut) : null
+        }
+        setSearchDates(convertedSearchDates)
         setCurrentPage(parsedData.currentPage || 1)
       } catch (error) {
         console.error('Error loading saved search data:', error)

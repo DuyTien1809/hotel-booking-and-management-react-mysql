@@ -14,6 +14,28 @@ const PublicHeader = () => {
     navigate('/')
   }
 
+  const handleBookingClick = (e) => {
+    // If user is authenticated and is a customer, go to customer booking page
+    if (isAuthenticated() && user?.role === 'CUSTOMER') {
+      navigate('/customer/booking')
+    } else {
+      // For non-authenticated users or non-customers, go to home page and scroll to search
+      e.preventDefault()
+      navigate('/')
+      // Use setTimeout to ensure navigation completes before scrolling
+      setTimeout(() => {
+        window.location.hash = 'search'
+        const searchSection = document.querySelector('[data-search-section]')
+        if (searchSection) {
+          searchSection.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+          })
+        }
+      }, 100)
+    }
+  }
+
   const getDashboardLink = () => {
     if (!user) return '/login'
     
@@ -30,7 +52,7 @@ const PublicHeader = () => {
   }
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
+    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
       <div className="container">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -46,9 +68,12 @@ const PublicHeader = () => {
             <Link to="/" className="text-gray-700 hover:text-primary-600 transition-colors">
               Trang chủ
             </Link>
-            <Link to="/customer/booking" className="text-gray-700 hover:text-primary-600 transition-colors">
+            <button
+              onClick={handleBookingClick}
+              className="text-gray-700 hover:text-primary-600 transition-colors bg-transparent border-none cursor-pointer"
+            >
               Đặt phòng
-            </Link>
+            </button>
             {isAuthenticated() && user?.role === 'CUSTOMER' && (
               <Link to="/customer/history" className="text-gray-700 hover:text-primary-600 transition-colors">
                 Lịch sử đặt phòng
@@ -140,13 +165,15 @@ const PublicHeader = () => {
               >
                 Trang chủ
               </Link>
-              <Link
-                to="/customer/booking"
-                className="text-gray-700 hover:text-primary-600 transition-colors"
-                onClick={() => setIsMenuOpen(false)}
+              <button
+                onClick={(e) => {
+                  setIsMenuOpen(false)
+                  handleBookingClick(e)
+                }}
+                className="text-left text-gray-700 hover:text-primary-600 transition-colors bg-transparent border-none cursor-pointer"
               >
                 Đặt phòng
-              </Link>
+              </button>
 
               {isAuthenticated() && user?.role === 'CUSTOMER' && (
                 <Link

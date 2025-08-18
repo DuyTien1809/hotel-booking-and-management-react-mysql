@@ -1,21 +1,36 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Eye } from 'lucide-react';
+import { Users, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getAmenityIcon } from '../../utils/amenityIcons.jsx';
 import AmenityIcon from './AmenityIcon.jsx';
 import BookingModal from '../booking/BookingModal';
 import { formatPrice, getDisplayPrice, formatPriceSegments } from '../../utils/priceUtils.js';
+import { useAuth } from '../../contexts/AuthContext';
 
 const RoomSearchResult = ({ searchResults, searchDates, isPublic = false }) => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailRoom, setDetailRoom] = useState(null);
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9;
+
   // Handle book room
   const handleBookRoom = (room) => {
-    if (isPublic) {
+    const userAuthenticated = isAuthenticated();
+    console.log('🔍 handleBookRoom called with:', {
+      room,
+      isPublic,
+      userAuthenticated,
+      searchDates
+    });
+
+    if (!userAuthenticated) {
+      console.log('📝 User not authenticated, saving booking data and redirecting to login');
       // Save booking data and redirect to login
       const bookingData = {
         room: room,
@@ -23,8 +38,10 @@ const RoomSearchResult = ({ searchResults, searchDates, isPublic = false }) => {
         returnUrl: '/booking'
       };
       sessionStorage.setItem('pendingBooking', JSON.stringify(bookingData));
+      console.log('💾 Saved booking data:', bookingData);
       navigate('/login?redirect=booking');
     } else {
+      console.log('✅ User authenticated, opening booking modal');
       setSelectedRoom(room);
       setShowBookingModal(true);
     }
@@ -90,6 +107,31 @@ const RoomSearchResult = ({ searchResults, searchDates, isPublic = false }) => {
     );
   }
 
+  // Pagination calculations
+  const totalPages = Math.ceil(searchResults.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentRooms = searchResults.slice(startIndex, endIndex);
+
+  // Pagination handlers
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    // Scroll to top of results
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      handlePageChange(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      handlePageChange(currentPage + 1);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header - Kết quả tìm kiếm */}
@@ -97,12 +139,17 @@ const RoomSearchResult = ({ searchResults, searchDates, isPublic = false }) => {
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Kết quả tìm kiếm</h2>
         <p className="text-gray-600">
           Tìm thấy {searchResults.length} hạng phòng phù hợp
+          {totalPages > 1 && (
+            <span className="ml-2 text-sm">
+              (Trang {currentPage} / {totalPages})
+            </span>
+          )}
         </p>
       </div>
 
       {/* Grid layout - 3 hạng phòng trên một hàng */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {searchResults.map((room, index) => (
+        {currentRooms.map((room, index) => (
           <div key={index} className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 hover:shadow-xl transition-shadow duration-300">
             {/* Hình ảnh */}
             <div className="relative">
@@ -186,6 +233,76 @@ const RoomSearchResult = ({ searchResults, searchDates, isPublic = false }) => {
           </div>
         ))}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center mt-8 space-x-2">
+          {/* Previous Button */}
+          <button
+            onClick={handlePrevPage}
+            disabled={currentPage === 1}
+            className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              currentPage === 1
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+            }`}
+          >
+            <ChevronLeft className="w-4 h-4 mr-1" />
+            Trước
+          </button>
+
+          {/* Page Numbers */}
+          <div className="flex space-x-1">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+              // Show first page, last page, current page, and pages around current page
+              const showPage =
+                page === 1 ||
+                page === totalPages ||
+                (page >= currentPage - 1 && page <= currentPage + 1);
+
+              if (!showPage) {
+                // Show ellipsis
+                if (page === currentPage - 2 || page === currentPage + 2) {
+                  return (
+                    <span key={page} className="px-3 py-2 text-gray-500">
+                      ...
+                    </span>
+                  );
+                }
+                return null;
+              }
+
+              return (
+                <button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    currentPage === page
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                  }`}
+                >
+                  {page}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Next Button */}
+          <button
+            onClick={handleNextPage}
+            disabled={currentPage === totalPages}
+            className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              currentPage === totalPages
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+            }`}
+          >
+            Sau
+            <ChevronRight className="w-4 h-4 ml-1" />
+          </button>
+        </div>
+      )}
 
       {/* Booking Modal */}
       {showBookingModal && selectedRoom && (
@@ -367,12 +484,13 @@ const RoomSearchResult = ({ searchResults, searchDates, isPublic = false }) => {
                     {/* Booking Button */}
                     <button
                       onClick={() => {
+                        console.log('🔘 Booking button clicked!', { isPublic, detailRoom });
                         setShowDetailModal(false);
                         handleBookRoom(detailRoom);
                       }}
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition-colors text-lg shadow-lg"
                     >
-                      {isPublic ? 'Đăng nhập để đặt phòng' : 'Đặt hạng phòng ngay'}
+                      {!isAuthenticated() ? 'Đăng nhập để đặt phòng' : 'Đặt hạng phòng ngay'}
                     </button>
 
                     {/* Trust Signals */}

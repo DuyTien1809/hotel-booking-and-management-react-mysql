@@ -17,7 +17,39 @@ const HomePage = () => {
     checkOut: null
   })
   const [prefilledRoomData, setPrefilledRoomData] = useState(null)
+  const [showPrefilledNotification, setShowPrefilledNotification] = useState(false)
   const [showGuidance, setShowGuidance] = useState(false)
+
+  // Function to scroll to search section
+  const scrollToSearch = () => {
+    if (searchSectionRef.current) {
+      searchSectionRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      })
+    }
+  }
+
+  // Handle URL hash for scrolling to search section
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (window.location.hash === '#search') {
+        setTimeout(() => {
+          scrollToSearch()
+        }, 100)
+      }
+    }
+
+    // Check hash on mount
+    handleHashChange()
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashChange)
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange)
+    }
+  }, [])
 
   // Load saved search results when component mounts
   useEffect(() => {
@@ -26,7 +58,14 @@ const HomePage = () => {
       try {
         const parsedData = JSON.parse(savedSearchData)
         setRoomSearchResults(parsedData.results || [])
-        setSearchDates(parsedData.searchDates || { checkIn: null, checkOut: null })
+
+        // Convert date strings back to Date objects
+        const savedSearchDates = parsedData.searchDates || { checkIn: null, checkOut: null }
+        const convertedSearchDates = {
+          checkIn: savedSearchDates.checkIn ? new Date(savedSearchDates.checkIn) : null,
+          checkOut: savedSearchDates.checkOut ? new Date(savedSearchDates.checkOut) : null
+        }
+        setSearchDates(convertedSearchDates)
       } catch (error) {
         console.error('Error loading saved search data:', error)
       }
@@ -62,25 +101,41 @@ const HomePage = () => {
     }, 100)
   }
 
-  // Handle featured room booking - navigate to public booking page
+  // Handle featured room booking - scroll to search section and prefill data
   const handleFeaturedRoomBooking = (room) => {
     console.log('🚀 handleFeaturedRoomBooking called with room:', room)
 
-    // Save prefilled data to sessionStorage for the booking page
+    // Set prefilled data for the search form
     const prefilledData = {
       kieuPhong: room.type,
       loaiPhong: room.category
     }
-    sessionStorage.setItem('bookingPrefilledData', JSON.stringify(prefilledData))
+    setPrefilledRoomData(prefilledData)
 
-    console.log('📦 Saved prefilled data:', prefilledData)
-    console.log('🔄 Navigating to /booking...')
+    console.log('📦 Set prefilled data:', prefilledData)
+    console.log('📍 Scrolling to search section...')
 
-    // Navigate to public booking page
-    navigate('/booking')
+    // Scroll to search section
+    if (searchSectionRef.current) {
+      searchSectionRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      })
+    }
+
+    // Show notification after scroll
+    setTimeout(() => {
+      setShowPrefilledNotification(true)
+      // Auto hide notification after 8 seconds
+      setTimeout(() => {
+        setShowPrefilledNotification(false)
+      }, 8000)
+    }, 800) // Wait for scroll to complete
   }
 
   const [featuredRooms, setFeaturedRooms] = useState([])
+  const [allHotRooms, setAllHotRooms] = useState([])
+  const [showAllHotRooms, setShowAllHotRooms] = useState(false)
 
   useEffect(() => {
     fetchFeaturedRooms()
@@ -106,7 +161,8 @@ const HomePage = () => {
           soLuotThue: hangPhong.soLuotThue || 0
         }))
         console.log('✅ Featured rooms from API:', featured)
-        setFeaturedRooms(featured)
+        setAllHotRooms(featured) // Lưu tất cả phòng hot
+        setFeaturedRooms(featured.slice(0, 3)) // Chỉ hiển thị 3 phòng đầu tiên
       } else {
         console.log('⚠️ No API data, using fallback')
         // Fallback data nếu API không có dữ liệu
@@ -153,6 +209,34 @@ const HomePage = () => {
       // Fallback to empty array if API fails
       setFeaturedRooms([])
     }
+  }
+
+  // Convert featured rooms data to RoomSearchResult format
+  const convertToSearchResultFormat = (rooms) => {
+    return rooms.map(room => ({
+      tenKieuPhong: room.type,
+      tenLoaiPhong: room.category,
+      moTaKieuPhong: room.description,
+      giaHienTai: room.price,
+      totalPrice: room.price * 2, // Giả sử 2 đêm
+      averagePrice: room.price,
+      soPhongTrong: Math.floor(Math.random() * 8) + 1, // Random cho demo
+      tongSoPhong: Math.floor(Math.random() * 5) + 8,
+      danhSachTienNghi: room.amenities.map(amenity => ({ tenTn: amenity })),
+      danhSachAnhUrl: [room.image],
+      danhSachKhuyenMai: []
+    }))
+  }
+
+  // Handle show all hot rooms
+  const handleShowAllHotRooms = () => {
+    setShowAllHotRooms(true)
+    console.log('🔄 Showing all hot rooms:', allHotRooms.length)
+  }
+
+  const handleShowLessHotRooms = () => {
+    setShowAllHotRooms(false)
+    console.log('🔄 Showing top 3 hot rooms')
   }
 
   const [services, setServices] = useState([])
@@ -231,11 +315,11 @@ const HomePage = () => {
               và dịch vụ chất lượng cao hòa quyện cùng thiết kế hiện đại
             </p>
 
-            {/* Guidance Banner */}
-            {showGuidance && (
-              <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl p-6 shadow-2xl max-w-7xl mx-auto mb-6 animate-fadeInUp relative">
+            {/* Prefilled Notification Banner */}
+            {showPrefilledNotification && (
+              <div className="bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-2xl p-6 shadow-2xl max-w-7xl mx-auto mb-6 animate-fadeInUp relative">
                 <button
-                  onClick={() => setShowGuidance(false)}
+                  onClick={() => setShowPrefilledNotification(false)}
                   className="absolute top-4 right-4 text-white hover:text-gray-200 text-xl font-bold"
                 >
                   ×
@@ -246,8 +330,8 @@ const HomePage = () => {
                   </div>
                   <div>
                     <h4 className="text-lg font-bold mb-1">🎯 Đã tự động điền thông tin phòng!</h4>
-                    <p className="text-blue-100">
-                      Vui lòng chọn <strong>ngày nhận phòng</strong> và <strong>ngày trả phòng</strong> để tiếp tục tìm kiếm phòng phù hợp.
+                    <p className="text-green-100">
+                      <strong>Kiểu phòng</strong> và <strong>loại phòng</strong> đã được điền sẵn. Vui lòng chọn <strong>ngày nhận phòng</strong> và <strong>ngày trả phòng</strong> để tìm kiếm.
                     </p>
                   </div>
                 </div>
@@ -255,7 +339,7 @@ const HomePage = () => {
             )}
 
             {/* Search Form */}
-            <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-7xl mx-auto animate-fadeInUp" style={{animationDelay: '0.4s'}} ref={searchSectionRef}>
+            <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-7xl mx-auto animate-fadeInUp" style={{animationDelay: '0.4s'}} ref={searchSectionRef} data-search-section>
               <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">
                 Tìm Kiếm Phòng Lý Tưởng
               </h3>
@@ -352,8 +436,12 @@ const HomePage = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {featuredRooms.map((room, index) => (
+          {/* Hiển thị phòng hot */}
+          <div className={`transition-all duration-500 ease-in-out ${showAllHotRooms ? 'opacity-100' : 'opacity-100'}`}>
+            {!showAllHotRooms ? (
+              // Hiển thị 3 phòng hot nhất
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-fadeIn">
+                {featuredRooms.map((room, index) => (
               <div key={room.id} className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 hover:shadow-xl transition-shadow duration-300 animate-fadeInUp" style={{animationDelay: `${0.1 * index}s`}}>
                 {/* Hình ảnh */}
                 <div className="relative">
@@ -419,23 +507,46 @@ const HomePage = () => {
                     }}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-3 rounded-lg transition-colors duration-200 text-sm"
                   >
-                    Xem Chi Tiết & Đặt Phòng
+                    Chọn thời gian và đặt phòng
                   </button>
                 </div>
               </div>
-            ))}
+                ))}
+              </div>
+            ) : (
+              // Hiển thị tất cả phòng hot với phân trang
+              <div className="animate-fadeIn">
+                <RoomSearchResult
+                  searchResults={convertToSearchResultFormat(allHotRooms)}
+                  searchDates={{}}
+                  isPublic={true}
+                />
+              </div>
+            )}
           </div>
 
           <div className="text-center mt-12">
-            <Link
-              to="/rooms"
-              className="inline-flex items-center px-8 py-4 bg-white border-2 border-primary-600 text-primary-600 hover:bg-primary-600 hover:text-white rounded-xl font-semibold transition-all duration-200"
-            >
-              Xem Tất Cả Phòng
-              <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
-            </Link>
+            {!showAllHotRooms ? (
+              <button
+                onClick={handleShowAllHotRooms}
+                className="inline-flex items-center px-8 py-4 bg-white border-2 border-primary-600 text-primary-600 hover:bg-primary-600 hover:text-white rounded-xl font-semibold transition-all duration-200"
+              >
+                Xem Tất Cả Hạng Phòng
+                <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </button>
+            ) : (
+              <button
+                onClick={handleShowLessHotRooms}
+                className="inline-flex items-center px-8 py-4 bg-white border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white rounded-xl font-semibold transition-all duration-200"
+              >
+                <svg className="w-5 h-5 mr-2 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+                Thu Gọn (Chỉ Hiển Thị Top 3)
+              </button>
+            )}
           </div>
         </div>
       </section>

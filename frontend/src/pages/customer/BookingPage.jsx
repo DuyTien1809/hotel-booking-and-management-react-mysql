@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import RoomSearch from '../../components/common/RoomSearch'
 import RoomSearchResult from '../../components/common/RoomSearchResult'
 import Pagination from '../../components/common/Pagination'
+import BookingModal from '../../components/booking/BookingModal'
 import { roomService } from '../../services/roomService'
 import { Search, MapPin } from 'lucide-react'
 
@@ -18,6 +19,8 @@ const BookingPage = () => {
     checkIn: null,
     checkOut: null
   })
+  const [selectedRoom, setSelectedRoom] = useState(null)
+  const [showBookingModal, setShowBookingModal] = useState(false)
 
   // Load saved search results when component mounts
   useEffect(() => {
@@ -27,7 +30,14 @@ const BookingPage = () => {
         const parsedData = JSON.parse(savedSearchData)
         setRooms(parsedData.rooms || [])
         setHasSearched(parsedData.hasSearched || false)
-        setSearchDates(parsedData.searchDates || { checkIn: null, checkOut: null })
+
+        // Convert date strings back to Date objects
+        const savedSearchDates = parsedData.searchDates || { checkIn: null, checkOut: null }
+        const convertedSearchDates = {
+          checkIn: savedSearchDates.checkIn ? new Date(savedSearchDates.checkIn) : null,
+          checkOut: savedSearchDates.checkOut ? new Date(savedSearchDates.checkOut) : null
+        }
+        setSearchDates(convertedSearchDates)
         setCurrentPage(parsedData.currentPage || 1)
       } catch (error) {
         console.error('Error loading saved search data:', error)
@@ -43,8 +53,18 @@ const BookingPage = () => {
         if (bookingData.room && bookingData.searchDates) {
           setRooms([bookingData.room])
           setHasSearched(true)
-          setSearchDates(bookingData.searchDates)
+
+          // Convert date strings back to Date objects for pending booking
+          const pendingSearchDates = {
+            checkIn: bookingData.searchDates.checkIn ? new Date(bookingData.searchDates.checkIn) : null,
+            checkOut: bookingData.searchDates.checkOut ? new Date(bookingData.searchDates.checkOut) : null
+          }
+          setSearchDates(pendingSearchDates)
           setCurrentPage(1)
+
+          // Automatically open booking modal for the pending room
+          setSelectedRoom(bookingData.room)
+          setShowBookingModal(true)
         }
         // Clear the pending booking data
         sessionStorage.removeItem('pendingBooking')
@@ -182,6 +202,18 @@ const BookingPage = () => {
           </div>
         )}
       </div>
+
+      {/* Booking Modal */}
+      {showBookingModal && selectedRoom && (
+        <BookingModal
+          room={selectedRoom}
+          searchDates={searchDates}
+          onClose={() => {
+            setShowBookingModal(false)
+            setSelectedRoom(null)
+          }}
+        />
+      )}
     </div>
   )
 }
