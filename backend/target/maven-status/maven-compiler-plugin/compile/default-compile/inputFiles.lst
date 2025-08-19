@@ -136,6 +136,7 @@ D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\
 D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\security\SecurityConfig.java
 D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\service\CustomUserDetailsService.java
 D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\service\EmailService.java
+D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\service\EmailValidationService.java
 D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\service\ImageService.java
 D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\service\impl\CustomerService.java
 D:\hotel-booking-and-management-react-mysql\backend\src\main\java\com\dev\Hotel\service\impl\DashboardService.java

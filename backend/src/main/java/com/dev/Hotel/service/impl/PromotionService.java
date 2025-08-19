@@ -7,11 +7,14 @@ import com.dev.Hotel.dto.KhuyenMaiDTO;
 import com.dev.Hotel.entity.PhieuThue;
 import com.dev.Hotel.entity.CtPhieuThue;
 import com.dev.Hotel.entity.KhuyenMai;
+import com.dev.Hotel.entity.CtKhuyenMai;
 import com.dev.Hotel.entity.HangPhong;
 import com.dev.Hotel.exception.OurException;
 import com.dev.Hotel.repo.PhieuThueRepository;
 import com.dev.Hotel.repo.CtPhieuThueRepository;
 import com.dev.Hotel.repo.KhuyenMaiRepository;
+import com.dev.Hotel.service.EmailService;
+import com.dev.Hotel.service.EmailValidationService;
 import com.dev.Hotel.utils.EntityDTOMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,6 +36,12 @@ public class PromotionService {
 
     @Autowired
     private KhuyenMaiRepository khuyenMaiRepository;
+
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private EmailValidationService emailValidationService;
 
     /**
      * Lấy danh sách khuyến mãi available cho một phiếu thuê
@@ -204,5 +213,132 @@ public class PromotionService {
         }
 
         return invoicePromotions;
+    }
+
+    /**
+     * Lấy tất cả khuyến mãi đang active
+     */
+    public Response getActivePromotions() {
+        Response response = new Response();
+        try {
+            List<KhuyenMai> activePromotions = khuyenMaiRepository.findActivePromotions(LocalDate.now());
+
+            // Group promotions by room type
+            Map<Integer, List<KhuyenMai>> promotionsByRoomType = new HashMap<>();
+
+            for (KhuyenMai promotion : activePromotions) {
+                if (promotion.getChiTietKhuyenMai() != null) {
+                    for (CtKhuyenMai ctKm : promotion.getChiTietKhuyenMai()) {
+                        Integer idHangPhong = ctKm.getIdHangPhong();
+                        promotionsByRoomType.computeIfAbsent(idHangPhong, k -> new ArrayList<>()).add(promotion);
+                    }
+                }
+            }
+
+            response.setStatusCode(200);
+            response.setMessage("Thành công");
+            response.setKhuyenMaiList(EntityDTOMapper.mapKhuyenMaiListToDTO(activePromotions));
+
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi lấy danh sách khuyến mãi: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return response;
+    }
+
+    /**
+     * Đăng ký nhận thông tin ưu đãi qua email
+     */
+    public Response subscribeToPromotions(String email) {
+        Response response = new Response();
+        try {
+            // Validate email format and domain existence
+            EmailValidationService.EmailValidationResult validationResult =
+                emailValidationService.validateEmailDetailed(email);
+
+            if (!validationResult.isValid()) {
+                response.setStatusCode(400);
+                response.setMessage(validationResult.getReason());
+                return response;
+            }
+
+            // Lấy tất cả khuyến mãi đang active
+            List<KhuyenMai> activePromotions = khuyenMaiRepository.findActivePromotions(LocalDate.now());
+
+            if (activePromotions.isEmpty()) {
+                response.setStatusCode(200);
+                response.setMessage("Cảm ơn bạn đã đăng ký! Hiện tại chưa có chương trình khuyến mãi nào.");
+                return response;
+            }
+
+            // Gửi email với thông tin khuyến mãi
+            sendPromotionEmail(email, activePromotions);
+
+            response.setStatusCode(200);
+            response.setMessage("Đăng ký thành công! Thông tin ưu đãi đã được gửi đến email của bạn.");
+
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("Lỗi khi đăng ký nhận ưu đãi: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return response;
+    }
+
+    /**
+     * Gửi email với thông tin khuyến mãi
+     */
+    private void sendPromotionEmail(String email, List<KhuyenMai> promotions) {
+        try {
+            StringBuilder emailContent = new StringBuilder();
+            emailContent.append("Xin chào,\n\n");
+            emailContent.append("Cảm ơn bạn đã đăng ký nhận thông tin ưu đãi từ khách sạn chúng tôi!\n\n");
+            emailContent.append("Dưới đây là các chương trình khuyến mãi hiện đang có:\n\n");
+
+            // Group promotions by room type for better presentation
+            Map<String, List<String>> promotionsByRoomType = new HashMap<>();
+
+            for (KhuyenMai promotion : promotions) {
+                if (promotion.getChiTietKhuyenMai() != null && !promotion.getChiTietKhuyenMai().isEmpty()) {
+                    for (CtKhuyenMai ctKm : promotion.getChiTietKhuyenMai()) {
+                        HangPhong hangPhong = ctKm.getHangPhong();
+                        if (hangPhong != null) {
+                            String roomTypeKey = hangPhong.getKieuPhong().getTenKp() + " - " + hangPhong.getLoaiPhong().getTenLp();
+                            String promotionInfo = String.format("• %s (Giảm %.0f%%) - Từ %s đến %s",
+                                promotion.getMoTaKm(),
+                                ctKm.getPhanTramGiam(),
+                                promotion.getNgayBatDau(),
+                                promotion.getNgayKetThuc());
+
+                            promotionsByRoomType.computeIfAbsent(roomTypeKey, k -> new ArrayList<>()).add(promotionInfo);
+                        }
+                    }
+                }
+            }
+
+            // Add promotions grouped by room type
+            for (Map.Entry<String, List<String>> entry : promotionsByRoomType.entrySet()) {
+                emailContent.append("🏨 ").append(entry.getKey()).append(":\n");
+                for (String promotionInfo : entry.getValue()) {
+                    emailContent.append("   ").append(promotionInfo).append("\n");
+                }
+                emailContent.append("\n");
+            }
+
+            emailContent.append("Để đặt phòng và tận hưởng các ưu đãi này, vui lòng truy cập website của chúng tôi ");
+            emailContent.append("hoặc liên hệ hotline: 1900 1234\n\n");
+            emailContent.append("Địa chỉ: 97 Man Thiện, Hiệp Phú, Thủ Đức, Hồ Chí Minh\n");
+            emailContent.append("Email: booking@hotel.com\n\n");
+            emailContent.append("Trân trọng,\n");
+            emailContent.append("Hotel Booking Management System");
+
+            // Send email using existing EmailService
+            emailService.sendPromotionEmail(email, emailContent.toString());
+
+        } catch (Exception e) {
+            System.err.println("Failed to send promotion email to: " + email + " - " + e.getMessage());
+            throw new RuntimeException("Email sending failed", e);
+        }
     }
 }

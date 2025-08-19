@@ -21,5 +21,18 @@ export const promotionService = {
       console.error('Error fetching active promotions:', error)
       throw error
     }
+  },
+
+  // Đăng ký nhận thông tin ưu đãi
+  subscribeToPromotions: async (email) => {
+    try {
+      const response = await api.post('/api/promotions/subscribe', null, {
+        params: { email }
+      })
+      return response.data
+    } catch (error) {
+      console.error('Error subscribing to promotions:', error)
+      throw error
+    }
   }
 }
