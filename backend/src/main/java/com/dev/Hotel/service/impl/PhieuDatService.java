@@ -531,12 +531,12 @@ public class PhieuDatService implements IPhieuDatService {
 
             // Lọc ra những phiếu đặt chưa có phiếu thuê (chưa check-in)
             List<PhieuDat> availableForCheckIn = allConfirmedBookings.stream()
-                .filter(pd -> {
-                    // Kiểm tra xem phiếu đặt này đã có phiếu thuê chưa
-                    List<PhieuThue> existingRentals = phieuThueRepository.findByPhieuDat(pd);
-                    return existingRentals.isEmpty(); // Chỉ lấy những phiếu chưa có phiếu thuê
-                })
-                .collect(java.util.stream.Collectors.toList());
+                    .filter(pd -> {
+                        // Kiểm tra xem phiếu đặt này đã có phiếu thuê chưa
+                        List<PhieuThue> existingRentals = phieuThueRepository.findByPhieuDat(pd);
+                        return existingRentals.isEmpty(); // Chỉ lấy những phiếu chưa có phiếu thuê
+                    })
+                    .collect(java.util.stream.Collectors.toList());
 
             // Sắp xếp theo ngày bắt đầu thuê
             availableForCheckIn.sort((a, b) -> {
@@ -626,7 +626,7 @@ public class PhieuDatService implements IPhieuDatService {
             // Tìm khách hàng theo CCCD, nếu không có thì báo lỗi
             KhachHang khachHang = khachHangRepository.findById(request.getCccd())
                     .orElseThrow(() -> new OurException("Không tìm thấy khách hàng với CCCD: " + request.getCccd() +
-                                                      ". Vui lòng tạo khách hàng trước khi đặt phòng."));
+                            ". Vui lòng tạo khách hàng trước khi đặt phòng."));
 
             // Cập nhật số điện thoại nếu có thay đổi
             if (request.getSdt() != null && !request.getSdt().trim().isEmpty()) {
@@ -690,8 +690,14 @@ public class PhieuDatService implements IPhieuDatService {
     /**
      * Create booking from PayPal payment
      */
-    @Transactional
+    @Override
     public Response createBookingFromPayPal(CreateBookingRequest request) {
+        // Call non-transactional method to avoid rollback issues
+        return createBookingFromPayPalInternal(request);
+    }
+
+    // Non-transactional internal method
+    private Response createBookingFromPayPalInternal(CreateBookingRequest request) {
         Response response = new Response();
         try {
             // Debug logs
@@ -727,7 +733,16 @@ public class PhieuDatService implements IPhieuDatService {
             System.out.println("Booking period validation PASSED");
 
             // Find or create customer
-            KhachHang khachHang = findOrCreateCustomer(request);
+            System.out.println("Finding or creating customer...");
+            KhachHang khachHang;
+            try {
+                khachHang = findOrCreateCustomer(request);
+                System.out.println("Customer found/created: " + khachHang.getCccd());
+            } catch (Exception e) {
+                System.out.println("ERROR in findOrCreateCustomer: " + e.getMessage());
+                e.printStackTrace();
+                throw e;
+            }
 
             // Create PhieuDat
             PhieuDat phieuDat = new PhieuDat();
@@ -739,7 +754,9 @@ public class PhieuDatService implements IPhieuDatService {
             phieuDat.setKhachHang(khachHang);
             // Note: nhanVien will be null for online bookings
 
+            System.out.println("Saving PhieuDat...");
             PhieuDat savedPhieuDat = phieuDatRepository.save(phieuDat);
+            System.out.println("PhieuDat saved with ID: " + savedPhieuDat.getIdPd());
 
             // Create CtPhieuDat
             if (request.getRoom() != null) {
@@ -768,6 +785,8 @@ public class PhieuDatService implements IPhieuDatService {
                 ctId.setIdHangPhong(hangPhong.getIdHangPhong());
 
                 ctPhieuDat.setId(ctId);
+                ctPhieuDat.setPhieuDat(savedPhieuDat); // Set PhieuDat entity
+                ctPhieuDat.setHangPhong(hangPhong); // Set HangPhong entity - THIS WAS MISSING!
                 ctPhieuDat.setSoLuongPhongO(
                         request.getRoom().getSoLuongPhongDat() != null ? request.getRoom().getSoLuongPhongDat() : 1);
 
@@ -798,9 +817,13 @@ public class PhieuDatService implements IPhieuDatService {
             response.setBookingConfirmationCode("BOOKING_" + savedPhieuDat.getIdPd());
 
         } catch (OurException e) {
+            System.out.println("OurException in createBookingFromPayPal: " + e.getMessage());
+            e.printStackTrace();
             response.setStatusCode(400);
             response.setMessage(e.getMessage());
         } catch (Exception e) {
+            System.out.println("Exception in createBookingFromPayPal: " + e.getMessage());
+            e.printStackTrace();
             response.setStatusCode(500);
             response.setMessage("Lỗi khi tạo đặt phòng: " + e.getMessage());
         }
@@ -808,23 +831,36 @@ public class PhieuDatService implements IPhieuDatService {
     }
 
     private KhachHang findOrCreateCustomer(CreateBookingRequest request) {
+        System.out.println("=== findOrCreateCustomer Debug ===");
+        System.out.println("IdCard: " + request.getIdCard());
+        System.out.println("FullName: " + request.getFullName());
+        System.out.println("Phone: " + request.getPhone());
+        System.out.println("Email: " + request.getEmail());
+
         // Validate required fields
         if (request.getIdCard() == null || request.getIdCard().trim().isEmpty()) {
+            System.out.println("ERROR: CCCD is null or empty");
             throw new OurException("CCCD không được để trống");
         }
         if (request.getFullName() == null || request.getFullName().trim().isEmpty()) {
+            System.out.println("ERROR: FullName is null or empty");
             throw new OurException("Họ tên không được để trống");
         }
         if (request.getPhone() == null || request.getPhone().trim().isEmpty()) {
+            System.out.println("ERROR: Phone is null or empty");
             throw new OurException("Số điện thoại không được để trống");
         }
         if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            System.out.println("ERROR: Email is null or empty");
             throw new OurException("Email không được để trống");
         }
+        System.out.println("All customer fields validation PASSED");
 
         // Try to find existing customer by CCCD
+        System.out.println("Looking for existing customer with CCCD: " + request.getIdCard().trim());
         return khachHangRepository.findByCccd(request.getIdCard().trim())
                 .orElseGet(() -> {
+                    System.out.println("Customer not found, creating new customer...");
                     // Create new customer
                     KhachHang newCustomer = new KhachHang();
                     newCustomer.setCccd(request.getIdCard().trim());
@@ -844,7 +880,10 @@ public class PhieuDatService implements IPhieuDatService {
                     newCustomer.setSdt(request.getPhone().trim());
                     newCustomer.setEmail(request.getEmail().trim());
 
-                    return khachHangRepository.save(newCustomer);
+                    System.out.println("Saving new customer with CCCD: " + newCustomer.getCccd());
+                    KhachHang savedCustomer = khachHangRepository.save(newCustomer);
+                    System.out.println("New customer saved successfully");
+                    return savedCustomer;
                 });
     }
 
@@ -856,8 +895,8 @@ public class PhieuDatService implements IPhieuDatService {
             if (!activeStaysWithDetails.isEmpty()) {
                 CtKhachO activeStay = activeStaysWithDetails.get(0);
                 String currentRoom = activeStay.getCtPhieuThue().getPhong().getSoPhong();
-                throw new OurException("Khách hàng đang ở phòng " + currentRoom + " và chưa check-out. " );
-           }
+                throw new OurException("Khách hàng đang ở phòng " + currentRoom + " và chưa check-out. ");
+            }
         }
     }
 }

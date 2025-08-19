@@ -96,8 +96,14 @@ const PayPalButton = ({
 
   const onCancelHandler = (data) => {
     console.log('PayPal Payment Cancelled:', data);
-    toast.info('Thanh toán đã bị hủy');
-    
+    toast('Thanh toán đã bị hủy', {
+      icon: 'ℹ️',
+      style: {
+        background: '#3b82f6',
+        color: 'white',
+      },
+    });
+
     if (onCancel) {
       onCancel(data);
     }

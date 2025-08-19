@@ -8,6 +8,9 @@ const BookingConfirmation = ({ room, bookingData, setBookingData, searchDates, o
   const [nights, setNights] = useState(0);
   const [roomQuantity, setRoomQuantity] = useState(1);
   const [quantityError, setQuantityError] = useState('');
+  const [depositPercentage, setDepositPercentage] = useState(20);
+  const [depositAmount, setDepositAmount] = useState(0);
+  const [depositInputType, setDepositInputType] = useState('percentage'); // 'percentage' or 'amount'
 
   // Tính số đêm khi component mount hoặc khi dates thay đổi
   useEffect(() => {
@@ -41,7 +44,39 @@ const BookingConfirmation = ({ room, bookingData, setBookingData, searchDates, o
   };
 
   const getDepositAmount = () => {
-    return getTotalAmount() * 0.2; // 20% deposit
+    if (depositInputType === 'percentage') {
+      return getTotalAmount() * (depositPercentage / 100);
+    } else {
+      return depositAmount;
+    }
+  };
+
+  const getMinDepositAmount = () => {
+    return getTotalAmount() * 0.2; // Minimum 20%
+  };
+
+  const validateDeposit = () => {
+    const currentDeposit = getDepositAmount();
+    const minDeposit = getMinDepositAmount();
+    return currentDeposit >= minDeposit;
+  };
+
+  // Update deposit when total amount or percentage changes
+  useEffect(() => {
+    if (depositInputType === 'percentage') {
+      const newDepositAmount = getTotalAmount() * (depositPercentage / 100);
+      setDepositAmount(newDepositAmount);
+    }
+  }, [getTotalAmount(), depositPercentage, depositInputType]);
+
+  const handleDepositPercentageChange = (value) => {
+    const percentage = Math.max(20, Math.min(100, parseFloat(value) || 20));
+    setDepositPercentage(percentage);
+  };
+
+  const handleDepositAmountChange = (value) => {
+    const amount = Math.max(0, parseFloat(value) || 0);
+    setDepositAmount(amount);
   };
 
   // Xử lý thay đổi số lượng phòng
@@ -80,8 +115,13 @@ const BookingConfirmation = ({ room, bookingData, setBookingData, searchDates, o
       return;
     }
 
+    if (!validateDeposit()) {
+      alert(`Tiền đặt cọc phải ít nhất ${formatPrice(getMinDepositAmount())} (20% tổng tiền)`);
+      return;
+    }
+
     const totalAmount = getTotalAmount();
-    const depositAmount = getDepositAmount();
+    const finalDepositAmount = getDepositAmount();
 
     setBookingData({
       ...bookingData,
@@ -90,7 +130,7 @@ const BookingConfirmation = ({ room, bookingData, setBookingData, searchDates, o
       nights,
       roomQuantity,
       totalAmount,
-      depositAmount
+      depositAmount: finalDepositAmount
     });
 
     onNext();
@@ -271,9 +311,91 @@ const BookingConfirmation = ({ room, bookingData, setBookingData, searchDates, o
               <span>Tổng cộng</span>
               <span className="text-xl text-blue-600">{formatPrice(getTotalAmount())}</span>
             </div>
-            <div className="flex justify-between text-orange-600">
-              <span>Tiền đặt cọc (20%)</span>
-              <span className="font-semibold">{formatPrice(getDepositAmount())}</span>
+
+            {/* Deposit Input Section */}
+            <div className="border-t pt-4 mt-4">
+              <div className="flex justify-between items-center mb-3">
+                <span className="font-medium text-gray-700">Tiền đặt cọc</span>
+                <span className="text-sm text-gray-500">
+                  (Tối thiểu: {formatPrice(getMinDepositAmount())})
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {/* Toggle between percentage and amount */}
+                <div className="flex space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setDepositInputType('percentage')}
+                    className={`px-3 py-1 text-sm rounded-lg transition-colors ${
+                      depositInputType === 'percentage'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    Theo %
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDepositInputType('amount')}
+                    className={`px-3 py-1 text-sm rounded-lg transition-colors ${
+                      depositInputType === 'amount'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    Số tiền
+                  </button>
+                </div>
+
+                {/* Input field */}
+                <div className="flex items-center space-x-2">
+                  {depositInputType === 'percentage' ? (
+                    <div className="flex items-center space-x-2 flex-1">
+                      <input
+                        type="number"
+                        min="20"
+                        max="100"
+                        step="1"
+                        value={depositPercentage}
+                        onChange={(e) => handleDepositPercentageChange(e.target.value)}
+                        className="w-20 px-2 py-1 border border-gray-300 rounded text-center"
+                      />
+                      <span className="text-gray-600">%</span>
+                      <span className="text-sm text-gray-500 flex-1">
+                        = {formatPrice(getTotalAmount() * (depositPercentage / 100))}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-2 flex-1">
+                      <input
+                        type="text"
+                        value={depositAmount.toLocaleString('vi-VN')}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/[^\d]/g, '');
+                          handleDepositAmountChange(value);
+                        }}
+                        className="flex-1 px-3 py-1 border border-gray-300 rounded"
+                        placeholder="Nhập số tiền"
+                      />
+                      <span className="text-gray-600">VNĐ</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Validation message */}
+                {!validateDeposit() && (
+                  <div className="text-red-600 text-sm">
+                    Tiền đặt cọc phải ít nhất {formatPrice(getMinDepositAmount())} (20% tổng tiền)
+                  </div>
+                )}
+
+                {/* Final deposit amount display */}
+                <div className="flex justify-between text-orange-600 font-semibold">
+                  <span>Tiền đặt cọc:</span>
+                  <span>{formatPrice(getDepositAmount())}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

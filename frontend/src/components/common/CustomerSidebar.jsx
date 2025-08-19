@@ -1,19 +1,14 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
-import { Home, Calendar, User, CreditCard, History } from 'lucide-react'
+import { Calendar, User, History } from 'lucide-react'
 
 const CustomerSidebar = () => {
   const menuItems = [
     {
       path: '/customer',
-      icon: Home,
-      label: 'Dashboard',
-      end: true
-    },
-    {
-      path: '/customer/booking',
       icon: Calendar,
-      label: 'Đặt phòng'
+      label: 'Đặt phòng',
+      end: true
     },
     {
       path: '/customer/history',

@@ -13,6 +13,9 @@ const PayPalPayment = ({ amount, bookingData, onSuccess, onError, onBack }) => {
       console.log('PayPal payment successful, processing booking...');
       console.log('Payment data received:', paymentData);
       console.log('Booking data:', bookingData);
+      console.log('Room data details:', bookingData.room);
+      console.log('Room idHangPhong:', bookingData.room?.idHangPhong);
+      console.log('All room properties:', Object.keys(bookingData.room || {}));
 
       // Gọi API để lưu booking với thông tin thanh toán
       const bookingPayload = {
@@ -130,7 +133,13 @@ const PayPalPayment = ({ amount, bookingData, onSuccess, onError, onBack }) => {
 
   const handlePaymentCancel = (data) => {
     console.log('Payment cancelled:', data);
-    toast.info('Thanh toán đã bị hủy');
+    toast('Thanh toán đã bị hủy', {
+      icon: 'ℹ️',
+      style: {
+        background: '#3b82f6',
+        color: 'white',
+      },
+    });
   };
 
   return (

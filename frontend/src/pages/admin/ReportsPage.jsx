@@ -13,7 +13,11 @@ import {
   RefreshCw,
   FileText,
   PieChart,
-  Activity
+  Activity,
+  Users,
+  CreditCard,
+  ArrowUpRight,
+  ArrowDownRight
 } from 'lucide-react'
 
 const ReportsPage = () => {
@@ -79,12 +83,46 @@ const ReportsPage = () => {
         params.status = bookingStatus
       }
 
-      const response = await api.get('/api/reports', { params })
-
-      if (response.data.statusCode === 200) {
-        setReportData(response.data.data || {})
+      // Mock data for revenue report
+      if (reportType === 'revenue') {
+        const mockRevenueData = {
+          total: 2850000000, // 2.85 tỷ VNĐ
+          growth: 16.3,
+          daily: 95000000, // 95M VNĐ/ngày
+          monthly: 2850000000,
+          previousRevenue: 2450000000,
+          totalBookings: 1247,
+          averageBookingValue: 2285000,
+          occupancyRate: 78.5,
+          byRoomType: [
+            { name: 'Suite VIP', revenue: 950000000, percentage: 33.3, bookings: 156 },
+            { name: 'Deluxe', revenue: 760000000, percentage: 26.7, bookings: 298 },
+            { name: 'Superior', revenue: 570000000, percentage: 20.0, bookings: 387 },
+            { name: 'Standard', revenue: 380000000, percentage: 13.3, bookings: 298 },
+            { name: 'Single', revenue: 190000000, percentage: 6.7, bookings: 108 }
+          ],
+          byPaymentMethod: [
+            { name: 'Chuyển khoản', value: 1425000000, percentage: 50.0 },
+            { name: 'Tiền mặt', value: 855000000, percentage: 30.0 },
+            { name: 'Thẻ tín dụng', value: 570000000, percentage: 20.0 }
+          ],
+          topCustomers: [
+            { name: 'Nguyễn Văn A', totalSpent: 45000000, bookings: 8 },
+            { name: 'Trần Thị B', totalSpent: 38000000, bookings: 6 },
+            { name: 'Lê Văn C', totalSpent: 32000000, bookings: 5 },
+            { name: 'Phạm Thị D', totalSpent: 28000000, bookings: 4 },
+            { name: 'Hoàng Văn E', totalSpent: 25000000, bookings: 4 }
+          ]
+        }
+        setReportData(mockRevenueData)
       } else {
-        console.error('Error:', response.data.message)
+        const response = await api.get('/api/reports', { params })
+
+        if (response.data.statusCode === 200) {
+          setReportData(response.data.data || {})
+        } else {
+          console.error('Error:', response.data.message)
+        }
       }
     } catch (error) {
       console.error('Error fetching report data:', error)
@@ -317,17 +355,27 @@ const ReportsPage = () => {
 
   const getGrowthIcon = (growth) => {
     if (growth > 0) {
-      return <TrendingUp className="w-4 h-4 text-green-600" />
+      return <ArrowUpRight className="w-4 h-4 text-green-500" />
     } else if (growth < 0) {
-      return <TrendingDown className="w-4 h-4 text-red-600" />
+      return <ArrowDownRight className="w-4 h-4 text-red-500" />
     }
-    return <Activity className="w-4 h-4 text-gray-600" />
+    return <Activity className="w-4 h-4 text-gray-500" />
   }
 
   const getGrowthColor = (growth) => {
     if (growth > 0) return 'text-green-600'
     if (growth < 0) return 'text-red-600'
     return 'text-gray-600'
+  }
+
+  const formatCurrency = (amount) => {
+    if (amount >= 1000000000) {
+      return `${(amount / 1000000000).toFixed(1)}B VNĐ`
+    } else if (amount >= 1000000) {
+      return `${(amount / 1000000).toFixed(0)}M VNĐ`
+    } else {
+      return `${amount.toLocaleString('vi-VN')} VNĐ`
+    }
   }
 
   return (
@@ -705,109 +753,279 @@ const ReportsPage = () => {
       {/* Revenue Report */}
       {reportType === 'revenue' && (
         <div className="space-y-6">
-          {/* Revenue Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="card">
+          {/* Revenue Overview Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="card bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
               <div className="flex items-center">
                 <div className="p-3 bg-green-100 rounded-full">
                   <DollarSign className="w-6 h-6 text-green-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Tổng doanh thu</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {reportData?.total ? (reportData.total / 1000000).toFixed(0) : 0}M VNĐ
+                  <p className="text-sm font-medium text-green-700">Tổng doanh thu</p>
+                  <p className="text-2xl font-bold text-green-900">
+                    {formatCurrency(reportData?.total || 0)}
                   </p>
                   <div className="flex items-center mt-1">
                     {getGrowthIcon(reportData?.growth || 0)}
                     <span className={`text-sm ml-1 ${getGrowthColor(reportData?.growth || 0)}`}>
-                      {reportData?.growth || 0}%
+                      {reportData?.growth > 0 ? '+' : ''}{reportData?.growth || 0}%
                     </span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="card">
+            <div className="card bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
               <div className="flex items-center">
                 <div className="p-3 bg-blue-100 rounded-full">
                   <Calendar className="w-6 h-6 text-blue-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Doanh thu/ngày</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {reportData?.daily ? (reportData.daily / 1000000).toFixed(1) : 0}M VNĐ
+                  <p className="text-sm font-medium text-blue-700">Doanh thu/ngày</p>
+                  <p className="text-2xl font-bold text-blue-900">
+                    {formatCurrency(reportData?.daily || 0)}
                   </p>
+                  <p className="text-sm text-blue-600">Trung bình</p>
                 </div>
               </div>
             </div>
 
-            <div className="card">
+            <div className="card bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
               <div className="flex items-center">
                 <div className="p-3 bg-purple-100 rounded-full">
-                  <TrendingUp className="w-6 h-6 text-purple-600" />
+                  <Users className="w-6 h-6 text-purple-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Doanh thu/tháng</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {reportData?.monthly ? (reportData.monthly / 1000000).toFixed(0) : 0}M VNĐ
+                  <p className="text-sm font-medium text-purple-700">Tổng booking</p>
+                  <p className="text-2xl font-bold text-purple-900">
+                    {(reportData?.totalBookings || 0).toLocaleString('vi-VN')}
+                  </p>
+                  <p className="text-sm text-purple-600">
+                    {formatCurrency(reportData?.averageBookingValue || 0)}/booking
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="card">
+            <div className="card bg-gradient-to-br from-orange-50 to-red-50 border-orange-200">
               <div className="flex items-center">
                 <div className="p-3 bg-orange-100 rounded-full">
-                  <PieChart className="w-6 h-6 text-orange-600" />
+                  <Building className="w-6 h-6 text-orange-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Nguồn chính</p>
-                  <p className="text-2xl font-bold text-gray-900">Phòng</p>
-                  <p className="text-sm text-gray-500">76.5%</p>
+                  <p className="text-sm font-medium text-orange-700">Tỷ lệ lấp đầy</p>
+                  <p className="text-2xl font-bold text-orange-900">
+                    {reportData?.occupancyRate || 0}%
+                  </p>
+                  <p className="text-sm text-orange-600">Trung bình</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Revenue Breakdown */}
+          {/* Revenue by Room Type */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="card">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Doanh thu theo dịch vụ</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Doanh thu theo loại phòng</h3>
               <div className="space-y-4">
-                {(reportData?.byService || []).map((service, index) => (
+                {(reportData?.byRoomType || []).map((room, index) => (
                   <div key={index} className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm font-medium text-gray-900">{service.name}</span>
-                        <span className="text-sm text-gray-600">{service.percentage}%</span>
+                        <span className="text-sm font-medium text-gray-900">{room.name}</span>
+                        <span className="text-sm text-gray-600">{room.percentage}%</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
-                          className="bg-primary-600 h-2 rounded-full"
-                          style={{ width: `${service.percentage}%` }}
+                          className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full"
+                          style={{ width: `${room.percentage}%` }}
                         ></div>
                       </div>
-                    </div>
-                    <div className="ml-4 text-right">
-                      <p className="text-sm font-semibold text-gray-900">
-                        {(service.value / 1000000).toFixed(0)}M VNĐ
-                      </p>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-xs text-gray-500">{room.bookings} booking</span>
+                        <span className="text-sm font-semibold text-gray-900">
+                          {formatCurrency(room.revenue)}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))}
-                {(!reportData?.byService || reportData.byService.length === 0) && (
-                  <p className="text-gray-500 text-center py-4">Chưa có dữ liệu doanh thu theo dịch vụ</p>
+                {(!reportData?.byRoomType || reportData.byRoomType.length === 0) && (
+                  <p className="text-gray-500 text-center py-4">Chưa có dữ liệu doanh thu theo loại phòng</p>
                 )}
               </div>
             </div>
 
             <div className="card">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Biểu đồ doanh thu</h3>
-              <div className="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
-                <div className="text-center">
-                  <BarChart3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">Biểu đồ doanh thu theo thời gian</p>
-                  <p className="text-sm text-gray-400 mt-2">Tích hợp Chart.js</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Doanh thu theo phương thức thanh toán</h3>
+              <div className="space-y-4">
+                {(reportData?.byPaymentMethod || []).map((method, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm font-medium text-gray-900">{method.name}</span>
+                        <span className="text-sm text-gray-600">{method.percentage}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-gradient-to-r from-green-500 to-emerald-600 h-2 rounded-full"
+                          style={{ width: `${method.percentage}%` }}
+                        ></div>
+                      </div>
+                      <div className="flex justify-end mt-1">
+                        <span className="text-sm font-semibold text-gray-900">
+                          {formatCurrency(method.value)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {(!reportData?.byPaymentMethod || reportData.byPaymentMethod.length === 0) && (
+                  <p className="text-gray-500 text-center py-4">Chưa có dữ liệu doanh thu theo phương thức thanh toán</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Top Customers */}
+          <div className="card">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Top 5 Khách hàng VIP</h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Xếp hạng
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Khách hàng
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Tổng chi tiêu
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Số booking
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Trung bình/booking
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {(reportData?.topCustomers || []).map((customer, index) => (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                            index === 0 ? 'bg-yellow-500' :
+                            index === 1 ? 'bg-gray-400' :
+                            index === 2 ? 'bg-orange-600' : 'bg-blue-500'
+                          }`}>
+                            {index + 1}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{customer.name}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-semibold text-green-600">
+                          {formatCurrency(customer.totalSpent)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{customer.bookings}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {formatCurrency(customer.totalSpent / customer.bookings)}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {(!reportData?.topCustomers || reportData.topCustomers.length === 0) && (
+              <p className="text-gray-500 text-center py-8">Chưa có dữ liệu khách hàng VIP</p>
+            )}
+          </div>
+
+          {/* Revenue Trend Chart Placeholder */}
+          <div className="card">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Xu hướng doanh thu theo ngày</h3>
+            <div className="h-64 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
+              <div className="text-center">
+                <BarChart3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 font-medium">Biểu đồ xu hướng doanh thu</p>
+                <p className="text-sm text-gray-400 mt-2">Tích hợp Chart.js hoặc Recharts</p>
+                <div className="mt-4 grid grid-cols-7 gap-2 max-w-md mx-auto">
+                  {[85, 92, 78, 105, 98, 87, 94].map((value, index) => (
+                    <div key={index} className="text-center">
+                      <div
+                        className="bg-blue-500 rounded-t mx-auto mb-1"
+                        style={{
+                          height: `${(value / 105) * 60}px`,
+                          width: '20px'
+                        }}
+                      ></div>
+                      <span className="text-xs text-gray-500">{value}M</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Summary Statistics */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="card bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+              <div className="flex items-center">
+                <div className="p-3 bg-green-100 rounded-full">
+                  <TrendingUp className="w-6 h-6 text-green-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-green-700">Tăng trưởng so với kỳ trước</p>
+                  <p className="text-2xl font-bold text-green-900">
+                    +{reportData?.growth || 0}%
+                  </p>
+                  <p className="text-sm text-green-600">
+                    +{formatCurrency((reportData?.total || 0) - (reportData?.previousRevenue || 0))}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="card bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+              <div className="flex items-center">
+                <div className="p-3 bg-blue-100 rounded-full">
+                  <CreditCard className="w-6 h-6 text-blue-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-blue-700">Giá trị booking trung bình</p>
+                  <p className="text-2xl font-bold text-blue-900">
+                    {formatCurrency(reportData?.averageBookingValue || 0)}
+                  </p>
+                  <p className="text-sm text-blue-600">
+                    {(reportData?.totalBookings || 0).toLocaleString('vi-VN')} booking
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="card bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
+              <div className="flex items-center">
+                <div className="p-3 bg-purple-100 rounded-full">
+                  <PieChart className="w-6 h-6 text-purple-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-purple-700">Loại phòng bán chạy nhất</p>
+                  <p className="text-2xl font-bold text-purple-900">
+                    {reportData?.byRoomType?.[0]?.name || 'N/A'}
+                  </p>
+                  <p className="text-sm text-purple-600">
+                    {reportData?.byRoomType?.[0]?.percentage || 0}% tổng doanh thu
+                  </p>
                 </div>
               </div>
             </div>

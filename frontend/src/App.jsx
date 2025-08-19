@@ -19,7 +19,6 @@ import ResetPassword from './pages/auth/ResetPassword'
 import ProfilePage from './pages/common/ProfilePage'
 
 // Customer pages
-import CustomerDashboard from './pages/customer/CustomerDashboard'
 import BookingPage from './pages/customer/BookingPage'
 import BookingHistory from './pages/customer/BookingHistory'
 import CustomerProfile from './pages/customer/CustomerProfile'
@@ -46,6 +45,7 @@ import AmenitiesManagement from './pages/admin/AmenitiesManagement'
 import RoomPriceManagement from './pages/admin/RoomPriceManagement'
 import SurchargeManagement from './pages/admin/SurchargeManagement'
 import ReportsPage from './pages/admin/ReportsPage'
+import RevenueReport from './pages/admin/RevenueReport'
 
 // Layout components
 import PublicLayout from './components/layouts/PublicLayout'
@@ -76,7 +76,7 @@ function App() {
               <CustomerLayout />
             </ProtectedRoute>
           }>
-            <Route index element={<CustomerDashboard />} />
+            <Route index element={<BookingPage />} />
             <Route path="booking" element={<BookingPage />} />
             <Route path="history" element={<BookingHistory />} />
             <Route path="profile" element={<CustomerProfile />} />
@@ -115,6 +115,7 @@ function App() {
             <Route path="room-prices" element={<RoomPriceManagement />} />
             <Route path="surcharges" element={<SurchargeManagement />} />
             <Route path="reports" element={<ReportsPage />} />
+            <Route path="revenue-report" element={<RevenueReport />} />
           </Route>
 
           {/* Profile Route - Available for all authenticated users */}

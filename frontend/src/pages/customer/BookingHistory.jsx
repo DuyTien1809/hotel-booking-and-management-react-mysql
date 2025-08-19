@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Calendar, Clock, CheckCircle, XCircle, Eye, Download } from 'lucide-react'
+import { Calendar, Clock, CheckCircle, XCircle, Eye, Phone, X } from 'lucide-react'
 import Pagination from '../../components/common/Pagination'
 import { api } from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
@@ -18,6 +18,9 @@ const BookingHistory = () => {
   const [bookingsPerPage] = useState(10)
   const [statusFilter, setStatusFilter] = useState('')
   const [dateFilter, setDateFilter] = useState('')
+  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [showDetailModal, setShowDetailModal] = useState(false)
+  const [selectedBooking, setSelectedBooking] = useState(null)
 
   useEffect(() => {
     if (user) {
@@ -151,6 +154,36 @@ const BookingHistory = () => {
   const currentBookings = filteredBookings.slice(indexOfFirstBooking, indexOfLastBooking)
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber)
+
+  // Handle view booking detail
+  const handleViewDetail = (booking) => {
+    setSelectedBooking(booking)
+    setShowDetailModal(true)
+  }
+
+  const handleCloseDetailModal = () => {
+    setShowDetailModal(false)
+    setSelectedBooking(null)
+  }
+
+  // Handle cancel booking
+  const handleCancelBooking = (booking) => {
+    setSelectedBooking(booking)
+    setShowCancelModal(true)
+  }
+
+  const handleCloseCancelModal = () => {
+    setShowCancelModal(false)
+    setSelectedBooking(null)
+  }
+
+  // Hotel contact info
+  const hotelContact = {
+    name: "Khách sạn ABC",
+    phone: "0123-456-789",
+    email: "contact@hotel-abc.com",
+    address: "123 Đường ABC, Quận 1, TP.HCM"
+  }
 
   if (loading) {
     return (
@@ -305,11 +338,19 @@ const BookingHistory = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
-                          <button className="text-primary-600 hover:text-primary-900">
+                          <button
+                            onClick={() => handleViewDetail(booking)}
+                            className="text-primary-600 hover:text-primary-900"
+                            title="Xem chi tiết"
+                          >
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button className="text-gray-600 hover:text-gray-900">
-                            <Download className="w-4 h-4" />
+                          <button
+                            onClick={() => handleCancelBooking(booking)}
+                            className="text-red-600 hover:text-red-900"
+                            title="Hủy phiếu đặt"
+                          >
+                            <Phone className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
@@ -338,6 +379,204 @@ const BookingHistory = () => {
           </div>
         )}
       </div>
+
+      {/* Booking Detail Modal */}
+      {showDetailModal && selectedBooking && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-gray-800">
+                Chi Tiết Phiếu Đặt
+              </h2>
+              <button
+                onClick={handleCloseDetailModal}
+                className="text-gray-500 hover:text-gray-700 text-2xl w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Booking Details */}
+            <div className="space-y-6">
+              {/* Basic Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-gray-800 mb-2">Thông tin cơ bản</h3>
+                  <div className="space-y-2 text-sm">
+                    <p><strong>Mã phiếu đặt:</strong> {selectedBooking.idPd || selectedBooking.maPhieuThue}</p>
+                    <p><strong>Ngày đặt:</strong> {new Date(selectedBooking.ngayDat || selectedBooking.ngayTao).toLocaleDateString('vi-VN')}</p>
+                    <p><strong>Trạng thái:</strong>
+                      <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${getBookingStatusColor(selectedBooking.trangThai || selectedBooking.status)}`}>
+                        {getBookingStatusText(selectedBooking.trangThai || selectedBooking.status)}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-gray-800 mb-2">Thông tin khách hàng</h3>
+                  <div className="space-y-2 text-sm">
+                    <p><strong>Họ tên:</strong> {selectedBooking.hoTen || selectedBooking.tenKhachHang || 'N/A'}</p>
+                    <p><strong>Email:</strong> {selectedBooking.email || 'N/A'}</p>
+                    <p><strong>Số điện thoại:</strong> {selectedBooking.soDienThoai || selectedBooking.phone || 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Check-in/Check-out */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-gray-800 mb-3">Thời gian lưu trú</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <p className="text-gray-600">Ngày nhận phòng</p>
+                    <p className="font-medium">{new Date(selectedBooking.ngayDen || selectedBooking.checkIn).toLocaleDateString('vi-VN')}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Ngày trả phòng</p>
+                    <p className="font-medium">{new Date(selectedBooking.ngayDi || selectedBooking.checkOut).toLocaleDateString('vi-VN')}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Số đêm</p>
+                    <p className="font-medium">
+                      {Math.ceil((new Date(selectedBooking.ngayDi || selectedBooking.checkOut) - new Date(selectedBooking.ngayDen || selectedBooking.checkIn)) / (1000 * 60 * 60 * 24))} đêm
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Room Details */}
+              {selectedBooking.danhSachPhong && selectedBooking.danhSachPhong.length > 0 && (
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-gray-800 mb-3">Chi tiết phòng</h3>
+                  <div className="space-y-3">
+                    {selectedBooking.danhSachPhong.map((room, index) => (
+                      <div key={index} className="bg-white p-3 rounded border">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                          <p><strong>Hạng phòng:</strong> {room.tenHangPhong || 'N/A'}</p>
+                          <p><strong>Số lượng:</strong> {room.soLuong || 1} phòng</p>
+                          <p><strong>Giá:</strong> {(room.gia || 0).toLocaleString('vi-VN')} VND/đêm</p>
+                          <p><strong>Thành tiền:</strong> {(room.thanhTien || 0).toLocaleString('vi-VN')} VND</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Payment Info */}
+              <div className="bg-yellow-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-gray-800 mb-3">Thông tin thanh toán</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p><strong>Tổng tiền:</strong> {(selectedBooking.tongTien || 0).toLocaleString('vi-VN')} VND</p>
+                    <p><strong>Phương thức:</strong> {selectedBooking.phuongThucThanhToan || 'Chưa xác định'}</p>
+                  </div>
+                  <div>
+                    <p><strong>Trạng thái thanh toán:</strong> {selectedBooking.trangThaiThanhToan || 'Chưa thanh toán'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Notes */}
+              {selectedBooking.ghiChu && (
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-gray-800 mb-2">Ghi chú</h3>
+                  <p className="text-sm text-gray-600">{selectedBooking.ghiChu}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Close Button */}
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={handleCloseDetailModal}
+                className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Booking Modal */}
+      {showCancelModal && selectedBooking && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-gray-800">
+                Hủy Phiếu Đặt
+              </h2>
+              <button
+                onClick={handleCloseCancelModal}
+                className="text-gray-500 hover:text-gray-700 text-2xl w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Booking Info */}
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+              <h3 className="font-semibold text-gray-800 mb-2">Thông tin phiếu đặt:</h3>
+              <p className="text-sm text-gray-600">
+                <strong>Mã phiếu:</strong> {selectedBooking.idPd || selectedBooking.maPhieuThue}
+              </p>
+              <p className="text-sm text-gray-600">
+                <strong>Ngày đặt:</strong> {new Date(selectedBooking.ngayDat || selectedBooking.ngayTao).toLocaleDateString('vi-VN')}
+              </p>
+            </div>
+
+            {/* Contact Info */}
+            <div className="mb-6">
+              <h3 className="font-semibold text-gray-800 mb-4">
+                Để hủy phiếu đặt, vui lòng liên hệ:
+              </h3>
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                  <Phone className="w-5 h-5 text-blue-600" />
+                  <div>
+                    <p className="font-medium text-gray-800">{hotelContact.name}</p>
+                    <p className="text-sm text-gray-600">{hotelContact.phone}</p>
+                  </div>
+                </div>
+
+                <div className="text-sm text-gray-600 space-y-1">
+                  <p><strong>Email:</strong> {hotelContact.email}</p>
+                  <p><strong>Địa chỉ:</strong> {hotelContact.address}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <a
+                href={`tel:${hotelContact.phone}`}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors text-center flex items-center justify-center gap-2"
+              >
+                <Phone className="w-4 h-4" />
+                Gọi ngay
+              </a>
+              <button
+                onClick={handleCloseCancelModal}
+                className="flex-1 border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                Đóng
+              </button>
+            </div>
+
+            {/* Note */}
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-xs text-yellow-800">
+                <strong>Lưu ý:</strong> Việc hủy phiếu đặt có thể áp dụng phí hủy theo chính sách của khách sạn.
+                Vui lòng liên hệ trực tiếp để được tư vấn chi tiết.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

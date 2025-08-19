@@ -125,8 +125,11 @@ const PaymentStep = ({ bookingData, onBack, onComplete }) => {
             <span className="font-bold text-blue-600">{formatPrice(bookingData.totalAmount)}</span>
           </div>
           <div className="flex justify-between text-lg">
-            <span className="text-orange-600 font-medium">Tiền đặt cọc (20%):</span>
+            <span className="text-orange-600 font-medium">Tiền đặt cọc:</span>
             <span className="font-bold text-orange-600">{formatPrice(bookingData.depositAmount)}</span>
+          </div>
+          <div className="text-sm text-gray-600 text-right">
+            ({((bookingData.depositAmount / bookingData.totalAmount) * 100).toFixed(1)}% tổng tiền)
           </div>
         </div>
       </div>

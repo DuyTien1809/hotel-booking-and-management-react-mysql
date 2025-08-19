@@ -25,9 +25,7 @@ const BookingModal = ({ room, searchDates, onClose }) => {
     }).format(price);
   };
 
-  const calculateDeposit = (totalAmount) => {
-    return totalAmount * 0.2; // 20% deposit
-  };
+  // Deposit calculation is now handled in BookingConfirmation component
 
   const renderStepContent = () => {
     switch (currentStep) {

@@ -213,19 +213,26 @@ const HomePage = () => {
 
   // Convert featured rooms data to RoomSearchResult format
   const convertToSearchResultFormat = (rooms) => {
-    return rooms.map(room => ({
-      tenKieuPhong: room.type,
-      tenLoaiPhong: room.category,
-      moTaKieuPhong: room.description,
-      giaHienTai: room.price,
-      totalPrice: room.price * 2, // Giả sử 2 đêm
-      averagePrice: room.price,
-      soPhongTrong: Math.floor(Math.random() * 8) + 1, // Random cho demo
-      tongSoPhong: Math.floor(Math.random() * 5) + 8,
-      danhSachTienNghi: room.amenities.map(amenity => ({ tenTn: amenity })),
-      danhSachAnhUrl: [room.image],
-      danhSachKhuyenMai: []
-    }))
+    console.log('🔄 Converting rooms to search result format:', rooms)
+    return rooms.map(room => {
+      console.log('🔍 Converting room:', room)
+      const converted = {
+        idHangPhong: room.id || Math.floor(Math.random() * 10) + 1, // Use room.id or generate random for demo
+        tenKieuPhong: room.type,
+        tenLoaiPhong: room.category,
+        moTaKieuPhong: room.description,
+        giaHienTai: room.price,
+        totalPrice: room.price * 2, // Giả sử 2 đêm
+        averagePrice: room.price,
+        soPhongTrong: Math.floor(Math.random() * 8) + 1, // Random cho demo
+        tongSoPhong: Math.floor(Math.random() * 5) + 8,
+        danhSachTienNghi: room.amenities || [],
+        danhSachAnhUrl: [room.image],
+        danhSachKhuyenMai: []
+      }
+      console.log('✅ Converted room:', converted)
+      return converted
+    })
   }
 
   // Handle show all hot rooms
