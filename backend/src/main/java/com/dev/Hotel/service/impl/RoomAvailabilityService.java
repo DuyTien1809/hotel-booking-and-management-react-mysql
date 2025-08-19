@@ -528,23 +528,28 @@ public class RoomAvailabilityService implements IRoomAvailabilityService {
 
             for (Object[] result : results) {
                 try {
-                    if (result.length >= 7) {
-                        // Mapping theo thứ tự kết quả từ stored procedure:
-                        // [0] = ID_HANG_PHONG (Integer)
-                        // [1] = TEN_KIEU_PHONG (String)
-                        // [2] = TEN_LOAI_PHONG (String)
-                        // [3] = TONG_SO_PHONG (Long)
-                        // [4] = SO_PHONG_CHIEM (Long)
-                        // [5] = SO_PHONG_KHONG_KHADUNG (Long)
-                        // [6] = SO_PHONG_TRONG (Long)
-
+                    // Hỗ trợ cả 2 định dạng kết quả từ SP:
+                    // 1) 7 cột: có SO_PHONG_CHIEM, SO_PHONG_KHONG_KHADUNG riêng
+                    // 2) 5 cột: chỉ có SO_PHONG_TRONG (thông dụng hiện tại)
+                    if (result.length >= 5) {
                         Integer idHangPhong = convertToInteger(result[0]);
                         String tenKieuPhong = (String) result[1];
                         String tenLoaiPhong = (String) result[2];
                         Integer tongSoPhong = convertToInteger(result[3]);
-                        Integer soPhongChiem = convertToInteger(result[4]);
-                        Integer soPhongKhongKhaDung = convertToInteger(result[5]);
-                        Integer soPhongTrong = convertToInteger(result[6]);
+
+                        Integer soPhongChiem = null;
+                        Integer soPhongKhongKhaDung = null;
+                        Integer soPhongTrong;
+
+                        if (result.length >= 7) {
+                            // Định dạng đầy đủ
+                            soPhongChiem = convertToInteger(result[4]);
+                            soPhongKhongKhaDung = convertToInteger(result[5]);
+                            soPhongTrong = convertToInteger(result[6]);
+                        } else {
+                            // Định dạng rút gọn: [4] là SO_PHONG_TRONG
+                            soPhongTrong = convertToInteger(result[4]);
+                        }
 
                         System.out.println("Processing room for staff: ID=" + idHangPhong +
                                 ", KieuPhong=" + tenKieuPhong +
@@ -554,12 +559,20 @@ public class RoomAvailabilityService implements IRoomAvailabilityService {
                                 ", Unavailable=" + soPhongKhongKhaDung +
                                 ", Available=" + soPhongTrong);
 
-                        AvailableRoomsByHangPhongDTO dto = new AvailableRoomsByHangPhongDTO(
-                                idHangPhong, tenKieuPhong, tenLoaiPhong,
-                                tongSoPhong, soPhongChiem, soPhongKhongKhaDung, soPhongTrong);
-
-                        availableRooms.add(dto);
-
+                        // Chỉ thêm hạng phòng còn trống
+                        if (soPhongTrong != null && soPhongTrong > 0) {
+                            AvailableRoomsByHangPhongDTO dto;
+                            if (soPhongChiem != null || soPhongKhongKhaDung != null) {
+                                dto = new AvailableRoomsByHangPhongDTO(
+                                        idHangPhong, tenKieuPhong, tenLoaiPhong,
+                                        tongSoPhong, soPhongChiem, soPhongKhongKhaDung, soPhongTrong);
+                            } else {
+                                dto = new AvailableRoomsByHangPhongDTO(
+                                        idHangPhong, tenKieuPhong, tenLoaiPhong,
+                                        tongSoPhong, soPhongTrong);
+                            }
+                            availableRooms.add(dto);
+                        }
                     } else {
                         System.out.println("Skipping result with insufficient columns: " + result.length);
                     }
