@@ -51,7 +51,6 @@ com\dev\Hotel\dto\TienNghiDTO.class
 com\dev\Hotel\service\impl\DashboardService.class
 com\dev\Hotel\dto\HoaDonDTO$RoomDetailDTO.class
 com\dev\Hotel\dto\CreateBookingRequest$RoomInfo.class
-com\dev\Hotel\repo\CTKhachORepository.class
 com\dev\Hotel\dto\BookingReportSummaryDTO.class
 com\dev\Hotel\dto\PhieuThueDetailsDTO.class
 com\dev\Hotel\entity\GiaHangPhong.class
@@ -63,15 +62,12 @@ com\dev\Hotel\entity\CtPhuThu.class
 com\dev\Hotel\dto\CreateInvoiceRequest$DamageDTO.class
 com\dev\Hotel\service\interfac\IReportService.class
 com\dev\Hotel\repo\DichVuRepository.class
-com\dev\Hotel\repo\BookingReportRepository.class
 com\dev\Hotel\dto\CreateBookingRequest$PaymentData$PayerInfo.class
 com\dev\Hotel\entity\NhanVien.class
 com\dev\Hotel\service\EmailService.class
 com\dev\Hotel\service\interfac\IDashboardService.class
 com\dev\Hotel\entity\HoaDon.class
-com\dev\Hotel\repo\CtPhieuThueRepository.class
 com\dev\Hotel\entity\DoiPhong.class
-com\dev\Hotel\repo\BookingReportRepository$1.class
 com\dev\Hotel\controller\HoaDonController.class
 com\dev\Hotel\dto\KhuyenMaiDTO.class
 com\dev\Hotel\dto\CreateInvoiceRequest$AdditionalChargeDTO.class
@@ -90,7 +86,6 @@ com\dev\Hotel\service\impl\KieuPhongService.class
 com\dev\Hotel\dto\LoaiPhongDTO.class
 com\dev\Hotel\dto\HoaDonDTO$SurchargeDetailDTO.class
 com\dev\Hotel\entity\DoiPhongId.class
-com\dev\Hotel\repo\BookingReportRepository$2.class
 com\dev\Hotel\service\interfac\IHangPhongService.class
 com\dev\Hotel\entity\QuanLy.class
 com\dev\Hotel\controller\PhieuThueController.class
@@ -135,6 +130,7 @@ com\dev\Hotel\dto\HangPhongDTO.class
 com\dev\Hotel\service\impl\PhieuDatService.class
 com\dev\Hotel\dto\CheckInWalkInRequest.class
 com\dev\Hotel\entity\CtDichVuId.class
+com\dev\Hotel\service\impl\PromotionService.class
 com\dev\Hotel\service\interfac\ICustomerService.class
 com\dev\Hotel\controller\PhieuDatController.class
 com\dev\Hotel\entity\CtTienNghi.class
@@ -147,7 +143,6 @@ com\dev\Hotel\dto\NhanVienDTO.class
 com\dev\Hotel\dto\UpdateBookingRequest.class
 com\dev\Hotel\service\impl\NhanVienService.class
 com\dev\Hotel\entity\DichVu.class
-com\dev\Hotel\repo\CtPhieuDatRepository.class
 com\dev\Hotel\dto\AvailableRoomsByHangPhongDTO.class
 com\dev\Hotel\repo\LoaiPhongRepository.class
 com\dev\Hotel\service\interfac\ILoaiPhongService.class
@@ -169,7 +164,6 @@ com\dev\Hotel\entity\CtKhuyenMaiId.class
 com\dev\Hotel\dto\PhieuThueDetailsDTO$SurchargeDetailDTO.class
 com\dev\Hotel\service\impl\RoomPricingService$PriceSegment.class
 com\dev\Hotel\service\impl\LoaiPhongService.class
-com\dev\Hotel\repo\CtDichVuRepository.class
 com\dev\Hotel\service\interfac\IHoaDonService.class
 com\dev\Hotel\service\impl\RoomPricingService.class
 com\dev\Hotel\entity\KhachHang.class

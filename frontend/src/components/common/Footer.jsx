@@ -1,8 +1,26 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { Phone, Mail, MapPin } from 'lucide-react'
+import { useAuth } from '../../contexts/AuthContext'
 
 const Footer = () => {
+  const { isAuthenticated, user } = useAuth()
+
+  const getDashboardLink = () => {
+    if (!user) return '/login'
+
+    switch (user.role) {
+      case 'ADMIN':
+        return '/admin'
+      case 'EMPLOYEE':
+        return '/staff'
+      case 'CUSTOMER':
+        return '/customer'
+      default:
+        return '/login'
+    }
+  }
+
   return (
     <footer className="bg-gray-900 text-white">
       <div className="container py-12">
@@ -39,21 +57,26 @@ const Footer = () => {
                   Trang chủ
                 </Link>
               </li>
-              <li>
-                <Link to="/rooms" className="text-gray-300 hover:text-white transition-colors">
-                  Phòng
-                </Link>
-              </li>
-              <li>
-                <Link to="/login" className="text-gray-300 hover:text-white transition-colors">
-                  Đăng nhập
-                </Link>
-              </li>
-              <li>
-                <Link to="/register" className="text-gray-300 hover:text-white transition-colors">
-                  Đăng ký
-                </Link>
-              </li>
+              {isAuthenticated() ? (
+                <li>
+                  <Link to={getDashboardLink()} className="text-gray-300 hover:text-white transition-colors">
+                    Dashboard
+                  </Link>
+                </li>
+              ) : (
+                <>
+                  <li>
+                    <Link to="/login" className="text-gray-300 hover:text-white transition-colors">
+                      Đăng nhập
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/register" className="text-gray-300 hover:text-white transition-colors">
+                      Đăng ký
+                    </Link>
+                  </li>
+                </>
+              )}
             </ul>
           </div>
 

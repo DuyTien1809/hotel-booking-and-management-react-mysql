@@ -6,6 +6,8 @@ import RoomSearchResult from '../../components/common/RoomSearchResult'
 import { api } from '../../services/api'
 import { roomService } from '../../services/roomService'
 import { hangPhongService } from '../../services/hangPhongService'
+import { promotionService } from '../../services/promotionService'
+import toast from 'react-hot-toast'
 
 const HomePage = () => {
   const navigate = useNavigate()
@@ -19,6 +21,8 @@ const HomePage = () => {
   const [prefilledRoomData, setPrefilledRoomData] = useState(null)
   const [showPrefilledNotification, setShowPrefilledNotification] = useState(false)
   const [showGuidance, setShowGuidance] = useState(false)
+  const [newsletterEmail, setNewsletterEmail] = useState('')
+  const [isSubscribing, setIsSubscribing] = useState(false)
 
   // Function to scroll to search section
   const scrollToSearch = () => {
@@ -291,6 +295,47 @@ const HomePage = () => {
           description: 'Phòng tập gym hiện đại với đầy đủ thiết bị'
         }
       ])
+    }
+  }
+
+  // Handle newsletter subscription
+  const handleNewsletterSubscription = async (e) => {
+    e.preventDefault()
+
+    if (!newsletterEmail) {
+      toast.error('Vui lòng nhập email')
+      return
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(newsletterEmail)) {
+      toast.error('Email không hợp lệ')
+      return
+    }
+
+    setIsSubscribing(true)
+    try {
+      const response = await promotionService.subscribeToPromotions(newsletterEmail)
+
+      if (response.statusCode === 200) {
+        toast.success(response.message)
+        setNewsletterEmail('') // Clear email input
+      } else if (response.statusCode === 400) {
+        // Email validation error
+        toast.error(response.message)
+      } else {
+        toast.error(response.message || 'Đăng ký thất bại')
+      }
+    } catch (error) {
+      console.error('Newsletter subscription error:', error)
+      if (error.response && error.response.data && error.response.data.message) {
+        toast.error(error.response.data.message)
+      } else {
+        toast.error('Có lỗi xảy ra khi đăng ký')
+      }
+    } finally {
+      setIsSubscribing(false)
     }
   }
 
@@ -627,7 +672,7 @@ const HomePage = () => {
                   </div>
                   <div>
                     <div className="font-semibold">Địa chỉ</div>
-                    <div className="text-primary-100">123 Đường ABC, Quận 1, TP.HCM</div>
+                    <div className="text-primary-100">97 Man Thiện, Hiệp Phú, Thủ Đức, Hồ Chí Minh</div>
                   </div>
                 </div>
               </div>
@@ -642,12 +687,6 @@ const HomePage = () => {
                 <button className="w-full bg-white bg-opacity-20 hover:bg-opacity-30 border-2 border-white text-white font-semibold py-4 rounded-xl transition-all duration-200 btn-glow">
                   Chat Trực Tuyến
                 </button>
-                <Link
-                  to="/rooms"
-                  className="block w-full bg-transparent border-2 border-white text-white hover:bg-white hover:text-primary-600 font-semibold py-4 rounded-xl text-center transition-all duration-200 btn-glow"
-                >
-                  Xem Tất Cả Phòng
-                </Link>
               </div>
             </div>
           </div>
@@ -662,16 +701,23 @@ const HomePage = () => {
             <p className="text-gray-400 mb-8">
               Nhận thông tin về các chương trình khuyến mãi và ưu đãi đặc biệt từ chúng tôi
             </p>
-            <div className="flex flex-col md:flex-row gap-4 max-w-md mx-auto">
+            <form onSubmit={handleNewsletterSubscription} className="flex flex-col md:flex-row gap-4 max-w-md mx-auto">
               <input
                 type="email"
                 placeholder="Nhập email của bạn"
-                className="flex-1 px-6 py-3 rounded-xl bg-gray-800 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-primary-500"
+                value={newsletterEmail}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
+                disabled={isSubscribing}
+                className="flex-1 px-6 py-3 rounded-xl bg-gray-800 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-primary-500 disabled:opacity-50"
               />
-              <button className="px-8 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-colors duration-200 btn-glow">
-                Đăng Ký
+              <button
+                type="submit"
+                disabled={isSubscribing}
+                className="px-8 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-colors duration-200 btn-glow disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubscribing ? 'Đang xử lý...' : 'Đăng Ký'}
               </button>
-            </div>
+            </form>
           </div>
         </div>
       </section>

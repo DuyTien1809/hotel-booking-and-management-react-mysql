@@ -25,28 +25,20 @@ public class PromotionController {
     }
 
     /**
-     * Test endpoint để kiểm tra khuyến mãi
+     * Lấy tất cả khuyến mãi đang active
      */
-    @GetMapping("/test")
-    public ResponseEntity<String> testPromotions() {
-        return ResponseEntity.ok("Promotion Controller is working!");
+    @GetMapping("/active")
+    public ResponseEntity<Response> getActivePromotions() {
+        Response response = promotionService.getActivePromotions();
+        return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
     /**
-     * Test endpoint để kiểm tra dữ liệu khuyến mãi
+     * Đăng ký nhận thông tin ưu đãi qua email
      */
-    @GetMapping("/test-data")
-    public ResponseEntity<Response> testPromotionData() {
-        Response response = new Response();
-        try {
-            // Test basic data
-            response.setStatusCode(200);
-            response.setMessage("Test data endpoint working");
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            response.setStatusCode(500);
-            response.setMessage("Error: " + e.getMessage());
-            return ResponseEntity.status(500).body(response);
-        }
+    @PostMapping("/subscribe")
+    public ResponseEntity<Response> subscribeToPromotions(@RequestParam("email") String email) {
+        Response response = promotionService.subscribeToPromotions(email);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 }

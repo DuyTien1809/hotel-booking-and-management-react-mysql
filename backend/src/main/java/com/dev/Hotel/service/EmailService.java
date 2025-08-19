@@ -51,5 +51,30 @@ public class EmailService {
             throw new RuntimeException("Email sending failed", e);
         }
     }
-    
+
+    /**
+     * Gửi email thông tin khuyến mãi
+     */
+    public void sendPromotionEmail(String toEmail, String promotionContent) {
+        try {
+            // Tạo email message
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(toEmail);
+            message.setSubject("🎉 Thông tin ưu đãi đặc biệt từ Hotel Booking System");
+
+            message.setText(promotionContent);
+
+            // Gửi email
+            mailSender.send(message);
+
+        } catch (Exception e) {
+            // Log lỗi để debug nếu cần
+            System.err.println("Failed to send promotion email to: " + toEmail + " - " + e.getMessage());
+
+            // Có thể throw exception hoặc handle theo business logic
+            throw new RuntimeException("Promotion email sending failed", e);
+        }
+    }
+
 }
