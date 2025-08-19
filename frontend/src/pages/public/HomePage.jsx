@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Search, Calendar, Users, Wifi, Car, Coffee, Dumbbell, MapPin, Phone, Mail, Award, Shield, Clock } from 'lucide-react'
+import { Search, Calendar, Users, Wifi, Car, Coffee, Dumbbell, MapPin, Phone, Mail, Award, Shield, Clock, Wine, Shirt, UtensilsCrossed, FileText } from 'lucide-react'
 import RoomSearch from '../../components/common/RoomSearch'
 import RoomSearchResult from '../../components/common/RoomSearchResult'
 import { api } from '../../services/api'
@@ -252,6 +252,21 @@ const HomePage = () => {
     fetchServices()
   }, [])
 
+  // Hàm để lấy icon phù hợp cho từng dịch vụ
+  const getServiceIcon = (serviceName) => {
+    const name = serviceName.toLowerCase()
+    if (name.includes('minibar') || name.includes('mini bar')) return Wine
+    if (name.includes('giặt') || name.includes('ủi') || name.includes('laundry')) return Shirt
+    if (name.includes('ẩm thực') || name.includes('restaurant') || name.includes('meal')) return UtensilsCrossed
+    if (name.includes('điện thoại') || name.includes('phone')) return Phone
+    if (name.includes('fax') || name.includes('gửi fax')) return FileText
+    if (name.includes('wifi') || name.includes('internet')) return Wifi
+    if (name.includes('gym') || name.includes('thể thao')) return Dumbbell
+    if (name.includes('coffee') || name.includes('cà phê')) return Coffee
+    if (name.includes('xe') || name.includes('car') || name.includes('parking')) return Car
+    return Award // Default icon cho các dịch vụ khác
+  }
+
   const fetchServices = async () => {
     try {
       // Gọi API để lấy danh sách dịch vụ
@@ -260,7 +275,7 @@ const HomePage = () => {
 
       // Convert to homepage format
       const servicesData = dichVuList.slice(0, 6).map(dv => ({
-        icon: Wifi, // Default icon
+        icon: getServiceIcon(dv.tenDv),
         title: dv.tenDv,
         description: dv.moTa || 'Dịch vụ chất lượng cao'
       }))
@@ -281,7 +296,7 @@ const HomePage = () => {
           description: 'Bãi đỗ xe rộng rãi, an toàn cho khách hàng'
         },
         {
-          icon: Coffee,
+          icon: UtensilsCrossed,
           title: 'Nhà hàng',
           description: 'Nhà hàng phục vụ các món ăn ngon, đa dạng'
         },
@@ -289,6 +304,16 @@ const HomePage = () => {
           icon: Dumbbell,
           title: 'Phòng gym',
           description: 'Phòng tập gym hiện đại với đầy đủ thiết bị'
+        },
+        {
+          icon: Wine,
+          title: 'Minibar',
+          description: 'Đồ uống và snack cao cấp trong phòng'
+        },
+        {
+          icon: Award,
+          title: 'Dịch vụ cao cấp',
+          description: 'Các dịch vụ chăm sóc khách hàng chuyên nghiệp'
         }
       ])
     }

@@ -543,6 +543,7 @@ public class EntityDTOMapper {
         DichVuDTO dto = new DichVuDTO();
         dto.setIdDv(dichVu.getIdDv());
         dto.setTenDv(dichVu.getTenDv());
+        dto.setMoTa(dichVu.getMoTa());
         dto.setDonViTinh(dichVu.getDonViTinh());
 
         // Get latest price from database using PriceService
@@ -793,32 +794,32 @@ public class EntityDTOMapper {
                     PhieuThueDetailsDTO.RoomDetailDTO roomDto = new PhieuThueDetailsDTO.RoomDetailDTO();
                     roomDto.setIdCtPt(ctPhieuThue.getIdCtPt());
 
-                if (ctPhieuThue.getPhong() != null) {
-                    roomDto.setIdPhong(ctPhieuThue.getPhong().getSoPhong());
-                    roomDto.setTenPhong(ctPhieuThue.getPhong().getSoPhong());
-                    if (ctPhieuThue.getPhong().getHangPhong() != null &&
-                            ctPhieuThue.getPhong().getHangPhong().getLoaiPhong() != null) {
-                        roomDto.setLoaiPhong(ctPhieuThue.getPhong().getHangPhong().getLoaiPhong().getTenLp());
+                    if (ctPhieuThue.getPhong() != null) {
+                        roomDto.setIdPhong(ctPhieuThue.getPhong().getSoPhong());
+                        roomDto.setTenPhong(ctPhieuThue.getPhong().getSoPhong());
+                        if (ctPhieuThue.getPhong().getHangPhong() != null &&
+                                ctPhieuThue.getPhong().getHangPhong().getLoaiPhong() != null) {
+                            roomDto.setLoaiPhong(ctPhieuThue.getPhong().getHangPhong().getLoaiPhong().getTenLp());
+                        }
                     }
-                }
 
-                roomDto.setDonGia(ctPhieuThue.getDonGia());
-                roomDto.setNgayDen(ctPhieuThue.getNgayDen());
-                roomDto.setNgayDi(ctPhieuThue.getNgayDi());
-                roomDto.setTrangThaiThanhToan(ctPhieuThue.getTtThanhToan());
+                    roomDto.setDonGia(ctPhieuThue.getDonGia());
+                    roomDto.setNgayDen(ctPhieuThue.getNgayDen());
+                    roomDto.setNgayDi(ctPhieuThue.getNgayDi());
+                    roomDto.setTrangThaiThanhToan(ctPhieuThue.getTtThanhToan());
 
-                // Calculate room charges
-                if (ctPhieuThue.getDonGia() != null && ctPhieuThue.getNgayDen() != null
-                        && ctPhieuThue.getNgayDi() != null) {
-                    long soNgay = java.time.temporal.ChronoUnit.DAYS.between(ctPhieuThue.getNgayDen(),
-                            ctPhieuThue.getNgayDi());
-                    soNgay = Math.max(1, soNgay);
-                    roomDto.setSoNgay((int) soNgay);
+                    // Calculate room charges
+                    if (ctPhieuThue.getDonGia() != null && ctPhieuThue.getNgayDen() != null
+                            && ctPhieuThue.getNgayDi() != null) {
+                        long soNgay = java.time.temporal.ChronoUnit.DAYS.between(ctPhieuThue.getNgayDen(),
+                                ctPhieuThue.getNgayDi());
+                        soNgay = Math.max(1, soNgay);
+                        roomDto.setSoNgay((int) soNgay);
 
-                    BigDecimal thanhTien = ctPhieuThue.getDonGia().multiply(BigDecimal.valueOf(soNgay));
-                    roomDto.setThanhTien(thanhTien);
-                    tongTienPhong = tongTienPhong.add(thanhTien);
-                }
+                        BigDecimal thanhTien = ctPhieuThue.getDonGia().multiply(BigDecimal.valueOf(soNgay));
+                        roomDto.setThanhTien(thanhTien);
+                        tongTienPhong = tongTienPhong.add(thanhTien);
+                    }
 
                     rooms.add(roomDto);
                 } // Đóng block if cho phòng chưa thanh toán
